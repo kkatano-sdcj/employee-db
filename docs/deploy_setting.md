@@ -11,12 +11,13 @@ pnpm install
 
 ### Build Command
 ```
-pnpm --filter @acme/nextjs build
+npx pnpm@10.19.0 --filter @acme/nextjs build
 ```
 または、ルートの`package.json`に定義されているエイリアスを使用：
 ```
 pnpm build
 ```
+**注意**: Vercelのビルド環境で確実に正しいバージョンのpnpmを使用するため、`npx pnpm@10.19.0`を明示的に指定することを推奨します。
 
 ### Output Directory
 Next.jsは自動検出されるため、通常は設定不要です。明示的に設定する場合：
@@ -53,9 +54,9 @@ Vercelの設定で`Next.js`を選択してください。
 
 ```json
 {
-  "buildCommand": "pnpm --filter @acme/nextjs build",
+  "buildCommand": "npx pnpm@10.19.0 --filter @acme/nextjs build",
   "outputDirectory": "apps/nextjs/.next",
-  "installCommand": "npm install -g pnpm@10.19.0 && pnpm install",
+  "installCommand": "npm install -g pnpm@10.19.0 && npx pnpm@10.19.0 install",
   "framework": "nextjs"
 }
 ```
@@ -96,16 +97,16 @@ Vercelの設定で`Next.js`を選択してください。
 
 ```json
 {
-  "buildCommand": "pnpm --filter @acme/nextjs build",
+  "buildCommand": "npx pnpm@10.19.0 --filter @acme/nextjs build",
   "outputDirectory": "apps/nextjs/.next",
-  "installCommand": "npm install -g pnpm@10.19.0 && pnpm install",
+  "installCommand": "npm install -g pnpm@10.19.0 && npx pnpm@10.19.0 install",
   "framework": "nextjs"
 }
 ```
 
 **注意**: `rootDirectory`は`vercel.json`には含めません。Vercelのダッシュボードの設定で指定してください。
 
-`installCommand`で`npm install -g pnpm@10.19.0`を使用してpnpmのバージョンを明示的にインストールすることで、Vercelのビルド環境で正しいバージョンのpnpmが使用されます。
+`installCommand`と`buildCommand`で`npx pnpm@10.19.0`を使用することで、Vercelのビルド環境で確実に正しいバージョンのpnpmが使用されます。`npm install -g`でインストールしてもシェルのキャッシュの問題で古いバージョンが使われる可能性があるため、`npx`を使用して明示的にバージョンを指定します。
 
 #### 解決策3: `package.json`に`engines`フィールドを追加
 

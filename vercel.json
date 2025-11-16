@@ -1,7 +1,7 @@
 {
-  "buildCommand": "pnpm --filter @acme/nextjs build",
+  "buildCommand": "npx pnpm@10.19.0 --filter @acme/nextjs build",
   "outputDirectory": "apps/nextjs/.next",
-  "installCommand": "npm install -g pnpm@10.19.0 && pnpm install",
+  "installCommand": "npm install -g pnpm@10.19.0 && npx pnpm@10.19.0 install",
   "framework": "nextjs"
 }
 
