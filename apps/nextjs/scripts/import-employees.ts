@@ -146,11 +146,11 @@ async function importEmployees() {
   try {
     // 既存のemployee_numberを取得
     console.log("🔍 既存の従業員データを確認中...");
-    const existingEmployees = await sql`
+    const existingEmployees = await sql<{ employee_number: string }>`
       SELECT employee_number FROM employees
     `;
     const existingNumbers = new Set(
-      existingEmployees.map((e: { employee_number: string }) => e.employee_number)
+      existingEmployees.map((e) => e.employee_number)
     );
     console.log(`   既存データ: ${existingNumbers.size}件\n`);
 
