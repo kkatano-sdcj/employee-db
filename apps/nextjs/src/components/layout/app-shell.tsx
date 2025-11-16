@@ -2,11 +2,11 @@ import { Sidebar } from "@/components/layout/sidebar";
 import { TopBar } from "@/components/layout/top-bar";
 
 export const AppShell = ({ children }: { children: React.ReactNode }) => (
-  <div className="min-h-screen bg-slate-50">
+  <div className="min-h-screen flex">
     <Sidebar />
-    <div className="flex flex-col lg:ml-72">
+    <main className="ml-72 flex-1">
       <TopBar />
-      <main className="px-4 pb-16 pt-8 lg:px-10">{children}</main>
-    </div>
+      <div className="p-8 animate-fade-in">{children}</div>
+    </main>
   </div>
 );

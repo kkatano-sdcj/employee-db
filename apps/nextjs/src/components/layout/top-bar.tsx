@@ -1,29 +1,57 @@
+"use client";
+
 import { format } from "date-fns";
 import { ja } from "date-fns/locale/ja";
-import { MagnifyingGlassIcon } from "@heroicons/react/24/outline";
+import { MagnifyingGlassIcon, BellIcon, PlusIcon } from "@heroicons/react/24/outline";
+import { usePathname } from "next/navigation";
 
 export const TopBar = () => {
-  const now = format(new Date(), "yyyy年MM月dd日 (EEE) HH:mm", { locale: ja });
+  const pathname = usePathname();
+  const now = format(new Date(), "yyyy年MM月dd日 HH:mm", { locale: ja });
+
+  // ページタイトルの取得
+  const getPageTitle = () => {
+    if (pathname === "/") return "ダッシュボード";
+    if (pathname.startsWith("/employees")) return "従業員管理";
+    if (pathname.startsWith("/contracts")) return "契約管理";
+    if (pathname.startsWith("/reports")) return "レポート・分析";
+    if (pathname.startsWith("/settings")) return "システム設定";
+    return "Employee Database";
+  };
 
   return (
-    <header className="sticky top-0 z-30 flex flex-col gap-4 border-b border-white/60 bg-white/80 px-5 py-4 backdrop-blur lg:px-10">
-      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-        <div>
-          <p className="text-xs uppercase tracking-widest text-slate-400">Dashboard</p>
-          <h1 className="text-2xl font-semibold text-slate-900">従業員データベース</h1>
-        </div>
-        <div className="text-sm text-slate-500">{now} 更新</div>
-      </div>
-      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-        <label className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm text-slate-500 shadow-inner">
-          <MagnifyingGlassIcon className="h-4 w-4" />
-          <input
-            className="w-full border-none bg-transparent text-sm focus:outline-none"
-            placeholder="従業員・契約を検索"
-          />
-        </label>
-        <div className="flex items-center gap-3 text-xs text-slate-500">
-          <span className="badge-dot bg-emerald-400" /> 稼働中 / メンテナンス予定なし
+    <header className="sticky top-0 z-30 bg-white/70 backdrop-blur-lg border-b border-slate-200/50 glass-morphism">
+      <div className="px-8 py-5">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-2xl font-bold text-slate-900">{getPageTitle()}</h2>
+            <p className="text-sm text-slate-500 mt-1">
+              最終更新: <span className="font-medium">{now}</span>
+            </p>
+          </div>
+          <div className="flex items-center gap-4">
+            {/* 検索 */}
+            <div className="relative">
+              <input
+                type="text"
+                placeholder="検索..."
+                className="w-72 px-4 py-2.5 pl-10 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-slate-400 focus:bg-white transition-all"
+              />
+              <MagnifyingGlassIcon className="absolute left-3 top-3 w-4 h-4 text-slate-400" />
+            </div>
+
+            {/* 通知 */}
+            <button className="relative p-2.5 bg-slate-50 hover:bg-slate-100 rounded-xl transition-all hover-lift">
+              <BellIcon className="w-5 h-5 text-slate-600" />
+              <span className="absolute top-1 right-1 w-2 h-2 bg-accent-rose rounded-full"></span>
+            </button>
+
+            {/* クイックアクション */}
+            <button className="px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-white text-sm font-medium rounded-xl transition-all shadow-soft hover-lift flex items-center gap-2">
+              <PlusIcon className="w-4 h-4" />
+              クイックアクション
+            </button>
+          </div>
         </div>
       </div>
     </header>
