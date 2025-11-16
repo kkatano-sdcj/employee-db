@@ -58,20 +58,20 @@ async function testConnection() {
 
     // テーブル一覧の確認
     console.log("📋 テーブル一覧を確認中...");
-    const tables = await sql`
+    const tables = (await sql`
       SELECT table_name 
       FROM information_schema.tables 
       WHERE table_schema = 'public' 
       AND table_type = 'BASE TABLE'
       ORDER BY table_name;
-    `;
+    `) as Array<{ table_name: string }>;
 
     if (tables.length === 0) {
       console.log("⚠️  テーブルが見つかりませんでした");
       console.log("   database/supabase_schema.sql を実行してスキーマを作成してください\n");
     } else {
       console.log(`✅ ${tables.length}個のテーブルが見つかりました:\n`);
-      tables.forEach((table: { table_name: string }) => {
+      tables.forEach((table) => {
         console.log(`   - ${table.table_name}`);
       });
       console.log();
@@ -79,7 +79,7 @@ async function testConnection() {
 
     // employeesテーブルの存在確認とレコード数
     const employeesTable = tables.find(
-      (t: { table_name: string }) => t.table_name === "employees"
+      (t) => t.table_name === "employees"
     );
 
     if (employeesTable) {
@@ -88,10 +88,10 @@ async function testConnection() {
       console.log(`   レコード数: ${(count as { count: bigint }).count}\n`);
 
       // サンプルデータの表示（最大5件）
-      const samples = await sql`SELECT employee_number, name, employment_status FROM employees LIMIT 5`;
+      const samples = (await sql`SELECT employee_number, name, employment_status FROM employees LIMIT 5`) as Array<{ employee_number: string; name: string; employment_status: string }>;
       if (samples.length > 0) {
         console.log("   サンプルデータ:");
-        samples.forEach((emp: { employee_number: string; name: string; employment_status: string }) => {
+        samples.forEach((emp) => {
           console.log(`     - ${emp.employee_number}: ${emp.name} (${emp.employment_status})`);
         });
         console.log();
