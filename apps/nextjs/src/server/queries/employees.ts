@@ -178,7 +178,7 @@ type TransportationRouteRow = {
 };
 
 export async function fetchEmployeeDetail(employeeId: string): Promise<EmployeeDetail> {
-  const [employee] = await db`
+  const [employee] = (await db`
     SELECT
       id,
       employee_number as "employeeNumber",
@@ -197,7 +197,23 @@ export async function fetchEmployeeDetail(employeeId: string): Promise<EmployeeD
       updated_at as "updatedAt"
     FROM employees
     WHERE id = ${employeeId}
-  `;
+  `) as Array<{
+    id: string;
+    employeeNumber: string;
+    branchNumber: number;
+    name: string;
+    nameKana: string;
+    gender: string;
+    birthDate: Date | string | null;
+    nationality: string | null;
+    hiredAt: Date | string | null;
+    retiredAt: Date | string | null;
+    employmentType: string;
+    employmentStatus: string;
+    departmentCode: string;
+    myNumber: string | null;
+    updatedAt: Date | string | null;
+  } | undefined>;
 
   const workConditions = await db<WorkConditionRow[]>`
     SELECT * FROM work_conditions
