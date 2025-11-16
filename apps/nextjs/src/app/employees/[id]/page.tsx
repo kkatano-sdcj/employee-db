@@ -103,23 +103,6 @@ export default async function EmployeeDetailPage({
             <div className="grid grid-cols-2 gap-y-4 gap-x-8">
               <div>
                 <p className="text-xs text-slate-500 uppercase tracking-wider mb-1">
-                  電話番号
-                </p>
-                <p className="text-sm font-medium text-slate-900 flex items-center gap-2">
-                  <PhoneIcon className="w-4 h-4 text-slate-400" />
-                  {employee.phoneNumber || "未登録"}
-                </p>
-              </div>
-              <div>
-                <p className="text-xs text-slate-500 uppercase tracking-wider mb-1">
-                  内線番号
-                </p>
-                <p className="text-sm font-medium text-slate-900">
-                  {employee.extensionNumber || "-"}
-                </p>
-              </div>
-              <div>
-                <p className="text-xs text-slate-500 uppercase tracking-wider mb-1">
                   入社日
                 </p>
                 <p className="text-sm font-medium text-slate-900 flex items-center gap-2">
@@ -138,16 +121,6 @@ export default async function EmployeeDetailPage({
               <span className="px-3 py-1.5 bg-slate-100 text-slate-700 rounded-lg text-xs font-medium">
                 {employmentTypeLabel(employee.employmentType)}
               </span>
-              {employee.isManager && (
-                <span className="px-3 py-1.5 bg-slate-100 text-slate-700 rounded-lg text-xs font-medium">
-                  管理職
-                </span>
-              )}
-              {employee.canWorkRemote && (
-                <span className="px-3 py-1.5 bg-slate-100 text-slate-700 rounded-lg text-xs font-medium">
-                  テレワーク可
-                </span>
-              )}
             </div>
           </div>
 
@@ -202,55 +175,16 @@ export default async function EmployeeDetailPage({
                   個人情報
                 </h4>
                 <div className="bg-slate-50/50 rounded-xl p-6 space-y-4">
-                  <InfoRow label="氏名（姓）" value={employee.lastName || "-"} />
-                  <InfoRow label="氏名（名）" value={employee.firstName || "-"} />
+                  <InfoRow label="氏名" value={employee.name} />
                   <InfoRow label="フリガナ" value={employee.nameKana} />
                   <InfoRow label="生年月日" value={employee.birthDate || "-"} />
                   <InfoRow label="性別" value={genderLabel(employee.gender)} />
                   <InfoRow label="国籍" value={employee.nationality || "日本"} />
+                  <InfoRow label="個人番号" value={employee.myNumber || "-"} />
                 </div>
               </div>
             </div>
 
-            {/* 連絡先情報 */}
-            <div className="space-y-6">
-              <div>
-                <h4 className="text-sm font-bold text-slate-900 uppercase tracking-wider mb-4 flex items-center">
-                  <span className="w-1 h-4 bg-slate-900 rounded-full mr-3" />
-                  連絡先情報
-                </h4>
-                <div className="bg-slate-50/50 rounded-xl p-6 space-y-4">
-                  <InfoRow label="郵便番号" value={employee.postalCode || "-"} />
-                  <InfoRow label="都道府県" value={employee.prefecture || "-"} />
-                  <InfoRow label="市区町村" value={employee.city || "-"} />
-                  <InfoRow label="番地・建物" value={employee.streetAddress || "-"} />
-                  <InfoRow label="携帯電話" value={employee.phoneNumber || "-"} />
-                  <InfoRow label="個人メール" value={employee.personalEmail || "-"} />
-                </div>
-              </div>
-            </div>
-
-            {/* 緊急連絡先 */}
-            <div className="space-y-6">
-              <div>
-                <h4 className="text-sm font-bold text-slate-900 uppercase tracking-wider mb-4 flex items-center">
-                  <span className="w-1 h-4 bg-accent-rose rounded-full mr-3" />
-                  緊急連絡先
-                </h4>
-                <div className="bg-red-50/30 border border-red-100 rounded-xl p-6 space-y-4">
-                  <InfoRow label="氏名" value={employee.emergencyContactName || "-"} />
-                  <InfoRow
-                    label="続柄"
-                    value={employee.emergencyContactRelation || "-"}
-                  />
-                  <InfoRow
-                    label="電話番号"
-                    value={employee.emergencyContactPhone || "-"}
-                  />
-                  <InfoRow label="住所" value={employee.emergencyContactAddress || "-"} />
-                </div>
-              </div>
-            </div>
 
             {/* 雇用情報 */}
             <div className="space-y-6">
@@ -265,8 +199,11 @@ export default async function EmployeeDetailPage({
                     value={employmentTypeLabel(employee.employmentType)}
                   />
                   <InfoRow label="部門" value={employee.departmentCode} />
-                  <InfoRow label="役職" value={employee.position || "-"} />
-                  <InfoRow label="上長" value={employee.supervisorName || "-"} />
+                  <InfoRow label="従業員番号" value={employee.employeeNumber} />
+                  <InfoRow label="支店番号" value={String(employee.branchNumber)} />
+                  {employee.retiredAt && (
+                    <InfoRow label="退職日" value={employee.retiredAt} />
+                  )}
                 </div>
               </div>
             </div>
