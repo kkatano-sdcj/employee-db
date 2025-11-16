@@ -313,8 +313,10 @@ export async function fetchEmployeeDetail(employeeId: string): Promise<EmployeeD
       ? {
           ...employee,
           birthDate: toDateString(employee.birthDate as unknown as Date),
+          nationality: employee.nationality ?? undefined,
           hiredAt: toDateString(employee.hiredAt as unknown as Date),
           retiredAt: toDateString(employee.retiredAt as unknown as Date),
+          myNumber: employee.myNumber ?? undefined,
           updatedAt: toDateTimeString(employee.updatedAt as unknown as Date),
         }
       : null,
