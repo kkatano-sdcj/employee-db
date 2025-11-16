@@ -146,9 +146,9 @@ async function importEmployees() {
   try {
     // 既存のemployee_numberを取得
     console.log("🔍 既存の従業員データを確認中...");
-    const existingEmployees = await sql<{ employee_number: string }>`
+    const existingEmployees = (await sql`
       SELECT employee_number FROM employees
-    `;
+    `) as Array<{ employee_number: string }>;
     const existingNumbers = new Set(
       existingEmployees.map((e) => e.employee_number)
     );
