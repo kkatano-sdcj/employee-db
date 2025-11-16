@@ -66,7 +66,6 @@ Vercelの設定で`Next.js`を選択してください。
 {
   "buildCommand": "next build",
   "outputDirectory": ".next",
-  "installCommand": "npm install -g pnpm@10.19.0 && npx pnpm@10.19.0 install",
   "framework": "nextjs"
 }
 ```
@@ -75,7 +74,7 @@ Vercelの設定で`Next.js`を選択してください。
 - `rootDirectory`は`vercel.json`には含めません。Vercelのダッシュボードで`Root Directory`を`apps/nextjs`に設定してください。
 - Root Directoryが`apps/nextjs`に設定されている場合、`buildCommand`はそのディレクトリから実行されるため、`next build`だけで十分です。
 - `outputDirectory`も`apps/nextjs`ディレクトリからの相対パス（`.next`）を指定します。
-- `installCommand`はプロジェクトルートから実行されるため、モノレポ全体の依存関係をインストールできます。
+- `installCommand`は削除しました。Vercelは`package.json`の`packageManager`フィールド（`pnpm@10.19.0`）を自動的に認識して、適切なバージョンのpnpmを使用します。これにより、Next.jsのバージョン検出も正しく動作します。
 
 ## Vercelダッシュボードでの設定手順
 
@@ -113,14 +112,13 @@ Vercelの設定で`Next.js`を選択してください。
 {
   "buildCommand": "next build",
   "outputDirectory": ".next",
-  "installCommand": "npm install -g pnpm@10.19.0 && npx pnpm@10.19.0 install",
   "framework": "nextjs"
 }
 ```
 
 **注意**: `rootDirectory`は`vercel.json`には含めません。Vercelのダッシュボードの設定で指定してください。
 
-`installCommand`で`npx pnpm@10.19.0`を使用することで、Vercelのビルド環境で確実に正しいバージョンのpnpmが使用されます。`npm install -g`でインストールしてもシェルのキャッシュの問題で古いバージョンが使われる可能性があるため、`npx`を使用して明示的にバージョンを指定します。
+**`installCommand`について**: Root Directoryが`apps/nextjs`に設定されている場合、`installCommand`を明示的に指定すると、VercelがNext.jsのバージョンを正しく検出できない場合があります。`package.json`の`packageManager`フィールド（`pnpm@10.19.0`）を指定していれば、Vercelは自動的に適切なバージョンのpnpmを使用します。そのため、`installCommand`は削除することを推奨します。
 
 `buildCommand`はRoot Directoryが`apps/nextjs`に設定されている場合、そのディレクトリから実行されるため、`next build`だけで十分です。Vercelが自動的にNext.jsのバージョンを検出します。
 
