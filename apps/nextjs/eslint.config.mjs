@@ -23,6 +23,13 @@ const eslintConfig = defineConfig([
       "no-restricted-properties": "off",
     },
   },
+  {
+    files: ["scripts/**/*.{ts,tsx,js}"],
+    rules: {
+      "no-restricted-properties": "off",
+      "@typescript-eslint/no-unused-vars": "off",
+    },
+  },
   globalIgnores([
     ".next/**",
     "out/**",

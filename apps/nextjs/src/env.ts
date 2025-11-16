@@ -14,4 +14,30 @@ const rawEnv = {
   NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
 };
 
-export const env = envSchema.parse(rawEnv);
+type Env = z.infer<typeof envSchema>;
+
+function formatZodIssues(error: z.ZodError): string {
+  return error.issues
+    .map((issue) => `${issue.path.join(".") || "value"}: ${issue.message}`)
+    .join(", ");
+}
+
+let parsedEnv: Env;
+
+try {
+  parsedEnv = envSchema.parse(rawEnv);
+} catch (error) {
+  if (error instanceof z.ZodError) {
+    const formatted = formatZodIssues(error);
+    const hint =
+      "ルート直下の `.env` に Supabase の接続情報 (例: DATABASE_URL) を設定してください。";
+
+    console.error("[env] 環境変数の検証に失敗しました:", formatted);
+    console.error("[env] ヒント:", hint);
+
+    throw new Error(`環境変数の設定が不足しています: ${formatted}`);
+  }
+  throw error;
+}
+
+export const env = parsedEnv;
