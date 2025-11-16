@@ -239,7 +239,7 @@ export default async function EmployeesPage({
                       </div>
                       <div>
                         <p className="text-sm font-medium text-slate-900">{employee.name}</p>
-                        <p className="text-xs text-slate-500">{employee.email}</p>
+                        <p className="text-xs text-slate-500">{employee.departmentCode}</p>
                       </div>
                     </div>
                   </td>

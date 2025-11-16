@@ -103,15 +103,6 @@ export default async function EmployeeDetailPage({
             <div className="grid grid-cols-2 gap-y-4 gap-x-8">
               <div>
                 <p className="text-xs text-slate-500 uppercase tracking-wider mb-1">
-                  メールアドレス
-                </p>
-                <p className="text-sm font-medium text-slate-900 flex items-center gap-2">
-                  <EnvelopeIcon className="w-4 h-4 text-slate-400" />
-                  {employee.email || "未登録"}
-                </p>
-              </div>
-              <div>
-                <p className="text-xs text-slate-500 uppercase tracking-wider mb-1">
                   電話番号
                 </p>
                 <p className="text-sm font-medium text-slate-900 flex items-center gap-2">
