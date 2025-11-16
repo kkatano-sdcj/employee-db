@@ -1,0 +1,982 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ダッシュボード - Employee Database System</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&family=Noto+Sans+JP:wght@300;400;500;700;900&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --secondary-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            --success-gradient: linear-gradient(135deg, #13f1fc 0%, #0470dc 100%);
+            --warning-gradient: linear-gradient(135deg, #f9d423 0%, #ff4e50 100%);
+            --info-gradient: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+            --dark-gradient: linear-gradient(135deg, #2D3436 0%, #000000 100%);
+            --neon-gradient: linear-gradient(135deg, #00ffff 0%, #ff00ff 50%, #ffff00 100%);
+
+            --glass-bg: rgba(255, 255, 255, 0.1);
+            --glass-border: rgba(255, 255, 255, 0.2);
+
+            --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            --shadow-glow: 0 0 30px rgba(102, 126, 234, 0.4);
+            --shadow-neon: 0 0 50px rgba(0, 255, 255, 0.5);
+        }
+
+        body {
+            font-family: 'Inter', 'Noto Sans JP', sans-serif;
+            background: #0a0e27;
+            min-height: 100vh;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        /* Futuristic Grid Background */
+        .bg-grid {
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            z-index: -2;
+            background-image:
+                linear-gradient(rgba(102, 126, 234, 0.1) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(102, 126, 234, 0.1) 1px, transparent 1px);
+            background-size: 50px 50px;
+            animation: gridMove 10s linear infinite;
+        }
+
+        @keyframes gridMove {
+            0% { transform: translate(0, 0); }
+            100% { transform: translate(50px, 50px); }
+        }
+
+        /* Animated Gradient Background */
+        .bg-gradient {
+            position: fixed;
+            width: 200%;
+            height: 200%;
+            top: -50%;
+            left: -50%;
+            z-index: -1;
+            background: radial-gradient(circle at 20% 50%, rgba(102, 126, 234, 0.3) 0%, transparent 50%),
+                        radial-gradient(circle at 80% 50%, rgba(240, 147, 251, 0.3) 0%, transparent 50%),
+                        radial-gradient(circle at 50% 100%, rgba(19, 241, 252, 0.3) 0%, transparent 50%);
+            animation: gradientRotate 20s linear infinite;
+        }
+
+        @keyframes gradientRotate {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Holographic Effect */
+        .holographic {
+            background: linear-gradient(45deg,
+                rgba(255, 0, 0, 0.1),
+                rgba(255, 127, 0, 0.1),
+                rgba(255, 255, 0, 0.1),
+                rgba(0, 255, 0, 0.1),
+                rgba(0, 0, 255, 0.1),
+                rgba(75, 0, 130, 0.1),
+                rgba(148, 0, 211, 0.1));
+            background-size: 200% 200%;
+            animation: holographic 3s ease infinite;
+        }
+
+        @keyframes holographic {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* Main Container */
+        .dashboard-container {
+            max-width: 1800px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        /* Header */
+        .dashboard-header {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            padding: 1.5rem 2rem;
+            margin-bottom: 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .dashboard-header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: var(--neon-gradient);
+            animation: neonPulse 2s ease-in-out infinite;
+        }
+
+        @keyframes neonPulse {
+            0%, 100% { opacity: 0.5; }
+            50% { opacity: 1; }
+        }
+
+        .welcome-section {
+            flex: 1;
+        }
+
+        .welcome-text {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 0.875rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .dashboard-title {
+            font-size: 2.5rem;
+            font-weight: 900;
+            background: linear-gradient(135deg, #00ffff, #ff00ff, #ffff00);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: textGlow 3s ease-in-out infinite;
+        }
+
+        @keyframes textGlow {
+            0%, 100% { filter: brightness(1); }
+            50% { filter: brightness(1.2) drop-shadow(0 0 20px rgba(0, 255, 255, 0.5)); }
+        }
+
+        .datetime-widget {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            color: white;
+        }
+
+        .time {
+            font-size: 2rem;
+            font-weight: 700;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .date {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 0.875rem;
+        }
+
+        /* Quick Stats Cards */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            padding: 1.5rem;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            right: -2px;
+            bottom: -2px;
+            background: var(--primary-gradient);
+            border-radius: 20px;
+            opacity: 0;
+            z-index: -1;
+            transition: opacity 0.3s ease;
+        }
+
+        .stat-card:hover::before {
+            opacity: 1;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px) scale(1.02);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .stat-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            position: relative;
+        }
+
+        .stat-icon.primary {
+            background: var(--primary-gradient);
+        }
+
+        .stat-icon.success {
+            background: var(--success-gradient);
+        }
+
+        .stat-icon.warning {
+            background: var(--warning-gradient);
+        }
+
+        .stat-icon.info {
+            background: var(--info-gradient);
+        }
+
+        .stat-value {
+            font-size: 2.5rem;
+            font-weight: 800;
+            color: white;
+            margin-bottom: 0.25rem;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .stat-label {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 0.875rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .stat-change {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.875rem;
+        }
+
+        .stat-change.positive {
+            color: #10b981;
+        }
+
+        .stat-change.negative {
+            color: #ef4444;
+        }
+
+        .change-icon {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Interactive Chart Section */
+        .charts-section {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .chart-container {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            padding: 1.5rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .chart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .chart-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: white;
+        }
+
+        .chart-controls {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .chart-btn {
+            padding: 0.5rem 1rem;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            color: white;
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .chart-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .chart-btn.active {
+            background: var(--primary-gradient);
+            border-color: transparent;
+        }
+
+        /* Animated Bar Chart */
+        .bar-chart {
+            height: 300px;
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-around;
+            padding: 1rem;
+        }
+
+        .bar {
+            width: 40px;
+            background: var(--primary-gradient);
+            border-radius: 8px 8px 0 0;
+            position: relative;
+            animation: barGrow 1s ease-out forwards;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        @keyframes barGrow {
+            from { height: 0; }
+        }
+
+        .bar:hover {
+            transform: scaleY(1.05);
+            filter: brightness(1.2);
+        }
+
+        .bar-label {
+            position: absolute;
+            bottom: -25px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 0.75rem;
+            white-space: nowrap;
+        }
+
+        .bar-value {
+            position: absolute;
+            top: -25px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: white;
+            font-weight: 600;
+            font-size: 0.875rem;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .bar:hover .bar-value {
+            opacity: 1;
+        }
+
+        /* Circular Progress */
+        .progress-ring {
+            width: 200px;
+            height: 200px;
+            margin: 0 auto;
+        }
+
+        .progress-ring-circle {
+            stroke: url(#gradient);
+            stroke-width: 10;
+            fill: none;
+            stroke-linecap: round;
+            transform: rotate(-90deg);
+            transform-origin: 50% 50%;
+            animation: progressAnimation 2s ease-out forwards;
+        }
+
+        @keyframes progressAnimation {
+            from {
+                stroke-dashoffset: 565;
+            }
+        }
+
+        .progress-text {
+            text-anchor: middle;
+            dominant-baseline: middle;
+            font-size: 3rem;
+            font-weight: 700;
+            fill: white;
+        }
+
+        .progress-label {
+            text-anchor: middle;
+            dominant-baseline: middle;
+            font-size: 0.875rem;
+            fill: rgba(255, 255, 255, 0.7);
+        }
+
+        /* Activity Feed */
+        .activity-feed {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            padding: 1.5rem;
+            height: 400px;
+            overflow-y: auto;
+        }
+
+        .feed-header {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: white;
+            margin-bottom: 1.5rem;
+            position: sticky;
+            top: 0;
+            background: inherit;
+            z-index: 1;
+        }
+
+        .activity-item {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            padding: 1rem;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            border-left: 3px solid;
+            animation: slideIn 0.5s ease;
+            transition: all 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(-20px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        .activity-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateX(5px);
+        }
+
+        .activity-item.new {
+            border-left-color: #10b981;
+        }
+
+        .activity-item.update {
+            border-left-color: #3b82f6;
+        }
+
+        .activity-item.alert {
+            border-left-color: #f59e0b;
+        }
+
+        .activity-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+        }
+
+        .activity-content {
+            flex: 1;
+        }
+
+        .activity-title {
+            color: white;
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+
+        .activity-description {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 0.875rem;
+        }
+
+        .activity-time {
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 0.75rem;
+        }
+
+        /* Data Table */
+        .data-table-section {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            overflow: hidden;
+        }
+
+        .table-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .table-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: white;
+        }
+
+        .table-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .data-table {
+            width: 100%;
+            overflow-x: auto;
+        }
+
+        .data-table table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0 0.5rem;
+        }
+
+        .data-table thead tr {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .data-table th {
+            padding: 1rem;
+            text-align: left;
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 0.875rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border: none;
+        }
+
+        .data-table tbody tr {
+            background: rgba(255, 255, 255, 0.03);
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .data-table tbody tr:hover {
+            background: rgba(255, 255, 255, 0.08);
+            transform: scale(1.01);
+        }
+
+        .data-table td {
+            padding: 1rem;
+            color: rgba(255, 255, 255, 0.9);
+            border: none;
+        }
+
+        .priority-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            display: inline-block;
+        }
+
+        .priority-high {
+            background: rgba(239, 68, 68, 0.2);
+            color: #ef4444;
+        }
+
+        .priority-medium {
+            background: rgba(245, 158, 11, 0.2);
+            color: #f59e0b;
+        }
+
+        .priority-low {
+            background: rgba(16, 185, 129, 0.2);
+            color: #10b981;
+        }
+
+        /* Quick Actions */
+        .quick-actions {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            z-index: 100;
+        }
+
+        .action-btn {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: var(--primary-gradient);
+            border: none;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            font-size: 1.5rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .action-btn::before {
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.3) 0%, transparent 70%);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .action-btn:hover::before {
+            opacity: 1;
+        }
+
+        .action-btn:hover {
+            transform: scale(1.1) rotate(10deg);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.6);
+        }
+
+        .action-btn.main {
+            width: 70px;
+            height: 70px;
+            font-size: 2rem;
+            background: var(--neon-gradient);
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        /* Responsive */
+        @media (max-width: 1200px) {
+            .charts-section {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .dashboard-container {
+                padding: 1rem;
+            }
+
+            .dashboard-header {
+                flex-direction: column;
+                gap: 1rem;
+                text-align: center;
+            }
+
+            .datetime-widget {
+                align-items: center;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Background Effects -->
+    <div class="bg-grid"></div>
+    <div class="bg-gradient"></div>
+
+    <!-- Main Dashboard Container -->
+    <div class="dashboard-container">
+        <!-- Header -->
+        <header class="dashboard-header holographic">
+            <div class="welcome-section">
+                <p class="welcome-text">おかえりなさい、管理者様</p>
+                <h1 class="dashboard-title">統合管理ダッシュボード</h1>
+            </div>
+            <div class="datetime-widget">
+                <div class="time" id="time">14:32:45</div>
+                <div class="date" id="date">2024年11月5日（火）</div>
+            </div>
+        </header>
+
+        <!-- Quick Stats -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon primary">👥</div>
+                <div class="stat-value">256</div>
+                <div class="stat-label">総従業員数</div>
+                <div class="stat-change positive">
+                    <span class="change-icon">↑</span>
+                    <span>12 (4.9%)</span>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon success">📄</div>
+                <div class="stat-value">48</div>
+                <div class="stat-label">今月の契約処理</div>
+                <div class="stat-change positive">
+                    <span class="change-icon">↑</span>
+                    <span>8 (20.0%)</span>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon warning">⚠️</div>
+                <div class="stat-value">15</div>
+                <div class="stat-label">契約更新予定</div>
+                <div class="stat-change negative">
+                    <span class="change-icon">↓</span>
+                    <span>3日以内</span>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon info">💰</div>
+                <div class="stat-value">¥82.5M</div>
+                <div class="stat-label">月額給与総額</div>
+                <div class="stat-change positive">
+                    <span class="change-icon">↑</span>
+                    <span>2.3%</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts Section -->
+        <div class="charts-section">
+            <!-- Main Chart -->
+            <div class="chart-container">
+                <div class="chart-header">
+                    <h3 class="chart-title">部門別従業員分布</h3>
+                    <div class="chart-controls">
+                        <button class="chart-btn active">月次</button>
+                        <button class="chart-btn">四半期</button>
+                        <button class="chart-btn">年次</button>
+                    </div>
+                </div>
+                <div class="bar-chart">
+                    <div class="bar" style="height: 80%;">
+                        <span class="bar-value">45</span>
+                        <span class="bar-label">営業部</span>
+                    </div>
+                    <div class="bar" style="height: 65%; background: var(--success-gradient);">
+                        <span class="bar-value">37</span>
+                        <span class="bar-label">技術部</span>
+                    </div>
+                    <div class="bar" style="height: 45%; background: var(--info-gradient);">
+                        <span class="bar-value">26</span>
+                        <span class="bar-label">経理部</span>
+                    </div>
+                    <div class="bar" style="height: 70%; background: var(--warning-gradient);">
+                        <span class="bar-value">40</span>
+                        <span class="bar-label">人事部</span>
+                    </div>
+                    <div class="bar" style="height: 55%; background: var(--secondary-gradient);">
+                        <span class="bar-value">31</span>
+                        <span class="bar-label">総務部</span>
+                    </div>
+                    <div class="bar" style="height: 85%;">
+                        <span class="bar-value">48</span>
+                        <span class="bar-label">製造部</span>
+                    </div>
+                    <div class="bar" style="height: 50%; background: var(--success-gradient);">
+                        <span class="bar-value">29</span>
+                        <span class="bar-label">企画部</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Progress Chart -->
+            <div class="chart-container">
+                <div class="chart-header">
+                    <h3 class="chart-title">契約処理進捗</h3>
+                </div>
+                <svg class="progress-ring" viewBox="0 0 200 200">
+                    <defs>
+                        <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" stop-color="#667eea"/>
+                            <stop offset="100%" stop-color="#764ba2"/>
+                        </linearGradient>
+                    </defs>
+                    <circle cx="100" cy="100" r="90" stroke="rgba(255, 255, 255, 0.1)" stroke-width="10" fill="none"/>
+                    <circle class="progress-ring-circle" cx="100" cy="100" r="90"
+                            stroke-dasharray="565" stroke-dashoffset="141"/>
+                    <text x="100" y="90" class="progress-text">75%</text>
+                    <text x="100" y="115" class="progress-label">完了率</text>
+                </svg>
+                <div style="text-align: center; margin-top: 1rem;">
+                    <p style="color: white; font-weight: 600;">48 / 64 件処理済</p>
+                    <p style="color: rgba(255, 255, 255, 0.7); font-size: 0.875rem;">月間目標まであと16件</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Data Table and Activity Feed -->
+        <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 2rem;">
+            <!-- Data Table -->
+            <div class="data-table-section">
+                <div class="table-header">
+                    <h3 class="table-title">本日の重要タスク</h3>
+                    <div class="table-actions">
+                        <button class="chart-btn">フィルタ</button>
+                        <button class="chart-btn">エクスポート</button>
+                    </div>
+                </div>
+                <div class="data-table">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>タスク</th>
+                                <th>担当者</th>
+                                <th>期限</th>
+                                <th>優先度</th>
+                                <th>ステータス</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>田中太郎の契約更新</td>
+                                <td>山田花子</td>
+                                <td>2024/11/08</td>
+                                <td><span class="priority-badge priority-high">高</span></td>
+                                <td>進行中</td>
+                            </tr>
+                            <tr>
+                                <td>新入社員オリエンテーション</td>
+                                <td>佐藤次郎</td>
+                                <td>2024/11/10</td>
+                                <td><span class="priority-badge priority-medium">中</span></td>
+                                <td>準備中</td>
+                            </tr>
+                            <tr>
+                                <td>給与データエクスポート</td>
+                                <td>鈴木美咲</td>
+                                <td>2024/11/15</td>
+                                <td><span class="priority-badge priority-low">低</span></td>
+                                <td>未着手</td>
+                            </tr>
+                            <tr>
+                                <td>部門別レポート作成</td>
+                                <td>高橋健二</td>
+                                <td>2024/11/12</td>
+                                <td><span class="priority-badge priority-medium">中</span></td>
+                                <td>進行中</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Activity Feed -->
+            <div class="activity-feed">
+                <h3 class="feed-header">最新アクティビティ</h3>
+
+                <div class="activity-item new">
+                    <div class="activity-icon" style="background: var(--success-gradient);">✅</div>
+                    <div class="activity-content">
+                        <div class="activity-title">新規採用承認</div>
+                        <div class="activity-description">営業部に2名の新規採用が承認されました</div>
+                        <div class="activity-time">5分前</div>
+                    </div>
+                </div>
+
+                <div class="activity-item update">
+                    <div class="activity-icon" style="background: var(--primary-gradient);">📝</div>
+                    <div class="activity-content">
+                        <div class="activity-title">契約書更新</div>
+                        <div class="activity-description">EMP-2024-015の契約が更新されました</div>
+                        <div class="activity-time">15分前</div>
+                    </div>
+                </div>
+
+                <div class="activity-item alert">
+                    <div class="activity-icon" style="background: var(--warning-gradient);">⚠️</div>
+                    <div class="activity-content">
+                        <div class="activity-title">契約期限アラート</div>
+                        <div class="activity-description">3件の契約が7日以内に期限を迎えます</div>
+                        <div class="activity-time">1時間前</div>
+                    </div>
+                </div>
+
+                <div class="activity-item new">
+                    <div class="activity-icon" style="background: var(--info-gradient);">💰</div>
+                    <div class="activity-content">
+                        <div class="activity-title">給与計算完了</div>
+                        <div class="activity-description">11月分の給与計算が完了しました</div>
+                        <div class="activity-time">2時間前</div>
+                    </div>
+                </div>
+
+                <div class="activity-item update">
+                    <div class="activity-icon" style="background: var(--secondary-gradient);">🔄</div>
+                    <div class="activity-content">
+                        <div class="activity-title">データ同期完了</div>
+                        <div class="activity-description">全従業員データの同期が完了しました</div>
+                        <div class="activity-time">3時間前</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="quick-actions">
+        <button class="action-btn">📊</button>
+        <button class="action-btn">📥</button>
+        <button class="action-btn">🔔</button>
+        <button class="action-btn main">➕</button>
+    </div>
+
+    <!-- Script for real-time clock -->
+    <script>
+        function updateDateTime() {
+            const now = new Date();
+            const timeElement = document.getElementById('time');
+            const dateElement = document.getElementById('date');
+
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            const seconds = String(now.getSeconds()).padStart(2, '0');
+            timeElement.textContent = `${hours}:${minutes}:${seconds}`;
+
+            const year = now.getFullYear();
+            const month = now.getMonth() + 1;
+            const day = now.getDate();
+            const weekdays = ['日', '月', '火', '水', '木', '金', '土'];
+            const weekday = weekdays[now.getDay()];
+            dateElement.textContent = `${year}年${month}月${day}日（${weekday}）`;
+        }
+
+        updateDateTime();
+        setInterval(updateDateTime, 1000);
+    </script>
+</body>
+</html>

@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>システム設定 - Employee Database System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        'sans': ['Inter', 'Noto Sans JP', 'system-ui', 'sans-serif'],
+                    },
+                    colors: {
+                        'slate': {
+                            50: '#f8fafc',
+                            100: '#f1f5f9',
+                            150: '#ebeef3',
+                            200: '#e2e8f0',
+                            300: '#cbd5e1',
+                            400: '#94a3b8',
+                            500: '#64748b',
+                            600: '#475569',
+                            700: '#334155',
+                            800: '#1e293b',
+                            850: '#172033',
+                            900: '#0f172a',
+                            950: '#020617',
+                        },
+                        'accent': {
+                            blue: '#3b82f6',
+                            emerald: '#10b981',
+                            amber: '#f59e0b',
+                            rose: '#f43f5e',
+                            violet: '#8b5cf6',
+                        }
+                    },
+                    animation: {
+                        'fade-in': 'fadeIn 0.5s ease-in-out',
+                        'slide-up': 'slideUp 0.3s ease-out',
+                        'pulse-soft': 'pulseSoft 2s infinite',
+                    },
+                    keyframes: {
+                        fadeIn: {
+                            '0%': { opacity: '0' },
+                            '100%': { opacity: '1' },
+                        },
+                        slideUp: {
+                            '0%': { transform: 'translateY(10px)', opacity: '0' },
+                            '100%': { transform: 'translateY(0)', opacity: '1' },
+                        },
+                        pulseSoft: {
+                            '0%, 100%': { opacity: '1' },
+                            '50%': { opacity: '0.8' },
+                        }
+                    },
+                    backdropBlur: {
+                        xs: '2px',
+                    },
+                    boxShadow: {
+                        'soft': '0 2px 15px -3px rgba(0, 0, 0, 0.07), 0 10px 20px -2px rgba(0, 0, 0, 0.04)',
+                        'glow': '0 0 20px rgba(59, 130, 246, 0.15)',
+                        'inner-soft': 'inset 0 2px 4px 0 rgba(0, 0, 0, 0.06)',
+                    }
+                }
+            }
+        }
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;500;600;700;800&family=Noto+Sans+JP:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        @keyframes gradient {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+        .gradient-animation {
+            background: linear-gradient(-45deg, #f8fafc, #f1f5f9, #e2e8f0, #f1f5f9);
+            background-size: 400% 400%;
+            animation: gradient 15s ease infinite;
+        }
+        .glass-morphism {
+            background: rgba(248, 250, 252, 0.7);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+        .text-gradient {
+            background: linear-gradient(135deg, #1e293b 0%, #475569 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .hover-lift {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .hover-lift:hover {
+            transform: translateY(-2px);
+        }
+        /* スクロールバーのカスタマイズ */
+        ::-webkit-scrollbar {
+            width: 10px;
+            height: 10px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+            border-radius: 5px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 5px;
+            transition: background 0.3s;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+        /* トグルスイッチ */
+        .toggle-switch {
+            position: relative;
+            width: 44px;
+            height: 24px;
+        }
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #cbd5e1;
+            transition: .4s;
+            border-radius: 24px;
+        }
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 16px;
+            width: 16px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        input:checked + .toggle-slider {
+            background: linear-gradient(to right, #3b82f6, #8b5cf6);
+        }
+        input:checked + .toggle-slider:before {
+            transform: translateX(20px);
+        }
+    </style>
+</head>
+<body class="bg-slate-50 font-sans antialiased">
+    <div class="flex h-screen overflow-hidden">
+        <!-- サイドバー -->
+        <aside class="w-64 glass-morphism border-r border-slate-200/50 shadow-soft">
+            <div class="flex flex-col h-full">
+                <!-- ロゴエリア -->
+                <div class="px-6 py-5 border-b border-slate-200/50">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 bg-gradient-to-br from-accent-blue to-accent-violet rounded-xl flex items-center justify-center shadow-lg">
+                            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                            </svg>
+                        </div>
+                        <div>
+                            <h1 class="text-lg font-bold text-slate-800">Employee DB</h1>
+                            <p class="text-xs text-slate-500">Management System</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ナビゲーション -->
+                <nav class="flex-1 px-4 py-4 space-y-1 overflow-y-auto">
+                    <a href="dashboard.html" class="flex items-center px-4 py-2.5 text-sm font-medium text-slate-600 rounded-lg hover:bg-slate-100/70 hover:text-slate-900 transition-all duration-200 group">
+                        <svg class="w-5 h-5 mr-3 text-slate-400 group-hover:text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
+                        </svg>
+                        ダッシュボード
+                    </a>
+                    <a href="employee-list.html" class="flex items-center px-4 py-2.5 text-sm font-medium text-slate-600 rounded-lg hover:bg-slate-100/70 hover:text-slate-900 transition-all duration-200 group">
+                        <svg class="w-5 h-5 mr-3 text-slate-400 group-hover:text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
+                        </svg>
+                        従業員管理
+                    </a>
+                    <a href="contract-management.html" class="flex items-center px-4 py-2.5 text-sm font-medium text-slate-600 rounded-lg hover:bg-slate-100/70 hover:text-slate-900 transition-all duration-200 group">
+                        <svg class="w-5 h-5 mr-3 text-slate-400 group-hover:text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                        </svg>
+                        契約管理
+                    </a>
+                    <a href="report.html" class="flex items-center px-4 py-2.5 text-sm font-medium text-slate-600 rounded-lg hover:bg-slate-100/70 hover:text-slate-900 transition-all duration-200 group">
+                        <svg class="w-5 h-5 mr-3 text-slate-400 group-hover:text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                        </svg>
+                        レポート
+                    </a>
+                    <a href="system-settings.html" class="flex items-center px-4 py-2.5 text-sm font-medium text-white bg-gradient-to-r from-accent-blue to-accent-violet rounded-lg shadow-lg group">
+                        <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                        </svg>
+                        システム設定
+                    </a>
+                </nav>
+
+                <!-- ユーザー情報 -->
+                <div class="px-4 py-4 border-t border-slate-200/50">
+                    <div class="flex items-center px-4 py-2">
+                        <img src="https://ui-avatars.com/api/?name=Admin+User&background=3b82f6&color=fff" alt="User" class="w-8 h-8 rounded-full">
+                        <div class="ml-3">
+                            <p class="text-sm font-medium text-slate-700">管理者</p>
+                            <p class="text-xs text-slate-500">admin@example.com</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- メインコンテンツ -->
+        <main class="flex-1 overflow-hidden">
+            <div class="h-full overflow-y-auto">
+                <!-- ヘッダー -->
+                <header class="glass-morphism border-b border-slate-200/50 px-8 py-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h2 class="text-2xl font-bold text-gradient">システム設定</h2>
+                            <p class="text-sm text-slate-600 mt-1">システム全体の設定と管理</p>
+                        </div>
+                        <div class="flex items-center space-x-3">
+                            <button class="px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors duration-200 flex items-center">
+                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                                </svg>
+                                リセット
+                            </button>
+                            <button class="px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-accent-blue to-accent-violet rounded-lg hover:shadow-glow transition-all duration-200 flex items-center">
+                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                </svg>
+                                保存
+                            </button>
+                        </div>
+                    </div>
+                </header>
+
+                <!-- 設定コンテンツ -->
+                <div class="px-8 py-6">
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <!-- 左サイドメニュー -->
+                        <div class="lg:col-span-1">
+                            <div class="bg-white rounded-xl shadow-soft p-4 animate-fade-in sticky top-6">
+                                <nav class="space-y-1">
+                                    <button class="w-full flex items-center px-4 py-3 text-sm font-medium text-white bg-gradient-to-r from-accent-blue to-accent-violet rounded-lg">
+                                        <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path>
+                                        </svg>
+                                        一般設定
+                                    </button>
+                                    <button class="w-full flex items-center px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50 rounded-lg transition-colors">
+                                        <svg class="w-5 h-5 mr-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                                        </svg>
+                                        ユーザー管理
+                                    </button>
+                                    <button class="w-full flex items-center px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50 rounded-lg transition-colors">
+                                        <svg class="w-5 h-5 mr-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
+                                        </svg>
+                                        セキュリティ
+                                    </button>
+                                    <button class="w-full flex items-center px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50 rounded-lg transition-colors">
+                                        <svg class="w-5 h-5 mr-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path>
+                                        </svg>
+                                        通知設定
+                                    </button>
+                                    <button class="w-full flex items-center px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50 rounded-lg transition-colors">
+                                        <svg class="w-5 h-5 mr-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4"></path>
+                                        </svg>
+                                        データベース
+                                    </button>
+                                    <button class="w-full flex items-center px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50 rounded-lg transition-colors">
+                                        <svg class="w-5 h-5 mr-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                        </svg>
+                                        バックアップ
+                                    </button>
+                                    <button class="w-full flex items-center px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50 rounded-lg transition-colors">
+                                        <svg class="w-5 h-5 mr-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"></path>
+                                        </svg>
+                                        ログ管理
+                                    </button>
+                                </nav>
+                            </div>
+                        </div>
+
+                        <!-- 右側設定エリア -->
+                        <div class="lg:col-span-2 space-y-6">
+                            <!-- 一般設定 -->
+                            <div class="bg-white rounded-xl shadow-soft p-6 animate-fade-in">
+                                <h3 class="text-lg font-semibold text-slate-800 mb-6 flex items-center">
+                                    <svg class="w-5 h-5 mr-2 text-accent-blue" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path>
+                                    </svg>
+                                    一般設定
+                                </h3>
+
+                                <div class="space-y-6">
+                                    <!-- 会社情報 -->
+                                    <div>
+                                        <h4 class="text-sm font-medium text-slate-700 mb-4">会社情報</h4>
+                                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            <div>
+                                                <label class="block text-sm text-slate-600 mb-1">会社名</label>
+                                                <input type="text" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-blue" value="株式会社サンプル">
+                                            </div>
+                                            <div>
+                                                <label class="block text-sm text-slate-600 mb-1">業種</label>
+                                                <select class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-blue">
+                                                    <option>IT・通信</option>
+                                                    <option>製造業</option>
+                                                    <option>サービス業</option>
+                                                    <option>小売業</option>
+                                                </select>
+                                            </div>
+                                            <div>
+                                                <label class="block text-sm text-slate-600 mb-1">代表者名</label>
+                                                <input type="text" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-blue" value="山田 太郎">
+                                            </div>
+                                            <div>
+                                                <label class="block text-sm text-slate-600 mb-1">設立年月</label>
+                                                <input type="month" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-blue" value="2010-04">
+                                            </div>
+                                            <div class="md:col-span-2">
+                                                <label class="block text-sm text-slate-600 mb-1">住所</label>
+                                                <input type="text" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-blue" value="東京都千代田区丸の内1-1-1">
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="border-t border-slate-200 pt-6">
+                                        <h4 class="text-sm font-medium text-slate-700 mb-4">システム設定</h4>
+                                        <div class="space-y-4">
+                                            <div class="flex items-center justify-between">
+                                                <div>
+                                                    <label class="text-sm font-medium text-slate-700">言語設定</label>
+                                                    <p class="text-xs text-slate-500 mt-1">システム全体の表示言語</p>
+                                                </div>
+                                                <select class="px-3 py-1.5 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-blue">
+                                                    <option>日本語</option>
+                                                    <option>English</option>
+                                                    <option>中文</option>
+                                                </select>
+                                            </div>
+                                            <div class="flex items-center justify-between">
+                                                <div>
+                                                    <label class="text-sm font-medium text-slate-700">タイムゾーン</label>
+                                                    <p class="text-xs text-slate-500 mt-1">システム時刻の基準</p>
+                                                </div>
+                                                <select class="px-3 py-1.5 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-blue">
+                                                    <option>Asia/Tokyo (JST)</option>
+                                                    <option>America/New_York (EST)</option>
+                                                    <option>Europe/London (GMT)</option>
+                                                </select>
+                                            </div>
+                                            <div class="flex items-center justify-between">
+                                                <div>
+                                                    <label class="text-sm font-medium text-slate-700">日付形式</label>
+                                                    <p class="text-xs text-slate-500 mt-1">日付の表示形式</p>
+                                                </div>
+                                                <select class="px-3 py-1.5 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-blue">
+                                                    <option>YYYY/MM/DD</option>
+                                                    <option>MM/DD/YYYY</option>
+                                                    <option>DD/MM/YYYY</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="border-t border-slate-200 pt-6">
+                                        <h4 class="text-sm font-medium text-slate-700 mb-4">機能設定</h4>
+                                        <div class="space-y-4">
+                                            <div class="flex items-center justify-between">
+                                                <div>
+                                                    <label class="text-sm font-medium text-slate-700">自動バックアップ</label>
+                                                    <p class="text-xs text-slate-500 mt-1">毎日午前2時に自動実行</p>
+                                                </div>
+                                                <label class="toggle-switch">
+                                                    <input type="checkbox" checked>
+                                                    <span class="toggle-slider"></span>
+                                                </label>
+                                            </div>
+                                            <div class="flex items-center justify-between">
+                                                <div>
+                                                    <label class="text-sm font-medium text-slate-700">メール通知</label>
+                                                    <p class="text-xs text-slate-500 mt-1">重要な更新をメールで通知</p>
+                                                </div>
+                                                <label class="toggle-switch">
+                                                    <input type="checkbox" checked>
+                                                    <span class="toggle-slider"></span>
+                                                </label>
+                                            </div>
+                                            <div class="flex items-center justify-between">
+                                                <div>
+                                                    <label class="text-sm font-medium text-slate-700">二段階認証</label>
+                                                    <p class="text-xs text-slate-500 mt-1">ログイン時の追加認証</p>
+                                                </div>
+                                                <label class="toggle-switch">
+                                                    <input type="checkbox">
+                                                    <span class="toggle-slider"></span>
+                                                </label>
+                                            </div>
+                                            <div class="flex items-center justify-between">
+                                                <div>
+                                                    <label class="text-sm font-medium text-slate-700">ダークモード</label>
+                                                    <p class="text-xs text-slate-500 mt-1">画面の配色を暗くする</p>
+                                                </div>
+                                                <label class="toggle-switch">
+                                                    <input type="checkbox">
+                                                    <span class="toggle-slider"></span>
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- ストレージ情報 -->
+                            <div class="bg-white rounded-xl shadow-soft p-6 animate-fade-in">
+                                <h3 class="text-lg font-semibold text-slate-800 mb-4 flex items-center">
+                                    <svg class="w-5 h-5 mr-2 text-accent-violet" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4"></path>
+                                    </svg>
+                                    ストレージ使用状況
+                                </h3>
+                                <div class="space-y-4">
+                                    <div>
+                                        <div class="flex justify-between items-center mb-2">
+                                            <span class="text-sm font-medium text-slate-700">データベース</span>
+                                            <span class="text-sm text-slate-600">2.8 GB / 10 GB</span>
+                                        </div>
+                                        <div class="w-full bg-slate-200 rounded-full h-2">
+                                            <div class="bg-gradient-to-r from-accent-blue to-accent-violet h-2 rounded-full" style="width: 28%"></div>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <div class="flex justify-between items-center mb-2">
+                                            <span class="text-sm font-medium text-slate-700">ファイル</span>
+                                            <span class="text-sm text-slate-600">4.2 GB / 50 GB</span>
+                                        </div>
+                                        <div class="w-full bg-slate-200 rounded-full h-2">
+                                            <div class="bg-gradient-to-r from-accent-emerald to-accent-blue h-2 rounded-full" style="width: 8.4%"></div>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <div class="flex justify-between items-center mb-2">
+                                            <span class="text-sm font-medium text-slate-700">バックアップ</span>
+                                            <span class="text-sm text-slate-600">1.5 GB / 20 GB</span>
+                                        </div>
+                                        <div class="w-full bg-slate-200 rounded-full h-2">
+                                            <div class="bg-gradient-to-r from-accent-violet to-accent-rose h-2 rounded-full" style="width: 7.5%"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="mt-6 pt-4 border-t border-slate-200">
+                                    <div class="flex justify-between items-center">
+                                        <div>
+                                            <p class="text-sm font-medium text-slate-700">合計使用量</p>
+                                            <p class="text-2xl font-bold text-slate-900 mt-1">8.5 GB</p>
+                                        </div>
+                                        <div class="text-right">
+                                            <p class="text-sm text-slate-600">総容量</p>
+                                            <p class="text-lg font-semibold text-slate-800">80 GB</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- システム情報 -->
+                            <div class="bg-white rounded-xl shadow-soft p-6 animate-fade-in">
+                                <h3 class="text-lg font-semibold text-slate-800 mb-4 flex items-center">
+                                    <svg class="w-5 h-5 mr-2 text-accent-emerald" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                    </svg>
+                                    システム情報
+                                </h3>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                                    <div>
+                                        <span class="text-slate-600">バージョン</span>
+                                        <p class="font-medium text-slate-800">v2.5.0</p>
+                                    </div>
+                                    <div>
+                                        <span class="text-slate-600">最終更新日</span>
+                                        <p class="font-medium text-slate-800">2024年1月15日</p>
+                                    </div>
+                                    <div>
+                                        <span class="text-slate-600">ライセンス</span>
+                                        <p class="font-medium text-slate-800">Enterprise Edition</p>
+                                    </div>
+                                    <div>
+                                        <span class="text-slate-600">サポート期限</span>
+                                        <p class="font-medium text-slate-800">2025年12月31日</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+</body>
+</html>

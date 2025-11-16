@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>従業員一覧 - Employee Database System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        'sans': ['Inter', 'Noto Sans JP', 'sans-serif'],
+                    },
+                    colors: {
+                        'primary': {
+                            50: '#f0f9ff',
+                            100: '#e0f2fe',
+                            200: '#bae6fd',
+                            300: '#7dd3fc',
+                            400: '#38bdf8',
+                            500: '#0ea5e9',
+                            600: '#0284c7',
+                            700: '#0369a1',
+                            800: '#075985',
+                            900: '#0c4a6e',
+                            950: '#082f49',
+                        },
+                        'neutral': {
+                            50: '#fafafa',
+                            100: '#f5f5f5',
+                            200: '#e5e5e5',
+                            300: '#d4d4d4',
+                            400: '#a3a3a3',
+                            500: '#737373',
+                            600: '#525252',
+                            700: '#404040',
+                            800: '#262626',
+                            900: '#171717',
+                            950: '#0a0a0a',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+JP:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body class="bg-neutral-50 text-neutral-800 font-sans antialiased">
+    <div class="min-h-screen">
+        <!-- Sidebar -->
+        <aside class="fixed left-0 top-0 h-full w-64 bg-white border-r border-neutral-200 z-30">
+            <div class="p-6">
+                <h1 class="text-2xl font-bold text-neutral-900">Employee DB</h1>
+                <p class="text-sm text-neutral-500 mt-1">統合管理システム</p>
+            </div>
+
+            <nav class="px-4">
+                <ul class="space-y-1">
+                    <li>
+                        <a href="#" class="flex items-center px-4 py-3 text-sm font-medium rounded-lg text-neutral-600 hover:bg-neutral-100 transition-colors">
+                            <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
+                            </svg>
+                            ダッシュボード
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#" class="flex items-center px-4 py-3 text-sm font-medium rounded-lg bg-primary-50 text-primary-700 hover:bg-primary-100 transition-colors">
+                            <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                            </svg>
+                            従業員管理
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#" class="flex items-center px-4 py-3 text-sm font-medium rounded-lg text-neutral-600 hover:bg-neutral-100 transition-colors">
+                            <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                            </svg>
+                            契約管理
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#" class="flex items-center px-4 py-3 text-sm font-medium rounded-lg text-neutral-600 hover:bg-neutral-100 transition-colors">
+                            <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                            </svg>
+                            レポート
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#" class="flex items-center px-4 py-3 text-sm font-medium rounded-lg text-neutral-600 hover:bg-neutral-100 transition-colors">
+                            <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                            </svg>
+                            設定
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="ml-64">
+            <!-- Header -->
+            <header class="bg-white border-b border-neutral-200">
+                <div class="px-8 py-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h2 class="text-2xl font-semibold text-neutral-900">従業員一覧</h2>
+                            <p class="text-sm text-neutral-500 mt-1">全従業員の管理・検索</p>
+                        </div>
+                        <button class="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg font-medium transition-colors flex items-center gap-2">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                            </svg>
+                            新規従業員追加
+                        </button>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Filters and Search -->
+            <div class="px-8 py-6 bg-white border-b border-neutral-200">
+                <div class="flex flex-col lg:flex-row gap-4">
+                    <!-- Search Bar -->
+                    <div class="flex-1">
+                        <div class="relative">
+                            <input type="text" placeholder="名前、ID、部門で検索..."
+                                   class="w-full px-4 py-2.5 pl-10 border border-neutral-300 rounded-lg focus:outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500">
+                            <svg class="absolute left-3 top-3 w-4 h-4 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                            </svg>
+                        </div>
+                    </div>
+
+                    <!-- Filter Buttons -->
+                    <div class="flex gap-3">
+                        <select class="px-4 py-2.5 border border-neutral-300 rounded-lg focus:outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500">
+                            <option>全部門</option>
+                            <option>営業部</option>
+                            <option>技術部</option>
+                            <option>経理部</option>
+                            <option>人事部</option>
+                            <option>総務部</option>
+                            <option>製造部</option>
+                            <option>企画部</option>
+                        </select>
+
+                        <select class="px-4 py-2.5 border border-neutral-300 rounded-lg focus:outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500">
+                            <option>全雇用形態</option>
+                            <option>正社員</option>
+                            <option>パート・アルバイト</option>
+                            <option>契約社員</option>
+                            <option>派遣社員</option>
+                        </select>
+
+                        <select class="px-4 py-2.5 border border-neutral-300 rounded-lg focus:outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500">
+                            <option>全ステータス</option>
+                            <option>在職中</option>
+                            <option>休職中</option>
+                            <option>退職済</option>
+                        </select>
+
+                        <button class="px-4 py-2.5 border border-neutral-300 rounded-lg hover:bg-neutral-50 transition-colors flex items-center gap-2">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path>
+                            </svg>
+                            詳細フィルタ
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Employee Table -->
+            <div class="p-8">
+                <div class="bg-white rounded-xl border border-neutral-200 overflow-hidden">
+                    <div class="px-6 py-4 border-b border-neutral-200 bg-neutral-50">
+                        <div class="flex items-center justify-between">
+                            <p class="text-sm text-neutral-600">
+                                全256件中 1-20件を表示
+                            </p>
+                            <div class="flex items-center gap-4">
+                                <select class="px-3 py-1.5 text-sm border border-neutral-300 rounded-lg focus:outline-none focus:border-primary-500">
+                                    <option>20件</option>
+                                    <option>50件</option>
+                                    <option>100件</option>
+                                </select>
+                                <div class="flex gap-1">
+                                    <button class="px-3 py-1.5 text-sm border border-neutral-300 rounded-lg hover:bg-neutral-50 disabled:opacity-50" disabled>
+                                        前へ
+                                    </button>
+                                    <button class="px-3 py-1.5 text-sm border border-neutral-300 rounded-lg bg-primary-600 text-white">
+                                        1
+                                    </button>
+                                    <button class="px-3 py-1.5 text-sm border border-neutral-300 rounded-lg hover:bg-neutral-50">
+                                        2
+                                    </button>
+                                    <button class="px-3 py-1.5 text-sm border border-neutral-300 rounded-lg hover:bg-neutral-50">
+                                        3
+                                    </button>
+                                    <span class="px-3 py-1.5 text-sm">...</span>
+                                    <button class="px-3 py-1.5 text-sm border border-neutral-300 rounded-lg hover:bg-neutral-50">
+                                        13
+                                    </button>
+                                    <button class="px-3 py-1.5 text-sm border border-neutral-300 rounded-lg hover:bg-neutral-50">
+                                        次へ
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="overflow-x-auto">
+                        <table class="w-full">
+                            <thead>
+                                <tr class="border-b border-neutral-200">
+                                    <th class="text-left px-6 py-3">
+                                        <input type="checkbox" class="rounded border-neutral-300 text-primary-600 focus:ring-primary-500">
+                                    </th>
+                                    <th class="text-left px-6 py-3 text-xs font-medium text-neutral-500 uppercase tracking-wider">
+                                        従業員ID
+                                    </th>
+                                    <th class="text-left px-6 py-3 text-xs font-medium text-neutral-500 uppercase tracking-wider">
+                                        氏名
+                                    </th>
+                                    <th class="text-left px-6 py-3 text-xs font-medium text-neutral-500 uppercase tracking-wider">
+                                        部門
+                                    </th>
+                                    <th class="text-left px-6 py-3 text-xs font-medium text-neutral-500 uppercase tracking-wider">
+                                        役職
+                                    </th>
+                                    <th class="text-left px-6 py-3 text-xs font-medium text-neutral-500 uppercase tracking-wider">
+                                        雇用形態
+                                    </th>
+                                    <th class="text-left px-6 py-3 text-xs font-medium text-neutral-500 uppercase tracking-wider">
+                                        入社日
+                                    </th>
+                                    <th class="text-left px-6 py-3 text-xs font-medium text-neutral-500 uppercase tracking-wider">
+                                        ステータス
+                                    </th>
+                                    <th class="text-left px-6 py-3 text-xs font-medium text-neutral-500 uppercase tracking-wider">
+                                        操作
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-neutral-200">
+                                <tr class="hover:bg-neutral-50 transition-colors">
+                                    <td class="px-6 py-4">
+                                        <input type="checkbox" class="rounded border-neutral-300 text-primary-600 focus:ring-primary-500">
+                                    </td>
+                                    <td class="px-6 py-4 text-sm font-medium text-neutral-900">EMP-2024-001</td>
+                                    <td class="px-6 py-4">
+                                        <div class="flex items-center">
+                                            <div class="h-10 w-10 flex-shrink-0 mr-3">
+                                                <div class="h-10 w-10 rounded-full bg-primary-100 text-primary-700 flex items-center justify-center font-semibold text-sm">
+                                                    田太
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <div class="text-sm font-medium text-neutral-900">田中 太郎</div>
+                                                <div class="text-xs text-neutral-500">tanaka@example.com</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4 text-sm text-neutral-600">営業部</td>
+                                    <td class="px-6 py-4 text-sm text-neutral-600">課長</td>
+                                    <td class="px-6 py-4 text-sm text-neutral-600">正社員</td>
+                                    <td class="px-6 py-4 text-sm text-neutral-600">2020/04/01</td>
+                                    <td class="px-6 py-4">
+                                        <span class="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-700">
+                                            在職中
+                                        </span>
+                                    </td>
+                                    <td class="px-6 py-4 text-sm">
+                                        <div class="flex gap-2">
+                                            <button class="text-primary-600 hover:text-primary-800">詳細</button>
+                                            <span class="text-neutral-300">|</span>
+                                            <button class="text-neutral-600 hover:text-neutral-800">編集</button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr class="hover:bg-neutral-50 transition-colors">
+                                    <td class="px-6 py-4">
+                                        <input type="checkbox" class="rounded border-neutral-300 text-primary-600 focus:ring-primary-500">
+                                    </td>
+                                    <td class="px-6 py-4 text-sm font-medium text-neutral-900">EMP-2024-002</td>
+                                    <td class="px-6 py-4">
+                                        <div class="flex items-center">
+                                            <div class="h-10 w-10 flex-shrink-0 mr-3">
+                                                <div class="h-10 w-10 rounded-full bg-pink-100 text-pink-700 flex items-center justify-center font-semibold text-sm">
+                                                    山花
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <div class="text-sm font-medium text-neutral-900">山田 花子</div>
+                                                <div class="text-xs text-neutral-500">yamada@example.com</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4 text-sm text-neutral-600">人事部</td>
+                                    <td class="px-6 py-4 text-sm text-neutral-600">主任</td>
+                                    <td class="px-6 py-4 text-sm text-neutral-600">正社員</td>
+                                    <td class="px-6 py-4 text-sm text-neutral-600">2019/10/01</td>
+                                    <td class="px-6 py-4">
+                                        <span class="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-700">
+                                            在職中
+                                        </span>
+                                    </td>
+                                    <td class="px-6 py-4 text-sm">
+                                        <div class="flex gap-2">
+                                            <button class="text-primary-600 hover:text-primary-800">詳細</button>
+                                            <span class="text-neutral-300">|</span>
+                                            <button class="text-neutral-600 hover:text-neutral-800">編集</button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr class="hover:bg-neutral-50 transition-colors">
+                                    <td class="px-6 py-4">
+                                        <input type="checkbox" class="rounded border-neutral-300 text-primary-600 focus:ring-primary-500">
+                                    </td>
+                                    <td class="px-6 py-4 text-sm font-medium text-neutral-900">EMP-2024-003</td>
+                                    <td class="px-6 py-4">
+                                        <div class="flex items-center">
+                                            <div class="h-10 w-10 flex-shrink-0 mr-3">
+                                                <div class="h-10 w-10 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center font-semibold text-sm">
+                                                    佐次
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <div class="text-sm font-medium text-neutral-900">佐藤 次郎</div>
+                                                <div class="text-xs text-neutral-500">sato@example.com</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4 text-sm text-neutral-600">技術部</td>
+                                    <td class="px-6 py-4 text-sm text-neutral-600">部長</td>
+                                    <td class="px-6 py-4 text-sm text-neutral-600">正社員</td>
+                                    <td class="px-6 py-4 text-sm text-neutral-600">2015/04/01</td>
+                                    <td class="px-6 py-4">
+                                        <span class="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-700">
+                                            在職中
+                                        </span>
+                                    </td>
+                                    <td class="px-6 py-4 text-sm">
+                                        <div class="flex gap-2">
+                                            <button class="text-primary-600 hover:text-primary-800">詳細</button>
+                                            <span class="text-neutral-300">|</span>
+                                            <button class="text-neutral-600 hover:text-neutral-800">編集</button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr class="hover:bg-neutral-50 transition-colors">
+                                    <td class="px-6 py-4">
+                                        <input type="checkbox" class="rounded border-neutral-300 text-primary-600 focus:ring-primary-500">
+                                    </td>
+                                    <td class="px-6 py-4 text-sm font-medium text-neutral-900">EMP-2024-004</td>
+                                    <td class="px-6 py-4">
+                                        <div class="flex items-center">
+                                            <div class="h-10 w-10 flex-shrink-0 mr-3">
+                                                <div class="h-10 w-10 rounded-full bg-purple-100 text-purple-700 flex items-center justify-center font-semibold text-sm">
+                                                    鈴美
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <div class="text-sm font-medium text-neutral-900">鈴木 美咲</div>
+                                                <div class="text-xs text-neutral-500">suzuki@example.com</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4 text-sm text-neutral-600">経理部</td>
+                                    <td class="px-6 py-4 text-sm text-neutral-600">一般職</td>
+                                    <td class="px-6 py-4 text-sm text-neutral-600">パート</td>
+                                    <td class="px-6 py-4 text-sm text-neutral-600">2022/07/01</td>
+                                    <td class="px-6 py-4">
+                                        <span class="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-700">
+                                            在職中
+                                        </span>
+                                    </td>
+                                    <td class="px-6 py-4 text-sm">
+                                        <div class="flex gap-2">
+                                            <button class="text-primary-600 hover:text-primary-800">詳細</button>
+                                            <span class="text-neutral-300">|</span>
+                                            <button class="text-neutral-600 hover:text-neutral-800">編集</button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Floating Action Button -->
+    <button class="fixed bottom-6 right-6 w-14 h-14 bg-primary-600 hover:bg-primary-700 text-white rounded-full shadow-lg hover:shadow-xl transition-all flex items-center justify-center">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+        </svg>
+    </button>
+</body>
+</html>

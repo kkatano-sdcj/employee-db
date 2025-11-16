@@ -1,0 +1,11 @@
+employee_number,branch_number,name,name_kana,gender,birth_date,nationality,hired_at,retired_at,employment_type,employment_status,department_code,my_number,updated_by
+EMP001,0,山田 花子,ヤマダ ハナコ,FEMALE,1995-03-15,日本,2024-04-01,,PART_TIME,ACTIVE,DEPT001,,system
+EMP002,0,佐藤 太郎,サトウ タロウ,MALE,1990-07-22,日本,2023-06-01,,FULL_TIME,ACTIVE,DEPT001,,system
+EMP003,0,鈴木 美咲,スズキ ミサキ,FEMALE,1998-11-08,日本,2024-01-15,,PART_TIME,ACTIVE,DEPT002,,system
+EMP004,0,田中 健一,タナカ ケンイチ,MALE,1988-05-30,日本,2022-09-01,2024-10-31,FULL_TIME,RETIRED,DEPT002,,system
+EMP005,0,渡辺 由美,ワタナベ ユミ,FEMALE,1992-12-14,日本,2023-11-01,,PART_TIME,ACTIVE,DEPT003,,system
+EMP006,0,伊藤 翔太,イトウ ショウタ,MALE,1996-08-03,日本,2024-03-01,,FULL_TIME,ACTIVE,DEPT001,,system
+EMP007,0,中村 愛美,ナカムラ マナミ,FEMALE,1994-02-18,日本,2023-07-15,,PART_TIME,ACTIVE,DEPT003,,system
+EMP008,0,小林 大輔,コバヤシ ダイスケ,MALE,1991-09-25,日本,2022-12-01,,FULL_TIME,ACTIVE,DEPT002,,system
+EMP009,0,加藤 さくら,カトウ サクラ,FEMALE,1997-06-10,日本,2024-05-01,,PART_TIME,ACTIVE,DEPT001,,system
+EMP010,0,吉田 雄一,ヨシダ ユウイチ,MALE,1989-04-07,日本,2023-02-01,,FULL_TIME,ACTIVE,DEPT003,,system

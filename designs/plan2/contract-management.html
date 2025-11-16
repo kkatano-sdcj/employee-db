@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>契約管理 - Employee Database System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        'sans': ['Inter', 'Noto Sans JP', 'sans-serif'],
+                    },
+                    colors: {
+                        'primary': {
+                            50: '#f0f9ff',
+                            100: '#e0f2fe',
+                            200: '#bae6fd',
+                            300: '#7dd3fc',
+                            400: '#38bdf8',
+                            500: '#0ea5e9',
+                            600: '#0284c7',
+                            700: '#0369a1',
+                            800: '#075985',
+                            900: '#0c4a6e',
+                            950: '#082f49',
+                        },
+                        'neutral': {
+                            50: '#fafafa',
+                            100: '#f5f5f5',
+                            200: '#e5e5e5',
+                            300: '#d4d4d4',
+                            400: '#a3a3a3',
+                            500: '#737373',
+                            600: '#525252',
+                            700: '#404040',
+                            800: '#262626',
+                            900: '#171717',
+                            950: '#0a0a0a',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+JP:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body class="bg-neutral-50 text-neutral-800 font-sans antialiased">
+    <div class="min-h-screen">
+        <!-- Sidebar -->
+        <aside class="fixed left-0 top-0 h-full w-64 bg-white border-r border-neutral-200 z-30">
+            <div class="p-6">
+                <h1 class="text-2xl font-bold text-neutral-900">Employee DB</h1>
+                <p class="text-sm text-neutral-500 mt-1">統合管理システム</p>
+            </div>
+
+            <nav class="px-4">
+                <ul class="space-y-1">
+                    <li>
+                        <a href="#" class="flex items-center px-4 py-3 text-sm font-medium rounded-lg text-neutral-600 hover:bg-neutral-100 transition-colors">
+                            <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
+                            </svg>
+                            ダッシュボード
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#" class="flex items-center px-4 py-3 text-sm font-medium rounded-lg text-neutral-600 hover:bg-neutral-100 transition-colors">
+                            <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                            </svg>
+                            従業員管理
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#" class="flex items-center px-4 py-3 text-sm font-medium rounded-lg bg-primary-50 text-primary-700 hover:bg-primary-100 transition-colors">
+                            <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                            </svg>
+                            契約管理
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#" class="flex items-center px-4 py-3 text-sm font-medium rounded-lg text-neutral-600 hover:bg-neutral-100 transition-colors">
+                            <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                            </svg>
+                            レポート
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#" class="flex items-center px-4 py-3 text-sm font-medium rounded-lg text-neutral-600 hover:bg-neutral-100 transition-colors">
+                            <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                            </svg>
+                            設定
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="ml-64">
+            <!-- Header -->
+            <header class="bg-white border-b border-neutral-200">
+                <div class="px-8 py-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h2 class="text-2xl font-semibold text-neutral-900">契約管理</h2>
+                            <p class="text-sm text-neutral-500 mt-1">契約書の作成・管理・更新</p>
+                        </div>
+                        <div class="flex gap-3">
+                            <button class="px-4 py-2 border border-neutral-300 rounded-lg hover:bg-neutral-50 font-medium transition-colors flex items-center gap-2">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+                                </svg>
+                                インポート
+                            </button>
+                            <button class="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg font-medium transition-colors flex items-center gap-2">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                                </svg>
+                                新規契約作成
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Statistics Cards -->
+            <div class="p-8">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                    <!-- Active Contracts -->
+                    <div class="bg-white rounded-xl p-6 border border-neutral-200">
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="w-12 h-12 bg-emerald-100 rounded-lg flex items-center justify-center">
+                                <svg class="w-6 h-6 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                            </div>
+                        </div>
+                        <h3 class="text-2xl font-bold text-neutral-900 mb-1">182</h3>
+                        <p class="text-sm text-neutral-600">有効な契約</p>
+                        <p class="text-xs text-emerald-600 mt-2">前月比 +12</p>
+                    </div>
+
+                    <!-- Pending Renewal -->
+                    <div class="bg-white rounded-xl p-6 border border-neutral-200">
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="w-12 h-12 bg-amber-100 rounded-lg flex items-center justify-center">
+                                <svg class="w-6 h-6 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                            </div>
+                        </div>
+                        <h3 class="text-2xl font-bold text-neutral-900 mb-1">23</h3>
+                        <p class="text-sm text-neutral-600">更新待ち</p>
+                        <p class="text-xs text-amber-600 mt-2">30日以内</p>
+                    </div>
+
+                    <!-- Expired Contracts -->
+                    <div class="bg-white rounded-xl p-6 border border-neutral-200">
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
+                                <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                            </div>
+                        </div>
+                        <h3 class="text-2xl font-bold text-neutral-900 mb-1">8</h3>
+                        <p class="text-sm text-neutral-600">期限切れ</p>
+                        <p class="text-xs text-red-600 mt-2">要対応</p>
+                    </div>
+
+                    <!-- Templates -->
+                    <div class="bg-white rounded-xl p-6 border border-neutral-200">
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
+                                <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                </svg>
+                            </div>
+                        </div>
+                        <h3 class="text-2xl font-bold text-neutral-900 mb-1">12</h3>
+                        <p class="text-sm text-neutral-600">テンプレート</p>
+                        <p class="text-xs text-purple-600 mt-2">利用可能</p>
+                    </div>
+                </div>
+
+                <!-- Filters and Search -->
+                <div class="bg-white rounded-xl border border-neutral-200 p-6 mb-6">
+                    <div class="flex flex-col lg:flex-row gap-4">
+                        <div class="flex-1">
+                            <div class="relative">
+                                <input type="text" placeholder="従業員名、契約番号、部門で検索..."
+                                       class="w-full px-4 py-2.5 pl-10 border border-neutral-300 rounded-lg focus:outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500">
+                                <svg class="absolute left-3 top-3 w-4 h-4 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                                </svg>
+                            </div>
+                        </div>
+                        <div class="flex gap-3">
+                            <select class="px-4 py-2.5 border border-neutral-300 rounded-lg focus:outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500">
+                                <option>全ステータス</option>
+                                <option>有効</option>
+                                <option>更新待ち</option>
+                                <option>期限切れ</option>
+                                <option>下書き</option>
+                            </select>
+                            <select class="px-4 py-2.5 border border-neutral-300 rounded-lg focus:outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500">
+                                <option>全契約タイプ</option>
+                                <option>雇用契約書</option>
+                                <option>秘密保持契約書</option>
+                                <option>業務委託契約書</option>
+                                <option>その他</option>
+                            </select>
+                            <input type="date" class="px-4 py-2.5 border border-neutral-300 rounded-lg focus:outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Contracts Table -->
+                <div class="bg-white rounded-xl border border-neutral-200 overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="w-full">
+                            <thead>
+                                <tr class="bg-neutral-50 border-b border-neutral-200">
+                                    <th class="text-left px-6 py-3">
+                                        <input type="checkbox" class="rounded border-neutral-300 text-primary-600 focus:ring-primary-500">
+                                    </th>
+                                    <th class="text-left px-6 py-3 text-xs font-medium text-neutral-500 uppercase tracking-wider">
+                                        契約番号
+                                    </th>
+                                    <th class="text-left px-6 py-3 text-xs font-medium text-neutral-500 uppercase tracking-wider">
+                                        従業員名
+                                    </th>
+                                    <th class="text-left px-6 py-3 text-xs font-medium text-neutral-500 uppercase tracking-wider">
+                                        契約タイプ
+                                    </th>
+                                    <th class="text-left px-6 py-3 text-xs font-medium text-neutral-500 uppercase tracking-wider">
+                                        開始日
+                                    </th>
+                                    <th class="text-left px-6 py-3 text-xs font-medium text-neutral-500 uppercase tracking-wider">
+                                        終了日
+                                    </th>
+                                    <th class="text-left px-6 py-3 text-xs font-medium text-neutral-500 uppercase tracking-wider">
+                                        ステータス
+                                    </th>
+                                    <th class="text-left px-6 py-3 text-xs font-medium text-neutral-500 uppercase tracking-wider">
+                                        操作
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-neutral-200">
+                                <tr class="hover:bg-neutral-50 transition-colors">
+                                    <td class="px-6 py-4">
+                                        <input type="checkbox" class="rounded border-neutral-300 text-primary-600 focus:ring-primary-500">
+                                    </td>
+                                    <td class="px-6 py-4 text-sm font-medium text-neutral-900">CNT-2024-001</td>
+                                    <td class="px-6 py-4">
+                                        <div class="flex items-center">
+                                            <div class="h-8 w-8 rounded-full bg-primary-100 text-primary-700 flex items-center justify-center font-semibold text-xs mr-3">
+                                                田太
+                                            </div>
+                                            <div>
+                                                <div class="text-sm font-medium text-neutral-900">田中 太郎</div>
+                                                <div class="text-xs text-neutral-500">営業部</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4 text-sm text-neutral-600">雇用契約書</td>
+                                    <td class="px-6 py-4 text-sm text-neutral-600">2024/04/01</td>
+                                    <td class="px-6 py-4 text-sm text-neutral-600">2025/03/31</td>
+                                    <td class="px-6 py-4">
+                                        <span class="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-700">
+                                            有効
+                                        </span>
+                                    </td>
+                                    <td class="px-6 py-4 text-sm">
+                                        <div class="flex gap-2">
+                                            <button class="text-primary-600 hover:text-primary-800">
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                                                </svg>
+                                            </button>
+                                            <button class="text-neutral-600 hover:text-neutral-800">
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                                                </svg>
+                                            </button>
+                                            <button class="text-neutral-600 hover:text-neutral-800">
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                                </svg>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr class="hover:bg-neutral-50 transition-colors">
+                                    <td class="px-6 py-4">
+                                        <input type="checkbox" class="rounded border-neutral-300 text-primary-600 focus:ring-primary-500">
+                                    </td>
+                                    <td class="px-6 py-4 text-sm font-medium text-neutral-900">CNT-2024-002</td>
+                                    <td class="px-6 py-4">
+                                        <div class="flex items-center">
+                                            <div class="h-8 w-8 rounded-full bg-pink-100 text-pink-700 flex items-center justify-center font-semibold text-xs mr-3">
+                                                山花
+                                            </div>
+                                            <div>
+                                                <div class="text-sm font-medium text-neutral-900">山田 花子</div>
+                                                <div class="text-xs text-neutral-500">人事部</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4 text-sm text-neutral-600">雇用契約書</td>
+                                    <td class="px-6 py-4 text-sm text-neutral-600">2023/10/01</td>
+                                    <td class="px-6 py-4 text-sm text-neutral-600">2024/09/30</td>
+                                    <td class="px-6 py-4">
+                                        <span class="px-2 py-1 text-xs font-medium rounded-full bg-amber-100 text-amber-700">
+                                            更新待ち
+                                        </span>
+                                    </td>
+                                    <td class="px-6 py-4 text-sm">
+                                        <div class="flex gap-2">
+                                            <button class="text-primary-600 hover:text-primary-800">
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                                                </svg>
+                                            </button>
+                                            <button class="text-neutral-600 hover:text-neutral-800">
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                                                </svg>
+                                            </button>
+                                            <button class="text-neutral-600 hover:text-neutral-800">
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                                </svg>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr class="hover:bg-neutral-50 transition-colors">
+                                    <td class="px-6 py-4">
+                                        <input type="checkbox" class="rounded border-neutral-300 text-primary-600 focus:ring-primary-500">
+                                    </td>
+                                    <td class="px-6 py-4 text-sm font-medium text-neutral-900">CNT-2024-003</td>
+                                    <td class="px-6 py-4">
+                                        <div class="flex items-center">
+                                            <div class="h-8 w-8 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center font-semibold text-xs mr-3">
+                                                佐次
+                                            </div>
+                                            <div>
+                                                <div class="text-sm font-medium text-neutral-900">佐藤 次郎</div>
+                                                <div class="text-xs text-neutral-500">技術部</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4 text-sm text-neutral-600">秘密保持契約書</td>
+                                    <td class="px-6 py-4 text-sm text-neutral-600">2024/01/01</td>
+                                    <td class="px-6 py-4 text-sm text-neutral-600">無期限</td>
+                                    <td class="px-6 py-4">
+                                        <span class="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-700">
+                                            有効
+                                        </span>
+                                    </td>
+                                    <td class="px-6 py-4 text-sm">
+                                        <div class="flex gap-2">
+                                            <button class="text-primary-600 hover:text-primary-800">
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                                                </svg>
+                                            </button>
+                                            <button class="text-neutral-600 hover:text-neutral-800">
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                                                </svg>
+                                            </button>
+                                            <button class="text-neutral-600 hover:text-neutral-800">
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                                </svg>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr class="hover:bg-neutral-50 transition-colors">
+                                    <td class="px-6 py-4">
+                                        <input type="checkbox" class="rounded border-neutral-300 text-primary-600 focus:ring-primary-500">
+                                    </td>
+                                    <td class="px-6 py-4 text-sm font-medium text-neutral-900">CNT-2024-004</td>
+                                    <td class="px-6 py-4">
+                                        <div class="flex items-center">
+                                            <div class="h-8 w-8 rounded-full bg-purple-100 text-purple-700 flex items-center justify-center font-semibold text-xs mr-3">
+                                                鈴美
+                                            </div>
+                                            <div>
+                                                <div class="text-sm font-medium text-neutral-900">鈴木 美咲</div>
+                                                <div class="text-xs text-neutral-500">経理部</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4 text-sm text-neutral-600">業務委託契約書</td>
+                                    <td class="px-6 py-4 text-sm text-neutral-600">2024/07/01</td>
+                                    <td class="px-6 py-4 text-sm text-neutral-600">2024/06/30</td>
+                                    <td class="px-6 py-4">
+                                        <span class="px-2 py-1 text-xs font-medium rounded-full bg-red-100 text-red-700">
+                                            期限切れ
+                                        </span>
+                                    </td>
+                                    <td class="px-6 py-4 text-sm">
+                                        <div class="flex gap-2">
+                                            <button class="text-primary-600 hover:text-primary-800">
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                                                </svg>
+                                            </button>
+                                            <button class="text-neutral-600 hover:text-neutral-800">
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                                                </svg>
+                                            </button>
+                                            <button class="text-neutral-600 hover:text-neutral-800">
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                                </svg>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Pagination -->
+                    <div class="px-6 py-4 border-t border-neutral-200 bg-neutral-50">
+                        <div class="flex items-center justify-between">
+                            <p class="text-sm text-neutral-600">
+                                全213件中 1-20件を表示
+                            </p>
+                            <div class="flex gap-2">
+                                <button class="px-3 py-1.5 text-sm border border-neutral-300 rounded-lg hover:bg-white disabled:opacity-50" disabled>
+                                    前へ
+                                </button>
+                                <button class="px-3 py-1.5 text-sm border border-neutral-300 rounded-lg bg-primary-600 text-white">
+                                    1
+                                </button>
+                                <button class="px-3 py-1.5 text-sm border border-neutral-300 rounded-lg hover:bg-white">
+                                    2
+                                </button>
+                                <button class="px-3 py-1.5 text-sm border border-neutral-300 rounded-lg hover:bg-white">
+                                    3
+                                </button>
+                                <span class="px-3 py-1.5 text-sm">...</span>
+                                <button class="px-3 py-1.5 text-sm border border-neutral-300 rounded-lg hover:bg-white">
+                                    11
+                                </button>
+                                <button class="px-3 py-1.5 text-sm border border-neutral-300 rounded-lg hover:bg-white">
+                                    次へ
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Floating Action Button -->
+    <button class="fixed bottom-6 right-6 w-14 h-14 bg-primary-600 hover:bg-primary-700 text-white rounded-full shadow-lg hover:shadow-xl transition-all flex items-center justify-center">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+        </svg>
+    </button>
+</body>
+</html>

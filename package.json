@@ -1,0 +1,20 @@
+{
+  "name": "employee-db",
+  "private": true,
+  "packageManager": "pnpm@10.19.0",
+  "scripts": {
+    "dev": "pnpm --filter @acme/nextjs dev",
+    "dev:next": "pnpm --filter @acme/nextjs dev",
+    "build": "pnpm --filter @acme/nextjs build",
+    "start": "pnpm --filter @acme/nextjs start",
+    "lint": "pnpm --filter @acme/nextjs lint",
+    "typecheck": "pnpm --filter @acme/nextjs lint",
+    "format": "pnpm prettier --check \"apps/**/*.{ts,tsx,js,jsx,css,md}\" \"prettier.config.mjs\"",
+    "format:fix": "pnpm prettier --write \"apps/**/*.{ts,tsx,js,jsx,css,md}\" \"prettier.config.mjs\""
+  },
+  "devDependencies": {
+    "prettier": "^3.3.3",
+    "prettier-plugin-tailwindcss": "^0.6.9",
+    "@ianvs/prettier-plugin-sort-imports": "^4.3.1"
+  }
+}

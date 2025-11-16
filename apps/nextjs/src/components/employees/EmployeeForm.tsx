@@ -1,0 +1,472 @@
+"use client";
+
+import type { ReactNode } from "react";
+import { useState } from "react";
+import { useFieldArray, useForm, type UseFormReturn } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { MinusCircleIcon, PlusCircleIcon } from "@heroicons/react/24/outline";
+
+import {
+  defaultEmployeeFormValues,
+  employeeFormSchema,
+  type EmployeeFormValues,
+} from "@/lib/schemas/employee";
+
+export const EmployeeForm = () => {
+  const [statusMessage, setStatusMessage] = useState<string>();
+  const form = useForm<EmployeeFormValues>({
+    resolver: zodResolver(employeeFormSchema),
+    defaultValues: defaultEmployeeFormValues,
+  });
+
+  const workingHours = useFieldArray({ control: form.control, name: "workingHours" });
+  const breakHours = useFieldArray({ control: form.control, name: "breakHours" });
+  const workLocations = useFieldArray({ control: form.control, name: "workLocations" });
+  const transportationRoutes = useFieldArray({
+    control: form.control,
+    name: "transportationRoutes",
+  });
+
+  const onSubmit = async (values: EmployeeFormValues) => {
+    setStatusMessage(undefined);
+    const response = await fetch("/api/employees", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(values),
+    });
+
+    if (!response.ok) {
+      const payload = await response
+        .json()
+        .catch(() => ({ message: "保存に失敗しました" }));
+      setStatusMessage(payload.message ?? "登録に失敗しました");
+      return;
+    }
+
+    setStatusMessage("登録が完了しました。従業員一覧を確認してください。");
+    form.reset(defaultEmployeeFormValues);
+  };
+
+  return (
+    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+      <FormSection title="基本情報">
+        <div className="grid gap-4 md:grid-cols-3">
+          <TextField
+            label="従業員番号"
+            registration={form.register("employeeNumber")}
+            error={form.formState.errors.employeeNumber?.message}
+          />
+          <TextField
+            label="氏名"
+            registration={form.register("name")}
+            error={form.formState.errors.name?.message}
+          />
+          <TextField
+            label="氏名(カナ)"
+            registration={form.register("nameKana")}
+            error={form.formState.errors.nameKana?.message}
+          />
+          <SelectField
+            label="性別"
+            registration={form.register("gender")}
+            error={form.formState.errors.gender?.message}
+            options={[
+              { label: "男性", value: "MALE" },
+              { label: "女性", value: "FEMALE" },
+              { label: "その他", value: "OTHER" },
+            ]}
+          />
+          <TextField
+            type="date"
+            label="生年月日"
+            registration={form.register("birthDate")}
+            error={form.formState.errors.birthDate?.message}
+          />
+          <TextField
+            type="text"
+            label="国籍"
+            registration={form.register("nationality")}
+            error={form.formState.errors.nationality?.message}
+          />
+          <TextField
+            type="date"
+            label="入社日"
+            registration={form.register("hiredAt")}
+            error={form.formState.errors.hiredAt?.message}
+          />
+          <SelectField
+            label="雇用区分"
+            registration={form.register("employmentType")}
+            error={form.formState.errors.employmentType?.message}
+            options={[
+              { label: "常勤", value: "FULL_TIME" },
+              { label: "パート", value: "PART_TIME" },
+              { label: "契約", value: "CONTRACT" },
+            ]}
+          />
+          <SelectField
+            label="勤務状態"
+            registration={form.register("employmentStatus")}
+            error={form.formState.errors.employmentStatus?.message}
+            options={[
+              { label: "稼働", value: "ACTIVE" },
+              { label: "休職", value: "ON_LEAVE" },
+              { label: "退職", value: "RETIRED" },
+            ]}
+          />
+          <TextField
+            label="所属コード"
+            registration={form.register("departmentCode")}
+            error={form.formState.errors.departmentCode?.message}
+          />
+          <TextField
+            label="マイナンバー"
+            registration={form.register("myNumber")}
+            error={form.formState.errors.myNumber?.message}
+          />
+        </div>
+      </FormSection>
+
+      <FormSection title="勤務条件">
+        <div className="grid gap-4 md:grid-cols-4">
+          <SelectField
+            label="勤務日数区分"
+            registration={form.register("workDaysType")}
+            error={form.formState.errors.workDaysType?.message}
+            options={[
+              { label: "週", value: "WEEKLY" },
+              { label: "月", value: "MONTHLY" },
+              { label: "シフト", value: "SHIFT" },
+            ]}
+          />
+          <TextField
+            type="number"
+            label="勤務日数"
+            registration={form.register("workDaysCount", { valueAsNumber: true })}
+            error={form.formState.errors.workDaysCount?.message}
+          />
+          <TextField
+            label="勤務日数メモ"
+            registration={form.register("workDaysCountNote")}
+            error={form.formState.errors.workDaysCountNote?.message}
+          />
+          <TextField
+            type="date"
+            label="有給基準日"
+            registration={form.register("paidLeaveBaseDate")}
+            error={form.formState.errors.paidLeaveBaseDate?.message}
+          />
+        </div>
+
+        <DynamicFieldArray
+          title="勤務時間帯"
+          fields={workingHours.fields}
+          onAdd={() => workingHours.append({ start: "09:00", end: "18:00" })}
+          onRemove={(idx) => workingHours.remove(idx)}
+        >
+          {(field, index) => (
+            <div className="grid gap-3 md:grid-cols-2">
+              <TextField
+                label="開始"
+                type="time"
+                registration={form.register(`workingHours.${index}.start` as const)}
+                error={form.formState.errors.workingHours?.[index]?.start?.message}
+              />
+              <TextField
+                label="終了"
+                type="time"
+                registration={form.register(`workingHours.${index}.end` as const)}
+                error={form.formState.errors.workingHours?.[index]?.end?.message}
+              />
+            </div>
+          )}
+        </DynamicFieldArray>
+
+        <DynamicFieldArray
+          title="休憩時間帯"
+          fields={breakHours.fields}
+          onAdd={() => breakHours.append({ start: "12:00", end: "13:00" })}
+          onRemove={(idx) => breakHours.remove(idx)}
+        >
+          {(field, index) => (
+            <div className="grid gap-3 md:grid-cols-2">
+              <TextField
+                label="開始"
+                type="time"
+                registration={form.register(`breakHours.${index}.start` as const)}
+                error={form.formState.errors.breakHours?.[index]?.start?.message}
+              />
+              <TextField
+                label="終了"
+                type="time"
+                registration={form.register(`breakHours.${index}.end` as const)}
+                error={form.formState.errors.breakHours?.[index]?.end?.message}
+              />
+            </div>
+          )}
+        </DynamicFieldArray>
+
+        <DynamicFieldArray
+          title="勤務場所"
+          fields={workLocations.fields}
+          onAdd={() => workLocations.append({ location: "" })}
+          onRemove={(idx) => workLocations.remove(idx)}
+        >
+          {(field, index) => (
+            <TextField
+              label="勤務地"
+              registration={form.register(`workLocations.${index}.location` as const)}
+              error={form.formState.errors.workLocations?.[index]?.location?.message}
+            />
+          )}
+        </DynamicFieldArray>
+
+        <DynamicFieldArray
+          title="交通費（ルート別）"
+          fields={transportationRoutes.fields}
+          onAdd={() =>
+            transportationRoutes.append({
+              route: "",
+              roundTripAmount: 0,
+              monthlyPassAmount: undefined,
+              maxAmount: undefined,
+              nearestStation: "",
+            })
+          }
+          onRemove={(idx) => transportationRoutes.remove(idx)}
+        >
+          {(field, index) => (
+            <div className="grid gap-3 md:grid-cols-5">
+              <TextField
+                label="ルート"
+                registration={form.register(
+                  `transportationRoutes.${index}.route` as const,
+                )}
+                error={
+                  form.formState.errors.transportationRoutes?.[index]?.route?.message
+                }
+              />
+              <TextField
+                type="number"
+                label="往復"
+                registration={form.register(
+                  `transportationRoutes.${index}.roundTripAmount` as const,
+                  { valueAsNumber: true },
+                )}
+                error={
+                  form.formState.errors.transportationRoutes?.[index]?.roundTripAmount
+                    ?.message
+                }
+              />
+              <TextField
+                type="number"
+                label="定期"
+                registration={form.register(
+                  `transportationRoutes.${index}.monthlyPassAmount` as const,
+                )}
+                error={
+                  form.formState.errors.transportationRoutes?.[index]?.monthlyPassAmount
+                    ?.message
+                }
+              />
+              <TextField
+                type="number"
+                label="上限"
+                registration={form.register(
+                  `transportationRoutes.${index}.maxAmount` as const,
+                )}
+                error={
+                  form.formState.errors.transportationRoutes?.[index]?.maxAmount?.message
+                }
+              />
+              <TextField
+                label="最寄り"
+                registration={form.register(
+                  `transportationRoutes.${index}.nearestStation` as const,
+                )}
+                error={
+                  form.formState.errors.transportationRoutes?.[index]?.nearestStation
+                    ?.message
+                }
+              />
+            </div>
+          )}
+        </DynamicFieldArray>
+      </FormSection>
+
+      <FormSection title="雇用契約">
+        <div className="grid gap-4 md:grid-cols-3">
+          <SelectField
+            label="契約タイプ"
+            registration={form.register("contract.contractType")}
+            error={form.formState.errors.contract?.contractType?.message}
+            options={[
+              { label: "無期", value: "INDEFINITE" },
+              { label: "有期", value: "FIXED_TERM" },
+            ]}
+          />
+          <TextField
+            type="date"
+            label="契約開始日"
+            registration={form.register("contract.contractStartDate")}
+            error={form.formState.errors.contract?.contractStartDate?.message}
+          />
+          <TextField
+            type="date"
+            label="契約終了日"
+            registration={form.register("contract.contractEndDate")}
+            error={form.formState.errors.contract?.contractEndDate?.message}
+          />
+          <div className="flex items-center gap-2">
+            <input
+              id="isRenewable"
+              type="checkbox"
+              className="h-4 w-4 rounded border-slate-300"
+              {...form.register("contract.isRenewable")}
+            />
+            <label htmlFor="isRenewable" className="text-sm text-slate-600">
+              更新予定あり
+            </label>
+          </div>
+          <TextField
+            type="number"
+            label="時給"
+            registration={form.register("contract.hourlyWage", { valueAsNumber: true })}
+            error={form.formState.errors.contract?.hourlyWage?.message}
+          />
+          <TextField
+            type="number"
+            label="残業時給"
+            registration={form.register("contract.overtimeHourlyWage")}
+            error={form.formState.errors.contract?.overtimeHourlyWage?.message}
+          />
+        </div>
+        <TextField
+          label="業務内容"
+          registration={form.register("contract.jobDescription")}
+          error={form.formState.errors.contract?.jobDescription?.message}
+        />
+        <TextField
+          label="有休条項"
+          registration={form.register("contract.paidLeaveClause")}
+          error={form.formState.errors.contract?.paidLeaveClause?.message}
+        />
+        <TextField
+          label="備考"
+          registration={form.register("contract.hourlyWageNote")}
+          error={form.formState.errors.contract?.hourlyWageNote?.message}
+        />
+      </FormSection>
+
+      {statusMessage && (
+        <p className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-700">
+          {statusMessage}
+        </p>
+      )}
+
+      <div className="flex justify-end">
+        <button
+          className="rounded-2xl bg-slate-900 px-6 py-3 text-sm font-semibold text-white shadow-soft"
+          type="submit"
+        >
+          従業員を登録
+        </button>
+      </div>
+    </form>
+  );
+};
+
+type FormSectionProps = { title: string; children: React.ReactNode };
+const FormSection = ({ title, children }: FormSectionProps) => (
+  <section className="section-card space-y-4">
+    <div>
+      <p className="text-xs uppercase tracking-widest text-slate-400">SECTION</p>
+      <h2 className="text-lg font-semibold text-slate-900">{title}</h2>
+    </div>
+    {children}
+  </section>
+);
+
+type FieldRegistration = ReturnType<UseFormReturn<EmployeeFormValues>["register"]>;
+
+type TextFieldProps = {
+  label: string;
+  registration: FieldRegistration;
+  error?: string;
+  type?: string;
+};
+
+const TextField = ({ label, registration, error, type = "text" }: TextFieldProps) => (
+  <label className="flex flex-col gap-1 text-sm">
+    <span className="input-label">{label}</span>
+    <input
+      type={type}
+      className={`input-field ${error ? "border-rose-300" : ""}`}
+      {...registration}
+    />
+    {error && <span className="text-xs text-rose-500">{error}</span>}
+  </label>
+);
+
+type SelectFieldProps = TextFieldProps & {
+  options: Array<{ label: string; value: string }>;
+};
+
+const SelectField = ({ label, registration, error, options }: SelectFieldProps) => (
+  <label className="flex flex-col gap-1 text-sm">
+    <span className="input-label">{label}</span>
+    <select className={`input-field ${error ? "border-rose-300" : ""}`} {...registration}>
+      {options.map((option) => (
+        <option key={option.value} value={option.value}>
+          {option.label}
+        </option>
+      ))}
+    </select>
+    {error && <span className="text-xs text-rose-500">{error}</span>}
+  </label>
+);
+
+type DynamicFieldArrayProps<T extends { id: string }> = {
+  title: string;
+  fields: T[];
+  onAdd: () => void;
+  onRemove: (index: number) => void;
+  children: (field: T, index: number) => ReactNode;
+};
+
+const DynamicFieldArray = <T extends { id: string }>({
+  title,
+  fields,
+  onAdd,
+  onRemove,
+  children,
+}: DynamicFieldArrayProps<T>) => (
+  <div className="space-y-3">
+    <div className="flex items-center justify-between">
+      <p className="text-sm font-semibold text-slate-700">{title}</p>
+      <button
+        type="button"
+        onClick={onAdd}
+        className="inline-flex items-center gap-1 text-sm font-semibold text-accent-blue"
+      >
+        <PlusCircleIcon className="h-4 w-4" /> 追加
+      </button>
+    </div>
+    <div className="space-y-3">
+      {fields.map((field, index) => (
+        <div key={field.id} className="rounded-2xl border border-slate-100 p-4">
+          <div className="flex justify-end">
+            <button
+              type="button"
+              onClick={() => onRemove(index)}
+              className="text-xs text-rose-500"
+            >
+              <MinusCircleIcon className="mr-1 inline h-4 w-4" /> 削除
+            </button>
+          </div>
+          {children(field, index)}
+        </div>
+      ))}
+    </div>
+  </div>
+);

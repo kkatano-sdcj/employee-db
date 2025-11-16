@@ -1,0 +1,1027 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>従業員詳細・編集 - Employee Database System</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&family=Noto+Sans+JP:wght@300;400;500;700;900&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --secondary-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            --success-gradient: linear-gradient(135deg, #13f1fc 0%, #0470dc 100%);
+            --warning-gradient: linear-gradient(135deg, #f9d423 0%, #ff4e50 100%);
+            --dark-gradient: linear-gradient(135deg, #2D3436 0%, #000000 100%);
+
+            --glass-bg: rgba(255, 255, 255, 0.1);
+            --glass-border: rgba(255, 255, 255, 0.2);
+            --text-primary: #1a202c;
+            --text-secondary: #4a5568;
+            --text-light: #718096;
+
+            --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            --shadow-glow: 0 0 30px rgba(102, 126, 234, 0.4);
+            --shadow-neumorphic: 12px 12px 24px #d1d5db, -12px -12px 24px #ffffff;
+        }
+
+        body {
+            font-family: 'Inter', 'Noto Sans JP', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        /* Animated Background */
+        .bg-animation {
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            z-index: -1;
+            overflow: hidden;
+        }
+
+        .floating-shape {
+            position: absolute;
+            opacity: 0.1;
+            animation: floatShape 20s infinite ease-in-out;
+        }
+
+        .shape-1 {
+            width: 300px;
+            height: 300px;
+            background: linear-gradient(45deg, #f093fb, #f5576c);
+            border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%;
+            top: 10%;
+            left: 10%;
+            animation-delay: 0s;
+        }
+
+        .shape-2 {
+            width: 200px;
+            height: 200px;
+            background: linear-gradient(45deg, #13f1fc, #0470dc);
+            border-radius: 70% 30% 30% 70% / 70% 70% 30% 30%;
+            bottom: 20%;
+            right: 10%;
+            animation-delay: 5s;
+        }
+
+        .shape-3 {
+            width: 250px;
+            height: 250px;
+            background: linear-gradient(45deg, #f9d423, #ff4e50);
+            border-radius: 50% 50% 30% 70% / 50% 70% 30% 50%;
+            top: 50%;
+            left: 50%;
+            animation-delay: 10s;
+        }
+
+        @keyframes floatShape {
+            0%, 100% { transform: translate(0, 0) rotate(0deg) scale(1); }
+            25% { transform: translate(50px, -30px) rotate(90deg) scale(1.1); }
+            50% { transform: translate(-30px, 50px) rotate(180deg) scale(0.9); }
+            75% { transform: translate(-50px, -30px) rotate(270deg) scale(1.05); }
+        }
+
+        /* Main Container */
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        /* Header */
+        .header {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            padding: 1.5rem 2rem;
+            margin-bottom: 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: var(--shadow-xl);
+        }
+
+        .breadcrumb {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 0.875rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .breadcrumb a {
+            color: rgba(255, 255, 255, 0.7);
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+
+        .breadcrumb a:hover {
+            color: white;
+        }
+
+        .page-title {
+            font-size: 2rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #ffffff 0%, #e2e8f0 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        /* Status Indicator */
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            background: rgba(16, 185, 129, 0.2);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            border-radius: 999px;
+            color: #10b981;
+            font-weight: 600;
+            font-size: 0.875rem;
+        }
+
+        .status-indicator::before {
+            content: '';
+            width: 8px;
+            height: 8px;
+            background: #10b981;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        /* Futuristic Tabs */
+        .tabs-container {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            padding: 0.5rem;
+            margin-bottom: 2rem;
+            box-shadow: var(--shadow-xl);
+        }
+
+        .tabs {
+            display: flex;
+            gap: 0.5rem;
+            position: relative;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 1rem;
+            background: transparent;
+            border: none;
+            border-radius: 16px;
+            color: rgba(255, 255, 255, 0.7);
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .tab::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--primary-gradient);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .tab:hover {
+            color: white;
+        }
+
+        .tab.active {
+            background: var(--primary-gradient);
+            color: white;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .tab-indicator {
+            position: absolute;
+            bottom: 0;
+            height: 3px;
+            background: var(--primary-gradient);
+            transition: all 0.3s ease;
+        }
+
+        /* Profile Section */
+        .profile-section {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: var(--shadow-xl);
+        }
+
+        .profile-header {
+            display: flex;
+            gap: 2rem;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        .profile-avatar {
+            width: 120px;
+            height: 120px;
+            border-radius: 24px;
+            background: var(--primary-gradient);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem;
+            color: white;
+            font-weight: bold;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .profile-avatar::after {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            animation: shimmer 3s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .profile-info {
+            flex: 1;
+        }
+
+        .profile-name {
+            font-size: 2rem;
+            font-weight: 700;
+            color: white;
+            margin-bottom: 0.5rem;
+        }
+
+        .profile-id {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .profile-badges {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .badge {
+            padding: 0.375rem 0.75rem;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 999px;
+            color: white;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .badge.primary {
+            background: var(--primary-gradient);
+            border: none;
+        }
+
+        /* Form Section */
+        .form-section {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: var(--shadow-xl);
+        }
+
+        .section-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: white;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .section-title::before {
+            content: '';
+            width: 4px;
+            height: 24px;
+            background: var(--primary-gradient);
+            border-radius: 2px;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .form-group {
+            position: relative;
+        }
+
+        .form-label {
+            display: block;
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 0.875rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .form-label.required::after {
+            content: ' *';
+            color: #ef4444;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 0.875rem 1rem;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
+            color: white;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .form-input:focus {
+            outline: none;
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(102, 126, 234, 0.5);
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .form-input::placeholder {
+            color: rgba(255, 255, 255, 0.4);
+        }
+
+        .form-select {
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 0.75rem center;
+            background-size: 1rem;
+            padding-right: 2.5rem;
+        }
+
+        .form-textarea {
+            min-height: 120px;
+            resize: vertical;
+        }
+
+        .form-helper {
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 0.75rem;
+            margin-top: 0.25rem;
+        }
+
+        .form-error {
+            color: #ef4444;
+            font-size: 0.75rem;
+            margin-top: 0.25rem;
+        }
+
+        /* Advanced Input Groups */
+        .input-group {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .input-group .form-input {
+            flex: 1;
+        }
+
+        .input-addon {
+            padding: 0.875rem 1rem;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
+            color: rgba(255, 255, 255, 0.7);
+            display: flex;
+            align-items: center;
+        }
+
+        /* Date Picker */
+        .date-picker {
+            position: relative;
+        }
+
+        .date-picker-icon {
+            position: absolute;
+            right: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: rgba(255, 255, 255, 0.6);
+            pointer-events: none;
+        }
+
+        /* Toggle Switch */
+        .toggle-switch {
+            position: relative;
+            width: 60px;
+            height: 30px;
+            margin-top: 0.5rem;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.2);
+            transition: 0.4s;
+            border-radius: 30px;
+        }
+
+        .toggle-slider::before {
+            position: absolute;
+            content: '';
+            height: 22px;
+            width: 22px;
+            left: 4px;
+            bottom: 4px;
+            background: white;
+            transition: 0.4s;
+            border-radius: 50%;
+        }
+
+        input:checked + .toggle-slider {
+            background: var(--primary-gradient);
+        }
+
+        input:checked + .toggle-slider::before {
+            transform: translateX(30px);
+        }
+
+        /* Multiple Input Fields */
+        .multiple-inputs {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .multiple-input-row {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+        }
+
+        .multiple-input-row .form-input {
+            flex: 1;
+        }
+
+        .add-button {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            background: var(--primary-gradient);
+            border: none;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .add-button:hover {
+            transform: scale(1.1);
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .remove-button {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            border: none;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .remove-button:hover {
+            transform: scale(1.1);
+            box-shadow: 0 4px 15px rgba(239, 68, 68, 0.4);
+        }
+
+        /* Timeline History */
+        .timeline {
+            position: relative;
+            padding-left: 2rem;
+        }
+
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: linear-gradient(180deg, var(--primary-gradient), transparent);
+        }
+
+        .timeline-item {
+            position: relative;
+            padding-bottom: 2rem;
+        }
+
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: -2.4rem;
+            top: 0;
+            width: 12px;
+            height: 12px;
+            background: var(--primary-gradient);
+            border-radius: 50%;
+            box-shadow: 0 0 20px rgba(102, 126, 234, 0.6);
+        }
+
+        .timeline-date {
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 0.875rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .timeline-content {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 1rem;
+        }
+
+        .timeline-title {
+            color: white;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .timeline-description {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 0.875rem;
+        }
+
+        /* Action Buttons */
+        .action-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: flex-end;
+            margin-top: 2rem;
+        }
+
+        .btn {
+            padding: 0.875rem 2rem;
+            border-radius: 12px;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-size: 0.875rem;
+        }
+
+        .btn-primary {
+            background: var(--primary-gradient);
+            color: white;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-primary::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+
+        .btn-primary:hover::before {
+            width: 300px;
+            height: 300px;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(239, 68, 68, 0.4);
+        }
+
+        .btn-danger:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(239, 68, 68, 0.6);
+        }
+
+        /* Edit Lock Notification */
+        .edit-lock {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            color: white;
+            padding: 1rem;
+            border-radius: 12px;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            animation: slideDown 0.5s ease;
+        }
+
+        @keyframes slideDown {
+            from {
+                transform: translateY(-20px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .edit-lock-icon {
+            font-size: 1.5rem;
+        }
+
+        .edit-lock-message {
+            flex: 1;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .profile-header {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .tabs {
+                flex-direction: column;
+            }
+
+            .action-buttons {
+                flex-direction: column;
+            }
+
+            .btn {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Animated Background -->
+    <div class="bg-animation">
+        <div class="floating-shape shape-1"></div>
+        <div class="floating-shape shape-2"></div>
+        <div class="floating-shape shape-3"></div>
+    </div>
+
+    <!-- Main Container -->
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div>
+                <div class="breadcrumb">
+                    <a href="#">ダッシュボード</a>
+                    <span>/</span>
+                    <a href="#">従業員管理</a>
+                    <span>/</span>
+                    <span>従業員詳細</span>
+                </div>
+                <h1 class="page-title">従業員詳細・編集</h1>
+            </div>
+            <div class="header-actions">
+                <div class="status-indicator">編集可能</div>
+                <button class="btn btn-secondary">キャンセル</button>
+                <button class="btn btn-primary">保存</button>
+            </div>
+        </header>
+
+        <!-- Edit Lock Notification (表示例) -->
+        <!-- <div class="edit-lock">
+            <div class="edit-lock-icon">🔒</div>
+            <div class="edit-lock-message">
+                <strong>編集ロック中</strong><br>
+                山田太郎さんが現在この記録を編集中です。閲覧のみ可能です。
+            </div>
+        </div> -->
+
+        <!-- Tabs -->
+        <div class="tabs-container">
+            <div class="tabs">
+                <button class="tab active">基本情報</button>
+                <button class="tab">勤務条件</button>
+                <button class="tab">雇用契約</button>
+                <button class="tab">給与情報</button>
+                <button class="tab">履歴</button>
+                <button class="tab">書類管理</button>
+            </div>
+        </div>
+
+        <!-- Profile Section -->
+        <section class="profile-section">
+            <div class="profile-header">
+                <div class="profile-avatar">田中</div>
+                <div class="profile-info">
+                    <h2 class="profile-name">田中 太郎</h2>
+                    <p class="profile-id">従業員番号: EMP-2024-001 | 枝番: 003</p>
+                    <div class="profile-badges">
+                        <span class="badge primary">正社員</span>
+                        <span class="badge">営業部</span>
+                        <span class="badge">在籍中</span>
+                        <span class="badge">勤続 4年</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Basic Information Form -->
+        <section class="form-section">
+            <h3 class="section-title">基本情報</h3>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label class="form-label required">氏名</label>
+                    <input type="text" class="form-input" value="田中 太郎" placeholder="氏名を入力">
+                </div>
+                <div class="form-group">
+                    <label class="form-label required">氏名カナ</label>
+                    <input type="text" class="form-input" value="タナカ タロウ" placeholder="氏名カナを入力">
+                </div>
+                <div class="form-group">
+                    <label class="form-label required">従業員番号</label>
+                    <input type="text" class="form-input" value="EMP-2024-001" readonly>
+                    <span class="form-helper">自動採番</span>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">枝番</label>
+                    <input type="text" class="form-input" value="003" readonly>
+                    <span class="form-helper">契約書出力時に自動増加</span>
+                </div>
+                <div class="form-group">
+                    <label class="form-label required">性別</label>
+                    <select class="form-input form-select">
+                        <option value="male" selected>男性</option>
+                        <option value="female">女性</option>
+                        <option value="other">その他</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label required">生年月日</label>
+                    <div class="date-picker">
+                        <input type="date" class="form-input" value="1990-04-15">
+                        <span class="date-picker-icon">📅</span>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">国籍</label>
+                    <input type="text" class="form-input" value="日本" placeholder="国籍を入力">
+                </div>
+                <div class="form-group">
+                    <label class="form-label required">入社日</label>
+                    <div class="date-picker">
+                        <input type="date" class="form-input" value="2020-04-01">
+                        <span class="date-picker-icon">📅</span>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label required">雇用区分</label>
+                    <select class="form-input form-select">
+                        <option value="full_time" selected>正社員</option>
+                        <option value="part_time">パートタイム</option>
+                        <option value="contract">契約社員</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label required">在籍ステータス</label>
+                    <select class="form-input form-select">
+                        <option value="active" selected>在籍中</option>
+                        <option value="leave">休職中</option>
+                        <option value="retired">退職</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label required">所属部門</label>
+                    <select class="form-input form-select">
+                        <option value="sales" selected>営業部</option>
+                        <option value="hr">人事部</option>
+                        <option value="tech">技術部</option>
+                        <option value="accounting">経理部</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">個人番号（マイナンバー）</label>
+                    <input type="text" class="form-input" value="123-4567-8901" placeholder="XXX-XXXX-XXXX">
+                    <span class="form-helper">権限がある場合のみ表示・編集可能</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Work Conditions Form -->
+        <section class="form-section">
+            <h3 class="section-title">勤務条件</h3>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label class="form-label required">勤務日数種別</label>
+                    <select class="form-input form-select">
+                        <option value="weekly" selected>週単位</option>
+                        <option value="monthly">月単位</option>
+                        <option value="shift">シフト制</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label required">勤務日数</label>
+                    <div class="input-group">
+                        <input type="number" class="form-input" value="5" min="1" max="31">
+                        <div class="input-addon">日/週</div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">有休付与基準日</label>
+                    <div class="date-picker">
+                        <input type="date" class="form-input" value="2024-04-01">
+                        <span class="date-picker-icon">📅</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group" style="margin-top: 1.5rem;">
+                <label class="form-label">勤務時間帯（複数設定可）</label>
+                <div class="multiple-inputs">
+                    <div class="multiple-input-row">
+                        <input type="time" class="form-input" value="09:00">
+                        <span style="color: white; padding: 0 0.5rem;">～</span>
+                        <input type="time" class="form-input" value="18:00">
+                        <button class="remove-button">✕</button>
+                    </div>
+                    <div class="multiple-input-row">
+                        <input type="time" class="form-input" value="13:00">
+                        <span style="color: white; padding: 0 0.5rem;">～</span>
+                        <input type="time" class="form-input" value="22:00">
+                        <button class="remove-button">✕</button>
+                    </div>
+                    <button class="add-button">＋</button>
+                </div>
+            </div>
+
+            <div class="form-group" style="margin-top: 1.5rem;">
+                <label class="form-label">休憩時間帯（複数設定可）</label>
+                <div class="multiple-inputs">
+                    <div class="multiple-input-row">
+                        <input type="time" class="form-input" value="12:00">
+                        <span style="color: white; padding: 0 0.5rem;">～</span>
+                        <input type="time" class="form-input" value="13:00">
+                        <button class="remove-button">✕</button>
+                    </div>
+                    <button class="add-button">＋</button>
+                </div>
+            </div>
+
+            <div class="form-group" style="margin-top: 1.5rem;">
+                <label class="form-label">勤務場所（複数設定可）</label>
+                <div class="multiple-inputs">
+                    <div class="multiple-input-row">
+                        <input type="text" class="form-input" value="本社オフィス" placeholder="勤務場所を入力">
+                        <button class="remove-button">✕</button>
+                    </div>
+                    <div class="multiple-input-row">
+                        <input type="text" class="form-input" value="渋谷支店" placeholder="勤務場所を入力">
+                        <button class="remove-button">✕</button>
+                    </div>
+                    <button class="add-button">＋</button>
+                </div>
+            </div>
+
+            <div class="form-group" style="margin-top: 1.5rem;">
+                <label class="form-label">交通費情報（ルート別）</label>
+                <div class="multiple-inputs">
+                    <div style="background: rgba(255, 255, 255, 0.05); padding: 1rem; border-radius: 12px; margin-bottom: 0.75rem;">
+                        <div class="form-grid" style="margin-bottom: 0.5rem;">
+                            <input type="text" class="form-input" value="自宅 → 本社" placeholder="ルート名">
+                            <input type="number" class="form-input" value="540" placeholder="往復金額">
+                            <input type="number" class="form-input" value="16200" placeholder="月額定期代">
+                            <input type="number" class="form-input" value="20000" placeholder="上限金額">
+                        </div>
+                        <button class="remove-button">✕</button>
+                    </div>
+                    <button class="add-button">＋ ルート追加</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Timeline History -->
+        <section class="form-section">
+            <h3 class="section-title">更新履歴</h3>
+            <div class="timeline">
+                <div class="timeline-item">
+                    <div class="timeline-date">2024年10月15日 14:30</div>
+                    <div class="timeline-content">
+                        <div class="timeline-title">勤務条件更新</div>
+                        <div class="timeline-description">勤務時間帯を変更しました（9:00-18:00 → 10:00-19:00）</div>
+                    </div>
+                </div>
+                <div class="timeline-item">
+                    <div class="timeline-date">2024年4月1日 09:00</div>
+                    <div class="timeline-content">
+                        <div class="timeline-title">昇進</div>
+                        <div class="timeline-description">主任から課長へ昇進しました</div>
+                    </div>
+                </div>
+                <div class="timeline-item">
+                    <div class="timeline-date">2023年10月1日 10:15</div>
+                    <div class="timeline-content">
+                        <div class="timeline-title">部署異動</div>
+                        <div class="timeline-description">企画部から営業部へ異動しました</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Action Buttons -->
+        <div class="action-buttons">
+            <button class="btn btn-danger">削除</button>
+            <button class="btn btn-secondary">キャンセル</button>
+            <button class="btn btn-primary">変更を保存</button>
+        </div>
+    </div>
+</body>
+</html>

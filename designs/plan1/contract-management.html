@@ -1,0 +1,1118 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>契約書管理 - Employee Database System</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&family=Noto+Sans+JP:wght@300;400;500;700;900&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --secondary-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            --success-gradient: linear-gradient(135deg, #13f1fc 0%, #0470dc 100%);
+            --warning-gradient: linear-gradient(135deg, #f9d423 0%, #ff4e50 100%);
+            --info-gradient: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+            --dark-gradient: linear-gradient(135deg, #2D3436 0%, #000000 100%);
+
+            --glass-bg: rgba(255, 255, 255, 0.1);
+            --glass-border: rgba(255, 255, 255, 0.2);
+
+            --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            --shadow-glow: 0 0 30px rgba(102, 126, 234, 0.4);
+            --shadow-3d: 0 14px 28px rgba(0, 0, 0, 0.25), 0 10px 10px rgba(0, 0, 0, 0.22);
+        }
+
+        body {
+            font-family: 'Inter', 'Noto Sans JP', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        /* Animated Particles Background */
+        .bg-animation {
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            z-index: -1;
+            overflow: hidden;
+        }
+
+        .particle {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: white;
+            border-radius: 50%;
+            opacity: 0.3;
+            animation: float-up 15s infinite linear;
+        }
+
+        @keyframes float-up {
+            0% {
+                transform: translateY(100vh) translateX(0);
+                opacity: 0;
+            }
+            10% {
+                opacity: 0.3;
+            }
+            90% {
+                opacity: 0.3;
+            }
+            100% {
+                transform: translateY(-100px) translateX(100px);
+                opacity: 0;
+            }
+        }
+
+        .geometric-shape {
+            position: absolute;
+            opacity: 0.05;
+        }
+
+        .shape-1 {
+            width: 500px;
+            height: 500px;
+            background: conic-gradient(from 180deg at 50% 50%, #667eea, #764ba2, #f093fb, #f5576c, #667eea);
+            border-radius: 50%;
+            top: -250px;
+            right: -250px;
+            animation: rotate 30s infinite linear;
+        }
+
+        .shape-2 {
+            width: 300px;
+            height: 300px;
+            background: linear-gradient(45deg, transparent 30%, rgba(255, 255, 255, 0.1) 50%, transparent 70%);
+            transform: rotate(45deg);
+            bottom: 50px;
+            left: -150px;
+            animation: pulse-scale 8s infinite ease-in-out;
+        }
+
+        @keyframes rotate {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @keyframes pulse-scale {
+            0%, 100% { transform: rotate(45deg) scale(1); }
+            50% { transform: rotate(45deg) scale(1.2); }
+        }
+
+        /* Main Container */
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        /* Header */
+        .header {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            padding: 1.5rem 2rem;
+            margin-bottom: 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: var(--shadow-xl);
+        }
+
+        .page-title {
+            font-size: 2.5rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #ffffff 0%, #e2e8f0 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .header-stats {
+            display: flex;
+            gap: 2rem;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: white;
+        }
+
+        .stat-label {
+            font-size: 0.75rem;
+            color: rgba(255, 255, 255, 0.7);
+            text-transform: uppercase;
+        }
+
+        /* Contract Status Pipeline */
+        .pipeline-container {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            box-shadow: var(--shadow-xl);
+        }
+
+        .pipeline {
+            display: flex;
+            justify-content: space-between;
+            position: relative;
+        }
+
+        .pipeline::before {
+            content: '';
+            position: absolute;
+            top: 30px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: rgba(255, 255, 255, 0.2);
+            z-index: 0;
+        }
+
+        .pipeline-stage {
+            flex: 1;
+            text-align: center;
+            position: relative;
+            z-index: 1;
+        }
+
+        .stage-icon {
+            width: 60px;
+            height: 60px;
+            margin: 0 auto 1rem;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            transition: all 0.3s ease;
+        }
+
+        .pipeline-stage.active .stage-icon {
+            background: var(--primary-gradient);
+            border-color: transparent;
+            box-shadow: 0 0 30px rgba(102, 126, 234, 0.6);
+            animation: pulse 2s infinite;
+        }
+
+        .pipeline-stage.completed .stage-icon {
+            background: var(--success-gradient);
+            border-color: transparent;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); box-shadow: 0 0 20px rgba(102, 126, 234, 0.5); }
+            50% { transform: scale(1.1); box-shadow: 0 0 40px rgba(102, 126, 234, 0.8); }
+        }
+
+        .stage-name {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 0.875rem;
+            font-weight: 600;
+        }
+
+        .stage-count {
+            color: white;
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin-top: 0.5rem;
+        }
+
+        /* Split Layout */
+        .split-layout {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        /* Contract Form */
+        .contract-form {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            padding: 2rem;
+            box-shadow: var(--shadow-xl);
+        }
+
+        .form-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        .form-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: white;
+        }
+
+        .form-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .icon-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            color: white;
+        }
+
+        .icon-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: scale(1.1);
+        }
+
+        .form-section {
+            margin-bottom: 2rem;
+        }
+
+        .section-label {
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 0.875rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .section-label::before {
+            content: '';
+            width: 3px;
+            height: 16px;
+            background: var(--primary-gradient);
+            border-radius: 2px;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+        }
+
+        .form-group {
+            position: relative;
+        }
+
+        .form-group.full-width {
+            grid-column: 1 / -1;
+        }
+
+        .form-label {
+            display: block;
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 0.875rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .form-label.required::after {
+            content: ' *';
+            color: #ef4444;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 0.875rem 1rem;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
+            color: white;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+        }
+
+        .form-input:focus {
+            outline: none;
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(102, 126, 234, 0.5);
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .form-textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        /* Approval Number Input */
+        .approval-input-group {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+        }
+
+        .approval-input {
+            flex: 1;
+        }
+
+        .generate-btn {
+            padding: 0.875rem 1.5rem;
+            background: var(--info-gradient);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .generate-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(67, 233, 123, 0.4);
+        }
+
+        /* PDF Preview */
+        .pdf-preview {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            padding: 2rem;
+            box-shadow: var(--shadow-xl);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .preview-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .preview-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: white;
+        }
+
+        .preview-controls {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .pdf-viewer {
+            background: white;
+            border-radius: 16px;
+            height: 600px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: var(--shadow-3d);
+        }
+
+        .pdf-page {
+            padding: 3rem;
+            height: 100%;
+            overflow-y: auto;
+            color: #1a202c;
+        }
+
+        .contract-header {
+            text-align: center;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid #e2e8f0;
+        }
+
+        .contract-title {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .contract-subtitle {
+            color: #4a5568;
+        }
+
+        .contract-body {
+            line-height: 1.8;
+        }
+
+        .contract-section {
+            margin-bottom: 1.5rem;
+        }
+
+        .contract-section h3 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: #2d3748;
+        }
+
+        .contract-field {
+            display: flex;
+            margin-bottom: 0.5rem;
+        }
+
+        .field-label {
+            font-weight: 600;
+            min-width: 150px;
+            color: #4a5568;
+        }
+
+        .field-value {
+            flex: 1;
+            color: #1a202c;
+        }
+
+        /* Floating Action Buttons */
+        .floating-actions {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            z-index: 100;
+        }
+
+        .fab {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            color: white;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .fab::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.3);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+
+        .fab:hover::before {
+            width: 80px;
+            height: 80px;
+        }
+
+        .fab-primary {
+            background: var(--primary-gradient);
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .fab-primary:hover {
+            transform: scale(1.1) rotate(5deg);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.6);
+        }
+
+        .fab-success {
+            background: var(--success-gradient);
+            box-shadow: 0 4px 15px rgba(19, 241, 252, 0.4);
+        }
+
+        .fab-success:hover {
+            transform: scale(1.1) rotate(-5deg);
+            box-shadow: 0 8px 25px rgba(19, 241, 252, 0.6);
+        }
+
+        /* Contract List */
+        .contract-list {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            box-shadow: var(--shadow-xl);
+        }
+
+        .list-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .list-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: white;
+        }
+
+        .search-box {
+            position: relative;
+            width: 300px;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 0.75rem 1rem 0.75rem 2.5rem;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
+            color: white;
+            font-size: 0.875rem;
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        .contract-cards {
+            display: grid;
+            gap: 1rem;
+        }
+
+        .contract-card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .contract-card:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateX(5px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .contract-info {
+            flex: 1;
+        }
+
+        .contract-name {
+            font-weight: 600;
+            color: white;
+            margin-bottom: 0.25rem;
+        }
+
+        .contract-details {
+            display: flex;
+            gap: 1rem;
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 0.875rem;
+        }
+
+        .contract-status {
+            padding: 0.375rem 0.75rem;
+            border-radius: 999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .status-draft {
+            background: rgba(156, 163, 175, 0.2);
+            color: #9ca3af;
+        }
+
+        .status-pending {
+            background: rgba(249, 212, 35, 0.2);
+            color: #f9d423;
+        }
+
+        .status-approved {
+            background: rgba(19, 241, 252, 0.2);
+            color: #13f1fc;
+        }
+
+        .status-completed {
+            background: rgba(16, 185, 129, 0.2);
+            color: #10b981;
+        }
+
+        /* Alert Banner */
+        .alert-banner {
+            background: var(--warning-gradient);
+            border-radius: 16px;
+            padding: 1rem 1.5rem;
+            margin-bottom: 2rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            animation: slideDown 0.5s ease;
+        }
+
+        @keyframes slideDown {
+            from {
+                transform: translateY(-20px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .alert-icon {
+            font-size: 1.5rem;
+        }
+
+        .alert-content {
+            flex: 1;
+            color: white;
+        }
+
+        .alert-title {
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+
+        .alert-message {
+            font-size: 0.875rem;
+            opacity: 0.9;
+        }
+
+        .alert-action {
+            padding: 0.5rem 1rem;
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 8px;
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .alert-action:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .split-layout {
+                grid-template-columns: 1fr;
+            }
+
+            .pipeline {
+                flex-wrap: wrap;
+            }
+
+            .pipeline-stage {
+                flex: 0 0 50%;
+                margin-bottom: 1rem;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+
+            .header {
+                flex-direction: column;
+                gap: 1rem;
+            }
+
+            .header-stats {
+                width: 100%;
+                justify-content: space-around;
+            }
+
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .search-box {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Animated Background -->
+    <div class="bg-animation">
+        <div class="geometric-shape shape-1"></div>
+        <div class="geometric-shape shape-2"></div>
+        <!-- Particles -->
+        <script>
+            for(let i = 0; i < 50; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.style.left = Math.random() * 100 + '%';
+                particle.style.animationDelay = Math.random() * 15 + 's';
+                particle.style.animationDuration = (15 + Math.random() * 10) + 's';
+                document.querySelector('.bg-animation').appendChild(particle);
+            }
+        </script>
+    </div>
+
+    <!-- Main Container -->
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <h1 class="page-title">契約書管理</h1>
+            <div class="header-stats">
+                <div class="stat-item">
+                    <div class="stat-value">23</div>
+                    <div class="stat-label">処理中</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value">156</div>
+                    <div class="stat-label">今月作成</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value">8</div>
+                    <div class="stat-label">承認待ち</div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Alert Banner -->
+        <div class="alert-banner">
+            <div class="alert-icon">⚠️</div>
+            <div class="alert-content">
+                <div class="alert-title">契約更新アラート</div>
+                <div class="alert-message">15件の契約が今月中に更新期限を迎えます</div>
+            </div>
+            <button class="alert-action">確認する</button>
+        </div>
+
+        <!-- Contract Status Pipeline -->
+        <div class="pipeline-container">
+            <div class="pipeline">
+                <div class="pipeline-stage completed">
+                    <div class="stage-icon">📝</div>
+                    <div class="stage-name">現場作成中</div>
+                    <div class="stage-count">5</div>
+                </div>
+                <div class="pipeline-stage completed">
+                    <div class="stage-icon">✍️</div>
+                    <div class="stage-name">事業部長押印待ち</div>
+                    <div class="stage-count">8</div>
+                </div>
+                <div class="pipeline-stage active">
+                    <div class="stage-icon">📤</div>
+                    <div class="stage-name">総務提出済</div>
+                    <div class="stage-count">12</div>
+                </div>
+                <div class="pipeline-stage">
+                    <div class="stage-icon">✅</div>
+                    <div class="stage-name">本人返却済</div>
+                    <div class="stage-count">156</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Split Layout -->
+        <div class="split-layout">
+            <!-- Contract Form -->
+            <div class="contract-form">
+                <div class="form-header">
+                    <h2 class="form-title">契約書作成</h2>
+                    <div class="form-actions">
+                        <div class="icon-btn">📋</div>
+                        <div class="icon-btn">⚙️</div>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <div class="section-label">基本情報</div>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label class="form-label required">従業員選択</label>
+                            <select class="form-input">
+                                <option>田中 太郎 (EMP-2024-001)</option>
+                                <option>佐藤 花子 (EMP-2024-002)</option>
+                                <option>鈴木 一郎 (EMP-2024-003)</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">枝番</label>
+                            <input type="text" class="form-input" value="004" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label required">契約種別</label>
+                            <select class="form-input">
+                                <option>無期雇用契約</option>
+                                <option selected>有期雇用契約</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">有期契約基準日</label>
+                            <input type="date" class="form-input" value="2024-11-01">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <div class="section-label">契約期間</div>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label class="form-label required">契約開始日</label>
+                            <input type="date" class="form-input" value="2024-11-01">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label required">契約終了日</label>
+                            <input type="date" class="form-input" value="2025-10-31">
+                        </div>
+                        <div class="form-group full-width">
+                            <label class="form-label">契約更新</label>
+                            <div style="display: flex; gap: 1rem; margin-top: 0.5rem;">
+                                <label style="color: white; display: flex; align-items: center; gap: 0.5rem;">
+                                    <input type="radio" name="renewal" checked> 更新有り
+                                </label>
+                                <label style="color: white; display: flex; align-items: center; gap: 0.5rem;">
+                                    <input type="radio" name="renewal"> 更新無し
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <div class="section-label">業務内容</div>
+                    <div class="form-group">
+                        <label class="form-label required">業務内容</label>
+                        <textarea class="form-input form-textarea" placeholder="具体的な業務内容を記載してください">営業部における営業活動全般
+・新規顧客開拓
+・既存顧客のフォローアップ
+・提案書作成および商談対応
+・営業報告書の作成</textarea>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <div class="section-label">承認情報</div>
+                    <div class="form-group">
+                        <label class="form-label required">承認番号</label>
+                        <div class="approval-input-group">
+                            <input type="text" class="form-input approval-input" placeholder="承認番号を入力または生成">
+                            <button class="generate-btn">自動生成</button>
+                        </div>
+                    </div>
+                    <div class="form-grid" style="margin-top: 1rem;">
+                        <div class="form-group">
+                            <label class="form-label">ステータス</label>
+                            <select class="form-input">
+                                <option selected>現場作成中</option>
+                                <option>事業部長押印待ち</option>
+                                <option>総務提出済</option>
+                                <option>本人返却済</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">作成日</label>
+                            <input type="date" class="form-input" value="2024-11-05">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PDF Preview -->
+            <div class="pdf-preview">
+                <div class="preview-header">
+                    <h2 class="preview-title">プレビュー</h2>
+                    <div class="preview-controls">
+                        <div class="icon-btn">🔍</div>
+                        <div class="icon-btn">⬇️</div>
+                        <div class="icon-btn">🖨️</div>
+                    </div>
+                </div>
+
+                <div class="pdf-viewer">
+                    <div class="pdf-page">
+                        <div class="contract-header">
+                            <h1 class="contract-title">雇用契約書</h1>
+                            <p class="contract-subtitle">Contract of Employment</p>
+                        </div>
+
+                        <div class="contract-body">
+                            <div class="contract-section">
+                                <h3>契約者情報</h3>
+                                <div class="contract-field">
+                                    <span class="field-label">氏名：</span>
+                                    <span class="field-value">田中 太郎</span>
+                                </div>
+                                <div class="contract-field">
+                                    <span class="field-label">従業員番号：</span>
+                                    <span class="field-value">EMP-2024-001-004</span>
+                                </div>
+                                <div class="contract-field">
+                                    <span class="field-label">所属部門：</span>
+                                    <span class="field-value">営業部</span>
+                                </div>
+                            </div>
+
+                            <div class="contract-section">
+                                <h3>契約内容</h3>
+                                <div class="contract-field">
+                                    <span class="field-label">契約期間：</span>
+                                    <span class="field-value">2024年11月1日 ～ 2025年10月31日</span>
+                                </div>
+                                <div class="contract-field">
+                                    <span class="field-label">契約種別：</span>
+                                    <span class="field-value">有期雇用契約</span>
+                                </div>
+                                <div class="contract-field">
+                                    <span class="field-label">更新：</span>
+                                    <span class="field-value">有り</span>
+                                </div>
+                            </div>
+
+                            <div class="contract-section">
+                                <h3>勤務条件</h3>
+                                <div class="contract-field">
+                                    <span class="field-label">勤務時間：</span>
+                                    <span class="field-value">9:00 ～ 18:00（休憩 12:00～13:00）</span>
+                                </div>
+                                <div class="contract-field">
+                                    <span class="field-label">勤務場所：</span>
+                                    <span class="field-value">本社オフィス、渋谷支店</span>
+                                </div>
+                                <div class="contract-field">
+                                    <span class="field-label">時給：</span>
+                                    <span class="field-value">¥2,500</span>
+                                </div>
+                            </div>
+
+                            <div class="contract-section">
+                                <h3>交通費</h3>
+                                <div class="contract-field">
+                                    <span class="field-label">ルート：</span>
+                                    <span class="field-value">自宅 → 本社</span>
+                                </div>
+                                <div class="contract-field">
+                                    <span class="field-label">往復金額：</span>
+                                    <span class="field-value">¥540/日</span>
+                                </div>
+                                <div class="contract-field">
+                                    <span class="field-label">月額定期：</span>
+                                    <span class="field-value">¥16,200</span>
+                                </div>
+                            </div>
+
+                            <div class="contract-section">
+                                <h3>承認情報</h3>
+                                <div class="contract-field">
+                                    <span class="field-label">承認番号：</span>
+                                    <span class="field-value">APV-2024-11-0523</span>
+                                </div>
+                                <div class="contract-field">
+                                    <span class="field-label">作成日：</span>
+                                    <span class="field-value">2024年11月5日</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Contract List -->
+        <div class="contract-list">
+            <div class="list-header">
+                <h3 class="list-title">最近の契約書</h3>
+                <div class="search-box">
+                    <span class="search-icon">🔍</span>
+                    <input type="text" class="search-input" placeholder="契約書を検索...">
+                </div>
+            </div>
+
+            <div class="contract-cards">
+                <div class="contract-card">
+                    <div class="contract-info">
+                        <div class="contract-name">田中 太郎 - 雇用契約書</div>
+                        <div class="contract-details">
+                            <span>EMP-2024-001-004</span>
+                            <span>2024/11/01 - 2025/10/31</span>
+                            <span>承認番号: APV-2024-11-0523</span>
+                        </div>
+                    </div>
+                    <span class="contract-status status-pending">事業部長押印待ち</span>
+                </div>
+
+                <div class="contract-card">
+                    <div class="contract-info">
+                        <div class="contract-name">佐藤 花子 - 雇用契約書</div>
+                        <div class="contract-details">
+                            <span>EMP-2024-002-002</span>
+                            <span>2024/10/01 - 2025/09/30</span>
+                            <span>承認番号: APV-2024-10-1234</span>
+                        </div>
+                    </div>
+                    <span class="contract-status status-approved">総務提出済</span>
+                </div>
+
+                <div class="contract-card">
+                    <div class="contract-info">
+                        <div class="contract-name">鈴木 一郎 - 雇用契約書</div>
+                        <div class="contract-details">
+                            <span>EMP-2024-003-001</span>
+                            <span>2024/09/01 - 2025/08/31</span>
+                            <span>承認番号: APV-2024-09-5678</span>
+                        </div>
+                    </div>
+                    <span class="contract-status status-completed">本人返却済</span>
+                </div>
+
+                <div class="contract-card">
+                    <div class="contract-info">
+                        <div class="contract-name">山田 美咲 - 雇用契約書</div>
+                        <div class="contract-details">
+                            <span>EMP-2024-004-003</span>
+                            <span>2024/11/15 - 2025/11/14</span>
+                            <span>承認番号: 未設定</span>
+                        </div>
+                    </div>
+                    <span class="contract-status status-draft">現場作成中</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Floating Action Buttons -->
+    <div class="floating-actions">
+        <button class="fab fab-success">💾</button>
+        <button class="fab fab-primary">📄</button>
+    </div>
+</body>
+</html>
