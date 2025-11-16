@@ -2,6 +2,10 @@
   "name": "employee-db",
   "private": true,
   "packageManager": "pnpm@10.19.0",
+  "engines": {
+    "node": ">=22.16.0",
+    "pnpm": ">=10.19.0"
+  },
   "scripts": {
     "dev": "pnpm --filter @acme/nextjs dev",
     "dev:next": "pnpm --filter @acme/nextjs dev",

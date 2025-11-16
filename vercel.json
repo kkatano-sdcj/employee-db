@@ -1,0 +1,8 @@
+{
+  "buildCommand": "pnpm --filter @acme/nextjs build",
+  "outputDirectory": "apps/nextjs/.next",
+  "installCommand": "corepack enable && corepack prepare pnpm@10.19.0 --activate && pnpm install",
+  "framework": "nextjs",
+  "rootDirectory": "apps/nextjs"
+}
+
