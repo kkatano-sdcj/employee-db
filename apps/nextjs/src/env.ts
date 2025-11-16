@@ -1,4 +1,19 @@
+import { existsSync } from "node:fs";
+import path from "node:path";
+import { config } from "dotenv";
 import { z } from "zod";
+
+const candidateEnvPaths = [
+  path.join(process.cwd(), ".env"),
+  path.join(process.cwd(), "..", ".env"),
+  path.join(process.cwd(), "..", "..", ".env"),
+];
+
+for (const envPath of candidateEnvPaths) {
+  if (existsSync(envPath)) {
+    config({ path: envPath, override: false });
+  }
+}
 
 const envSchema = z.object({
   DATABASE_URL: z.string().min(1, "DATABASE_URL is required"),
