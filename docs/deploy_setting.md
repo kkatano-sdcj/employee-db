@@ -55,7 +55,7 @@ Vercelの設定で`Next.js`を選択してください。
 {
   "buildCommand": "pnpm --filter @acme/nextjs build",
   "outputDirectory": "apps/nextjs/.next",
-  "installCommand": "corepack enable && corepack prepare pnpm@10.19.0 --activate && pnpm install",
+  "installCommand": "corepack enable && corepack use pnpm@10.19.0 && pnpm install",
   "framework": "nextjs"
 }
 ```
@@ -98,7 +98,7 @@ Vercelの設定で`Next.js`を選択してください。
 {
   "buildCommand": "pnpm --filter @acme/nextjs build",
   "outputDirectory": "apps/nextjs/.next",
-  "installCommand": "corepack enable && corepack prepare pnpm@10.19.0 --activate && pnpm install",
+  "installCommand": "corepack enable && corepack use pnpm@10.19.0 && pnpm install",
   "framework": "nextjs"
 }
 ```
