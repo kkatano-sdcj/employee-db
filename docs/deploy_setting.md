@@ -55,13 +55,12 @@ Vercelの設定で`Next.js`を選択してください。
 {
   "buildCommand": "pnpm --filter @acme/nextjs build",
   "outputDirectory": "apps/nextjs/.next",
-  "installCommand": "pnpm install",
-  "framework": "nextjs",
-  "rootDirectory": "apps/nextjs"
+  "installCommand": "corepack enable && corepack prepare pnpm@10.19.0 --activate && pnpm install",
+  "framework": "nextjs"
 }
 ```
 
-ただし、Vercelのダッシュボードで`Root Directory`を`apps/nextjs`に設定すれば、他の設定は自動検出されます。
+**重要**: `rootDirectory`は`vercel.json`には含めません。Vercelのダッシュボードで`Root Directory`を`apps/nextjs`に設定してください。これにより、他の設定も正しく動作します。
 
 ## Vercelダッシュボードでの設定手順
 
@@ -100,10 +99,11 @@ Vercelの設定で`Next.js`を選択してください。
   "buildCommand": "pnpm --filter @acme/nextjs build",
   "outputDirectory": "apps/nextjs/.next",
   "installCommand": "corepack enable && corepack prepare pnpm@10.19.0 --activate && pnpm install",
-  "framework": "nextjs",
-  "rootDirectory": "apps/nextjs"
+  "framework": "nextjs"
 }
 ```
+
+**注意**: `rootDirectory`は`vercel.json`には含めません。Vercelのダッシュボードの設定で指定してください。
 
 `installCommand`で`corepack`を使用してpnpmのバージョンを明示的に指定することで、Vercelのビルド環境で正しいバージョンのpnpmが使用されます。
 
