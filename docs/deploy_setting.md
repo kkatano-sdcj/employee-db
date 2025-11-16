@@ -55,7 +55,7 @@ Vercelの設定で`Next.js`を選択してください。
 {
   "buildCommand": "pnpm --filter @acme/nextjs build",
   "outputDirectory": "apps/nextjs/.next",
-  "installCommand": "corepack enable && corepack use pnpm@10.19.0 && pnpm install",
+  "installCommand": "npm install -g pnpm@10.19.0 && pnpm install",
   "framework": "nextjs"
 }
 ```
@@ -98,14 +98,14 @@ Vercelの設定で`Next.js`を選択してください。
 {
   "buildCommand": "pnpm --filter @acme/nextjs build",
   "outputDirectory": "apps/nextjs/.next",
-  "installCommand": "corepack enable && corepack use pnpm@10.19.0 && pnpm install",
+  "installCommand": "npm install -g pnpm@10.19.0 && pnpm install",
   "framework": "nextjs"
 }
 ```
 
 **注意**: `rootDirectory`は`vercel.json`には含めません。Vercelのダッシュボードの設定で指定してください。
 
-`installCommand`で`corepack`を使用してpnpmのバージョンを明示的に指定することで、Vercelのビルド環境で正しいバージョンのpnpmが使用されます。
+`installCommand`で`npm install -g pnpm@10.19.0`を使用してpnpmのバージョンを明示的にインストールすることで、Vercelのビルド環境で正しいバージョンのpnpmが使用されます。
 
 #### 解決策3: `package.json`に`engines`フィールドを追加
 
