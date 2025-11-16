@@ -9,15 +9,15 @@ Root Directoryが`apps/nextjs`に設定されている場合でも、`installCom
 
 **推奨設定**:
 ```
-corepack enable && corepack prepare pnpm@10.19.0 --activate && pnpm install
+corepack enable && corepack prepare pnpm@10.19.0 --activate && corepack pnpm install
 ```
 
 **動作の仕組み**:
 1. `corepack enable`: Node.jsのcorepackを有効化します
-2. `corepack prepare pnpm@10.19.0 --activate`: 指定したバージョンのpnpm（10.19.0）を準備して有効化します
-3. `pnpm install`: 有効化されたpnpmを使用して依存関係をインストールします
+2. `corepack prepare pnpm@10.19.0 --activate`: 指定したバージョンのpnpm（10.19.0）を準備します
+3. `corepack pnpm install`: corepackが管理するpnpmを直接使用して依存関係をインストールします。これにより、`package.json`の`packageManager`フィールドに基づいて適切なバージョン（10.19.0）が確実に使用されます
 
-**注意**: `corepack enable`だけでは、Vercelのビルド環境で古いバージョンのpnpmが使われる場合があります。`corepack prepare`を明示的に実行することで、確実に正しいバージョンのpnpmが使用されます。
+**根本原因**: `corepack prepare --activate`で準備しても、シェルの`pnpm`コマンドが古いバージョンを参照している可能性があります。`corepack pnpm`を使うことで、corepackが管理するpnpmを直接実行でき、確実に正しいバージョンが使用されます。
 
 ### Build Command
 Root Directoryが`apps/nextjs`に設定されている場合：
@@ -86,7 +86,7 @@ Vercelの設定で`Next.js`を選択してください。
 {
   "buildCommand": "next build",
   "outputDirectory": ".next",
-  "installCommand": "corepack enable && corepack prepare pnpm@10.19.0 --activate && pnpm install",
+  "installCommand": "corepack enable && corepack prepare pnpm@10.19.0 --activate && corepack pnpm install",
   "framework": "nextjs"
 }
 ```
@@ -95,7 +95,7 @@ Vercelの設定で`Next.js`を選択してください。
 - `rootDirectory`は`vercel.json`には含めません。Vercelのダッシュボードで`Root Directory`を`apps/nextjs`に設定してください。
 - Root Directoryが`apps/nextjs`に設定されている場合、`buildCommand`はそのディレクトリから実行されるため、`next build`だけで十分です。
 - `outputDirectory`も`apps/nextjs`ディレクトリからの相対パス（`.next`）を指定します。
-- `installCommand`は`corepack enable && corepack prepare pnpm@10.19.0 --activate && pnpm install`を指定します。`corepack enable`でcorepackを有効化し、`corepack prepare`で明示的にpnpm@10.19.0を準備して有効化します。これにより、`engines.pnpm`フィールドの要件（`>=10.19.0`）も満たされます。
+- `installCommand`は`corepack enable && corepack prepare pnpm@10.19.0 --activate && corepack pnpm install`を指定します。`corepack enable`でcorepackを有効化し、`corepack prepare`で明示的にpnpm@10.19.0を準備します。`corepack pnpm install`により、corepackが管理するpnpmを直接使用して、確実に正しいバージョン（10.19.0）が使用されます。これにより、`engines.pnpm`フィールドの要件（`>=10.19.0`）も満たされます。
 
 ## Vercelダッシュボードでの設定手順
 
@@ -103,7 +103,7 @@ Vercelの設定で`Next.js`を選択してください。
    - **Root Directory** を `apps/nextjs` に設定
    - **Framework Preset** を `Next.js` に設定
 2. プロジェクト設定 → **Build and Output Settings**
-   - **Install Command**: `corepack enable && corepack prepare pnpm@10.19.0 --activate && pnpm install` を設定（`vercel.json`で指定している場合は自動検出されます）
+   - **Install Command**: `corepack enable && corepack prepare pnpm@10.19.0 --activate && corepack pnpm install` を設定（`vercel.json`で指定している場合は自動検出されます）
    - **Build Command**: `next build` を設定（`vercel.json`で指定している場合は自動検出されます）
    - **Output Directory**: `.next` を設定（`vercel.json`で指定している場合は自動検出されます）
 3. プロジェクト設定 → **Environment Variables**
@@ -139,14 +139,14 @@ Vercelの設定で`Next.js`を選択してください。
 {
   "buildCommand": "next build",
   "outputDirectory": ".next",
-  "installCommand": "corepack enable && corepack prepare pnpm@10.19.0 --activate && pnpm install",
+  "installCommand": "corepack enable && corepack prepare pnpm@10.19.0 --activate && corepack pnpm install",
   "framework": "nextjs"
 }
 ```
 
 **注意**: `rootDirectory`は`vercel.json`には含めません。Vercelのダッシュボードの設定で指定してください。
 
-**`installCommand`について**: `corepack enable && corepack prepare pnpm@10.19.0 --activate && pnpm install`を指定することで、明示的にpnpm@10.19.0を準備して有効化します。`corepack enable`だけではVercelのビルド環境で古いバージョンのpnpmが使われる場合があるため、`corepack prepare`を明示的に実行することで、確実に正しいバージョンのpnpmが使用されます。これにより、`engines.pnpm`フィールドの要件（`>=10.19.0`）も満たされます。
+**`installCommand`について**: `corepack enable && corepack prepare pnpm@10.19.0 --activate && corepack pnpm install`を指定することで、明示的にpnpm@10.19.0を準備し、corepackが管理するpnpmを直接使用します。`corepack prepare --activate`で準備しても、シェルの`pnpm`コマンドが古いバージョンを参照している可能性があるため、`corepack pnpm`を使うことで、確実に正しいバージョンのpnpmが使用されます。これにより、`engines.pnpm`フィールドの要件（`>=10.19.0`）も満たされます。
 
 `buildCommand`はRoot Directoryが`apps/nextjs`に設定されている場合、そのディレクトリから実行されるため、`next build`だけで十分です。Vercelが自動的にNext.jsのバージョンを検出します。
 
