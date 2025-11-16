@@ -5,9 +5,14 @@
 ## Vercel設定値
 
 ### Install Command
+Root Directoryが`apps/nextjs`に設定されている場合でも、`installCommand`はプロジェクトルートから実行されます。
+
+**推奨設定**:
 ```
-pnpm install
+corepack enable && pnpm install
 ```
+
+`corepack enable`により、`package.json`の`packageManager`フィールド（`pnpm@10.19.0`）が読み取られ、適切なバージョンのpnpmが自動的に有効化されます。
 
 ### Build Command
 Root Directoryが`apps/nextjs`に設定されている場合：
@@ -41,6 +46,16 @@ apps/nextjs/.next
 apps/nextjs
 ```
 
+**Root Directoryの動作について**:
+- Root Directoryが`apps/nextjs`に設定されている場合、Vercelは`apps/nextjs`ディレクトリをプロジェクトのルートとして扱います
+- **Install Command**: プロジェクトルート（`/vercel/path0`）から実行されます。モノレポ全体の依存関係をインストールするため、ルートの`package.json`と`pnpm-workspace.yaml`が使用されます
+- **Build Command**: `apps/nextjs`ディレクトリから実行されます。そのため、`next build`だけでNext.jsアプリをビルドできます
+- **Output Directory**: `apps/nextjs`ディレクトリからの相対パス（`.next`）を指定します
+
+**設定方法**:
+- Vercelダッシュボード → プロジェクト設定 → **General** → **Root Directory** に `apps/nextjs` を設定
+- **注意**: `vercel.json`には`rootDirectory`フィールドを含めません（Vercelのスキーマに含まれていないため）
+
 ## 補足事項
 
 ### 環境変数の設定
@@ -66,6 +81,7 @@ Vercelの設定で`Next.js`を選択してください。
 {
   "buildCommand": "next build",
   "outputDirectory": ".next",
+  "installCommand": "corepack enable && pnpm install",
   "framework": "nextjs"
 }
 ```
@@ -74,15 +90,21 @@ Vercelの設定で`Next.js`を選択してください。
 - `rootDirectory`は`vercel.json`には含めません。Vercelのダッシュボードで`Root Directory`を`apps/nextjs`に設定してください。
 - Root Directoryが`apps/nextjs`に設定されている場合、`buildCommand`はそのディレクトリから実行されるため、`next build`だけで十分です。
 - `outputDirectory`も`apps/nextjs`ディレクトリからの相対パス（`.next`）を指定します。
-- `installCommand`は削除しました。Vercelは`package.json`の`packageManager`フィールド（`pnpm@10.19.0`）を自動的に認識して、適切なバージョンのpnpmを使用します。これにより、Next.jsのバージョン検出も正しく動作します。
+- `installCommand`は`corepack enable && pnpm install`を指定します。`corepack enable`により、`package.json`の`packageManager`フィールド（`pnpm@10.19.0`）が読み取られ、適切なバージョンのpnpmが自動的に有効化されます。これにより、`engines.pnpm`フィールドの要件も満たされます。
 
 ## Vercelダッシュボードでの設定手順
 
 1. プロジェクト設定 → **General**
-2. **Root Directory** を `apps/nextjs` に設定
-3. **Framework Preset** を `Next.js` に設定
-4. **Build and Output Settings** は自動検出されることを確認
-5. **Environment Variables** に必要な環境変数を追加
+   - **Root Directory** を `apps/nextjs` に設定
+   - **Framework Preset** を `Next.js` に設定
+2. プロジェクト設定 → **Build and Output Settings**
+   - **Install Command**: `corepack enable && pnpm install` を設定（`vercel.json`で指定している場合は自動検出されます）
+   - **Build Command**: `next build` を設定（`vercel.json`で指定している場合は自動検出されます）
+   - **Output Directory**: `.next` を設定（`vercel.json`で指定している場合は自動検出されます）
+3. プロジェクト設定 → **Environment Variables**
+   - 必要な環境変数を追加（`DATABASE_URL`、`AUTH_SECRET`など）
+
+**注意**: `vercel.json`で設定を指定している場合、Vercelダッシュボードの設定は自動的に上書きされます。ただし、**Root Directory**は`vercel.json`には含めないため、必ずダッシュボードで設定してください。
 
 これでデプロイが可能になります。
 
@@ -112,13 +134,14 @@ Vercelの設定で`Next.js`を選択してください。
 {
   "buildCommand": "next build",
   "outputDirectory": ".next",
+  "installCommand": "corepack enable && pnpm install",
   "framework": "nextjs"
 }
 ```
 
 **注意**: `rootDirectory`は`vercel.json`には含めません。Vercelのダッシュボードの設定で指定してください。
 
-**`installCommand`について**: Root Directoryが`apps/nextjs`に設定されている場合、`installCommand`を明示的に指定すると、VercelがNext.jsのバージョンを正しく検出できない場合があります。`package.json`の`packageManager`フィールド（`pnpm@10.19.0`）を指定していれば、Vercelは自動的に適切なバージョンのpnpmを使用します。そのため、`installCommand`は削除することを推奨します。
+**`installCommand`について**: `corepack enable && pnpm install`を指定することで、`package.json`の`packageManager`フィールド（`pnpm@10.19.0`）が読み取られ、適切なバージョンのpnpmが自動的に有効化されます。これにより、`engines.pnpm`フィールドの要件も満たされ、Vercelが自動的に`pnpm install`を実行する際に古いバージョンが使われる問題を回避できます。
 
 `buildCommand`はRoot Directoryが`apps/nextjs`に設定されている場合、そのディレクトリから実行されるため、`next build`だけで十分です。Vercelが自動的にNext.jsのバージョンを検出します。
 
