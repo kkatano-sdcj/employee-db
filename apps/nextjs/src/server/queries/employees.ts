@@ -276,7 +276,7 @@ export async function fetchEmployeeDetail(employeeId: string): Promise<EmployeeD
       })),
   }));
 
-  const contracts = await db`
+  const contracts = (await db`
     SELECT
       id,
       contract_type as "contractType",
@@ -292,9 +292,21 @@ export async function fetchEmployeeDetail(employeeId: string): Promise<EmployeeD
     FROM contracts
     WHERE employee_id = ${employeeId}
     ORDER BY contract_start_date DESC
-  `;
+  `) as Array<{
+    id: string;
+    contractType: string;
+    contractStartDate: Date | string | null;
+    contractEndDate: Date | string | null;
+    hourlyWage: number;
+    hourlyWageNote: string | null;
+    overtimeHourlyWage: number | null;
+    jobDescription: string | null;
+    paidLeaveClause: string | null;
+    status: string;
+    updatedAt: Date | string | null;
+  }>;
 
-  const employmentHistory = await db`
+  const employmentHistory = (await db`
     SELECT
       id,
       event_type as "eventType",
@@ -306,7 +318,15 @@ export async function fetchEmployeeDetail(employeeId: string): Promise<EmployeeD
     FROM employment_history
     WHERE employee_id = ${employeeId}
     ORDER BY effective_date DESC
-  `;
+  `) as Array<{
+    id: string;
+    eventType: string;
+    effectiveDate: Date | string | null;
+    departmentCode: string | null;
+    grade: string | null;
+    hourlyWage: number | null;
+    remarks: string | null;
+  }>;
 
   return {
     employee: employee
@@ -322,19 +342,28 @@ export async function fetchEmployeeDetail(employeeId: string): Promise<EmployeeD
       : null,
     workConditions: workConditionDetails,
     contracts: contracts.map((contract) => ({
-      ...contract,
+      id: contract.id,
+      contractType: contract.contractType,
       contractStartDate: toDateString(contract.contractStartDate as unknown as Date),
       contractEndDate: toDateString(contract.contractEndDate as unknown as Date),
-      updatedAt: toDateTimeString(contract.updatedAt as unknown as Date),
+      hourlyWage: Number(contract.hourlyWage ?? 0),
+      hourlyWageNote: contract.hourlyWageNote ?? undefined,
       overtimeHourlyWage: contract.overtimeHourlyWage
         ? Number(contract.overtimeHourlyWage)
         : null,
-      hourlyWage: Number(contract.hourlyWage ?? 0),
+      jobDescription: contract.jobDescription ?? undefined,
+      paidLeaveClause: contract.paidLeaveClause ?? undefined,
+      status: contract.status,
+      updatedAt: toDateTimeString(contract.updatedAt as unknown as Date),
     })),
     employmentHistory: employmentHistory.map((history) => ({
-      ...history,
+      id: history.id,
+      eventType: history.eventType,
       effectiveDate: toDateString(history.effectiveDate as unknown as Date),
+      departmentCode: history.departmentCode ?? undefined,
+      grade: history.grade ?? undefined,
       hourlyWage: history.hourlyWage ? Number(history.hourlyWage) : null,
+      remarks: history.remarks ?? undefined,
     })),
   };
 }
