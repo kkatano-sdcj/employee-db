@@ -5,19 +5,19 @@
 **Status**: Draft  
 **Input**: User description: "@spec_draft.md の内容を元に要件定義を作成してください。"
 
-## User Scenarios & Testing *(mandatory)*
+## ユーザーシナリオとテスト *(必須)*
 
 ### User Story 1 - 従業員情報の登録と管理 (Priority: P1)
 
 統括人事管理者が新規パート従業員の基本情報（氏名、生年月日、入社日、雇用区分など）を登録し、勤務時間帯、休憩時間帯、勤務場所、交通費などの勤務条件を設定できる。
 
-**Why this priority**: システムの基盤となる機能であり、他のすべての機能が従業員情報に依存するため、最優先で実装する必要があります。
+**優先度の理由**: システムの基盤となる機能であり、他のすべての機能が従業員情報に依存するため、最優先で実装する必要があります。
 
-**Independent Test**: 統括人事管理者が新規従業員を登録し、勤務条件を設定して保存できることを確認します。この機能単体で、従業員マスターの基本機能が動作することを検証できます。
+**独立テスト**: 統括人事管理者が新規従業員を登録し、勤務条件を設定して保存できることを確認します。この機能単体で、従業員マスターの基本機能が動作することを検証できます。
 
-**Acceptance Scenarios**:
+**受け入れシナリオ**:
 
-1. **Given** 統括人事管理者がログインしている, **When** 新規従業員の基本情報（氏名、生年月日、入社日、雇用区分）を入力して保存する, **Then** 従業員情報が正しく登録され、一覧画面に表示される
+1. **Given** 統括人事管理者がログインしている, **When** 新規従業員の基本情報（氏名、生年月日、入社日、雇用区分、部門コード）を入力して保存する, **Then** 従業員情報が正しく登録され、一覧画面に表示される
 2. **Given** 従業員が登録されている, **When** 複数の勤務時間帯（例：09:00-12:00、13:00-18:00）を設定する, **Then** すべての勤務時間帯が正しく保存され、表示される
 3. **Given** 従業員が登録されている, **When** 複数の勤務場所と交通費情報（ルート別、往復金額、月額定期、上限金額）を設定する, **Then** すべての情報が正しく保存され、契約書出力時に反映される
 4. **Given** 従業員情報が登録されている, **When** 情報を更新する, **Then** 最終更新日時と更新者が記録される
@@ -28,11 +28,11 @@
 
 統括人事管理者が雇用契約書を作成し、PDF形式で出力できる。契約書には枝番が自動付与され、承認番号を管理できる。
 
-**Why this priority**: 雇用契約書からの手入力作業を廃止するという主要目的を達成するための核心機能です。法的文書としての契約書を正確に出力できることが必須です。
+**優先度の理由**: 雇用契約書からの手入力作業を廃止するという主要目的を達成するための核心機能です。法的文書としての契約書を正確に出力できることが必須です。
 
-**Independent Test**: 統括人事管理者が従業員の契約情報を入力し、契約書をPDF形式で出力できることを確認します。出力されたPDFに必要な情報（枝番、承認番号、勤務条件、交通費など）がすべて含まれていることを検証できます。
+**独立テスト**: 統括人事管理者が従業員の契約情報を入力し、契約書をPDF形式で出力できることを確認します。出力されたPDFに必要な情報（枝番、承認番号、勤務条件、交通費など）がすべて含まれていることを検証できます。
 
-**Acceptance Scenarios**:
+**受け入れシナリオ**:
 
 1. **Given** 従業員情報と勤務条件が登録されている, **When** 雇用契約書を作成してPDF出力する, **Then** 契約期間、勤務時間、勤務場所、時給、交通費などの情報が含まれたPDFが生成される
 2. **Given** 契約書が作成されている, **When** 契約書を出力する, **Then** 社員番号に枝番が自動付与される
@@ -45,13 +45,13 @@
 
 統括人事管理者が給与計算に必要なデータ（時給、通勤費、社会保険フラグ、各種手当）をCSV形式で抽出できる。
 
-**Why this priority**: 給与支払データ作成の効率化という主要目的を達成するための核心機能です。手入力作業を削減し、正確性を向上させるために必須です。
+**優先度の理由**: 給与支払データ作成の効率化という主要目的を達成するための核心機能です。手入力作業を削減し、正確性を向上させるために必須です。
 
-**Independent Test**: 統括人事管理者が指定した日時点での給与計算用データをCSV形式で抽出できることを確認します。抽出されたCSVに時給、通勤費、社会保険フラグ、各種手当が含まれていることを検証できます。
+**独立テスト**: 統括人事管理者が指定した日時点での給与計算用データをCSV形式で抽出できることを確認します。抽出されたCSVに時給、通勤費、社会保険フラグ、各種手当が含まれていることを検証できます。
 
-**Acceptance Scenarios**:
+**受け入れシナリオ**:
 
-1. **Given** 従業員情報と給与情報が登録されている, **When** 給与計算用CSVを抽出する, **Then** 時給情報（複数レート対応、適用期間付き）、通勤費（ルート別）、社会保険加入フラグ、各種手当が含まれたCSVが生成される
+1. **Given** 従業員情報と給与情報が登録されている, **When** 給与計算用CSVを抽出する, **Then** 時給情報（複数レート対応、適用期間付き）、残業時給、通勤費（ルート別）、社会保険加入フラグ、各種手当が含まれたCSVが生成される
 2. **Given** 複数の従業員が登録されている, **When** 指定日時点での給与計算用CSVを抽出する, **Then** その時点で有効な情報のみが抽出される
 3. **Given** 抽出項目を選択できる, **When** 必要な項目のみを選択してCSV抽出する, **Then** 選択した項目のみが含まれたCSVが生成される
 
@@ -61,11 +61,11 @@
 
 契約期限が近づいた際に、統括人事管理者と現場マネージャーに自動通知が送られる。
 
-**Why this priority**: 契約更新の見逃しを防ぎ、継続的な雇用管理を支援する重要な機能です。ただし、基本機能が動作した後に実装することで、段階的に価値を提供できます。
+**優先度の理由**: 契約更新の見逃しを防ぎ、継続的な雇用管理を支援する重要な機能です。ただし、基本機能が動作した後に実装することで、段階的に価値を提供できます。
 
-**Independent Test**: 契約期限の30日前、14日前、7日前に自動通知が送られることを確認します。通知対象者が正しく設定され、アラート状態が管理されることを検証できます。
+**独立テスト**: 契約期限の30日前、14日前、7日前に自動通知が送られることを確認します。通知対象者が正しく設定され、アラート状態が管理されることを検証できます。
 
-**Acceptance Scenarios**:
+**受け入れシナリオ**:
 
 1. **Given** 契約期限が30日前になった, **When** アラートシステムが動作する, **Then** 統括人事管理者と担当部署の現場マネージャーに通知が送られる
 2. **Given** 契約期限が14日前になった, **When** アラートシステムが動作する, **Then** リマインダー通知が送られる
@@ -78,16 +78,17 @@
 
 統括人事管理者と現場マネージャーが従業員を検索し、一覧表示できる。勤務場所やステータスでフィルタリング可能。
 
-**Why this priority**: 登録された従業員情報を効率的に閲覧・管理するための基本機能です。検索とフィルタリングにより、大量のデータから必要な情報を素早く見つけられます。
+**優先度の理由**: 登録された従業員情報を効率的に閲覧・管理するための基本機能です。検索とフィルタリングにより、大量のデータから必要な情報を素早く見つけられます。
 
-**Independent Test**: ユーザーが従業員を検索し、勤務場所やステータスでフィルタリングして一覧表示できることを確認します。検索結果が正しく表示され、権限に応じた情報のみが表示されることを検証できます。
+**独立テスト**: ユーザーが従業員を検索し、勤務場所やステータスでフィルタリングして一覧表示できることを確認します。検索結果が正しく表示され、権限に応じた情報のみが表示されることを検証できます。
 
-**Acceptance Scenarios**:
+**受け入れシナリオ**:
 
 1. **Given** 複数の従業員が登録されている, **When** 氏名で検索する, **Then** 該当する従業員が一覧に表示される
 2. **Given** 複数の従業員が登録されている, **When** 勤務場所でフィルタリングする, **Then** 該当する勤務場所の従業員のみが表示される
 3. **Given** 現場マネージャーがログインしている, **When** 従業員一覧を表示する, **Then** 自部門・自拠点の従業員のみが表示される
 4. **Given** 統括人事管理者がログインしている, **When** 従業員一覧を表示する, **Then** すべての従業員が表示される
+5. **Given** 複数の従業員が一覧に表示されている, **When** 複数の従業員をチェックしてステータスを一括変更する, **Then** 選択した従業員のステータスが一括で更新される
 
 ---
 
@@ -95,11 +96,11 @@
 
 複数のユーザーが同じ従業員情報を同時に編集しようとした場合、最初のアクセス者以外は編集できない。
 
-**Why this priority**: データの整合性を保ち、同時編集による競合を防ぐ重要な機能です。ただし、基本機能が動作した後に実装することで、段階的に価値を提供できます。
+**優先度の理由**: データの整合性を保ち、同時編集による競合を防ぐ重要な機能です。ただし、基本機能が動作した後に実装することで、段階的に価値を提供できます。
 
-**Independent Test**: 2人のユーザーが同じ従業員情報に同時にアクセスし、最初のユーザーが編集を開始した場合、2人目のユーザーは編集できないことを確認します。ロックが15分後に自動解放されることも検証できます。
+**独立テスト**: 2人のユーザーが同じ従業員情報に同時にアクセスし、最初のユーザーが編集を開始した場合、2人目のユーザーは編集できないことを確認します。ロックが15分後に自動解放されることも検証できます。
 
-**Acceptance Scenarios**:
+**受け入れシナリオ**:
 
 1. **Given** ユーザーAが従業員情報を編集している, **When** ユーザーBが同じ従業員情報にアクセスする, **Then** ユーザーBは編集できないことを示すメッセージが表示される
 2. **Given** ユーザーAが従業員情報の編集を開始した, **When** 15分が経過する, **Then** ロックが自動解放され、他のユーザーが編集可能になる
@@ -111,18 +112,18 @@
 
 従業員の契約履歴（雇用期間、勤務時間、勤務日数、勤務場所、時給、雇用保険、社会保険）を表示できる。
 
-**Why this priority**: 過去の契約情報を参照するための機能です。基本機能が動作した後に実装することで、段階的に価値を提供できます。
+**優先度の理由**: 過去の契約情報を参照するための機能です。基本機能が動作した後に実装することで、段階的に価値を提供できます。
 
-**Independent Test**: 統括人事管理者が従業員の契約履歴を表示できることを確認します。過去の契約情報が時系列で表示され、必要な情報がすべて含まれていることを検証できます。
+**独立テスト**: 統括人事管理者が従業員の契約履歴を表示できることを確認します。過去の契約情報が時系列で表示され、必要な情報がすべて含まれていることを検証できます。
 
-**Acceptance Scenarios**:
+**受け入れシナリオ**:
 
 1. **Given** 従業員に複数の契約履歴がある, **When** 契約履歴を表示する, **Then** 雇用期間、勤務時間、勤務日数、勤務場所、時給、雇用保険、社会保険が時系列で表示される
 2. **Given** 契約内容が変更された, **When** 契約変更履歴を表示する, **Then** 変更日時、変更項目、変更前値、変更後値、変更理由、更新者、承認者が表示される
 
 ---
 
-### Edge Cases
+### エッジケース
 
 - 複数のユーザーが同時に同じ従業員情報にアクセスした場合、最初のアクセス者以外は編集できない
 - 契約書を再作成する際、既存の承認番号をそのまま使用しようとした場合、新しい承認番号の入力が必須となる
@@ -134,7 +135,7 @@
 - Enterキーを押下した場合、保存されずに次のフィールドに移動する（誤操作防止）
 - 従業員番号を手動入力する際、既存の従業員番号と重複する場合、エラーメッセージが表示され登録が拒否される
 
-## Clarifications
+## 明確化事項
 
 ### Session 2025-01-27
 
@@ -144,92 +145,159 @@
 - Q: 監査ログの保持期間 → A: 7年間（法的要件に準拠）
 - Q: 従業員データの保持期間（退職後） → A: 7年間（法的要件に準拠）
 
-## Requirements *(mandatory)*
+### Session 2025-01-28
 
-### Functional Requirements
+- Q: 雇用開始日と雇用終了日のUI配置 → A: 近い場所に配置する（UI-001として要件化）
+- Q: 役職・雇用形態の必要性 → A: 不要（Out of Scopeに明記、Employment Historyエンティティから除外）
+- Q: 残業時給の必要性 → A: 必要（従業員管理情報.mdに記載、給与・手当タブに表示）
+- Q: 一覧画面からのステータス一括変更 → A: 必要（FR-026として要件化、User Story 5にAcceptance Scenario追加）
+- Q: 銀行口座情報の保存 → A: 不要（Out of Scopeに明記、Assumptionsにも追記）
+- Q: 連絡先情報の保存 → A: 統括としては不要、現場での必要性は検討中（Assumptionsに追記、Out of Scopeにも明記）
+- Q: データベースの部門項目で登録する部門 → A: BPS課、オンサイト課、CC課、PS課の4部署（EmployeeエンティティとEmployment Historyエンティティに反映、FR-001に追加、依存関係に追加）
 
-- **FR-001**: System MUST allow 統括人事管理者 to register new employees with basic information (employee number entered manually, name, date of birth, hire date, employment classification). System MUST validate employee number uniqueness and reject duplicate entries with an error message displayed inline below the employee number field.
-- **FR-025**: System MUST display validation errors inline (directly below the field where the error occurred) with clear, user-friendly error messages in Japanese
-- **FR-002**: System MUST allow users to set multiple working hours (time ranges) for each employee
-- **FR-003**: System MUST allow users to set multiple break hours (time ranges) for each employee
-- **FR-004**: System MUST allow users to set multiple work locations for each employee
-- **FR-005**: System MUST allow users to register transportation expenses by route (round-trip amount, monthly pass, maximum amount)
-- **FR-006**: System MUST generate employment contracts in PDF format with automatic branch number assignment
-- **FR-007**: System MUST require approval number input when creating or recreating employment contracts
-- **FR-008**: System MUST allow users to extract payroll calculation data (hourly wage, transportation expenses, social insurance flag, various allowances) in CSV format
-- **FR-009**: System MUST allow users to extract data at a specified point in time in CSV format with selectable output items
-- **FR-010**: System MUST send automatic alerts 30 days, 14 days, and 7 days before contract expiration. Alerts MUST be delivered via in-app notification center only (no email or SMS). Users MUST be able to view and manage alerts within the application.
-- **FR-011**: System MUST prevent users other than the first accessor from editing the same employee record simultaneously
-- **FR-012**: System MUST display the last update date and time and updater on all screens
-- **FR-013**: System MUST record all contract changes (change date/time, changed items, before/after values, change reason, updater, approver)
-- **FR-014**: System MUST allow users to search employees by name, work location, and status
-- **FR-015**: System MUST restrict access to personal numbers and salary information to 統括人事管理者 and administrators only
-- **FR-016**: System MUST restrict 現場マネージャー access to only their own department/location data
-- **FR-017**: System MUST restrict CSV extraction, contract PDF output, and payroll CSV output to 統括人事管理者 and administrators only
-- **FR-018**: System MUST record all change operations in audit logs (before/after values in JSON format). Audit logs MUST be retained for 7 years to comply with legal requirements (labor relations document retention period).
-- **FR-019**: System MUST prevent saving when Enter key is pressed (move to next field instead)
-- **FR-020**: System MUST automatically release edit locks after 15 minutes
-- **FR-021**: System MUST allow users to manage document submissions and custody items (submission status, return status tracking)
-- **FR-022**: System MUST allow users to view contract history (employment period, working hours, working days, work location, hourly wage, employment insurance, social insurance)
-- **FR-023**: System MUST invalidate existing contracts when contract content is changed and require new contract creation
-- **FR-024**: System MUST automatically release employment termination alerts when contract documents are output
+## 要件 *(必須)*
 
-### Key Entities *(include if feature involves data)*
+### 機能要件
 
-- **Employee**: Represents a part-time employee with basic information (employee number entered manually with uniqueness constraint, branch number, name, date of birth, nationality, hire date, retirement date, employment classification, status, department code, personal number). Includes last update date/time and updater information. Employee number must be unique across all employees.
-- **Employment History**: Represents employment and personnel history including period, department, position, grade, paid leave, salary reference, work location history, and working days type (weekly/monthly/shift). Includes last update date/time and updater information.
-- **Salary**: Represents salary information including hourly wage (multiple rates supported), social insurance flag, various allowances (basic allowance, job allowance, perfect attendance allowance, other allowances), and applicable period. Includes last update date/time and updater information.
-- **Work Condition**: Represents comprehensive work settings including working hours (multiple, normalized table), break hours (multiple, normalized table), work locations (multiple, normalized table), paid leave grant base date, and transportation expense information (by route, round-trip amount, monthly pass, maximum amount, normalized table). Includes last update date/time and updater information.
-- **Contract**: Represents employment contract including contract type, contract period (start/end), contract renewal flag, fixed-term contract base date, job content, and employment termination alert flag. Includes last update date/time and updater information.
-- **Contract Alert**: Represents contract renewal alerts including contract ID reference, alert type (pre-expiration notification, employment termination notification), notification date/time, notification target, alert status (unnotified/notified/confirmed), and last update date/time.
-- **Contract Change History**: Represents contract change history including contract ID reference, change date/time, changed items, before/after values, change reason, updater, and change approver.
-- **Document Submission**: Represents submitted documents and custody items including employee ID reference, document type (submission/custody), document name, submission date, return scheduled date, return date, status (unsubmitted/submitted/returned), notes, last update date/time, and updater.
-- **Document**: Represents contract document including document ID, approval number, contract period reference, document type, status (field creation/division head seal pending/general affairs submitted/returned to employee), creation date/time, approval date/time, document data (PDF), last update date/time, and updater.
-- **Edit Lock**: Represents edit lock for preventing simultaneous editing including target record ID, lock acquirer, lock acquisition time, and lock expiration time.
+- **FR-001**: システムは統括人事管理者が新規従業員を基本情報（従業員番号は手動入力、氏名、生年月日、入社日、雇用区分、部門コード）で登録できること。システムは従業員番号の一意性を検証し、重複エントリを拒否し、エラーメッセージを従業員番号フィールドの直下にインライン表示すること。部門コードはBPS課、オンサイト課、CC課、PS課のいずれかから選択すること。
+- **FR-025**: システムはバリデーションエラーをインライン表示（エラーが発生したフィールドの直下）し、明確でユーザーフレンドリーな日本語のエラーメッセージを表示すること。
+- **FR-002**: システムは各従業員に対して複数の勤務時間（時間帯）を設定できること。
+- **FR-003**: システムは各従業員に対して複数の休憩時間（時間帯）を設定できること。
+- **FR-004**: システムは各従業員に対して複数の勤務場所を設定できること。
+- **FR-005**: システムはルート別に交通費（往復金額、月額定期、上限金額、最寄り駅）を登録できること。
+- **FR-006**: システムは雇用契約書をPDF形式で生成し、自動的に枝番を付与すること。
+- **FR-007**: システムは雇用契約書を作成または再作成する際に承認番号の入力を必須とすること。
+- **FR-008**: システムは給与計算用データ（時給、残業時給、通勤費、社会保険フラグ、各種手当）をCSV形式で抽出できること。
+- **FR-009**: システムは指定した時点でのデータをCSV形式で抽出でき、出力項目を選択可能にすること。
+- **FR-010**: システムは契約期限の30日前、14日前、7日前に自動アラートを送信すること。アラートはアプリケーション内の通知センターのみで配信し（メールやSMSは使用しない）、ユーザーはアプリケーション内でアラートを閲覧・管理できること。
+- **FR-011**: システムは最初のアクセス者以外が同じ従業員レコードを同時に編集することを防止すること。
+- **FR-012**: システムはすべての画面に最終更新日時と更新者を表示すること。
+- **FR-013**: システムはすべての契約変更（変更日時、変更項目、変更前値、変更後値、変更理由、更新者、承認者）を記録すること。
+- **FR-014**: システムは従業員を氏名、勤務場所、ステータスで検索できること。
+- **FR-026**: システムは従業員一覧画面から複数選択した従業員の書類ステータスを更新できること。
+- **FR-015**: システムは個人番号と給与情報（時給、残業時給を含む）へのアクセスを統括人事管理者と管理者のみに制限すること。
+- **FR-016**: システムは現場マネージャーのアクセスを自部門・自拠点のデータのみに制限すること。
+- **FR-017**: システムはCSV抽出、契約書PDF出力、給与CSV出力を統括人事管理者と管理者のみに制限すること。
+- **FR-018**: システムはすべての変更操作を監査ログに記録すること（変更前値・変更後値をJSON形式で）。監査ログは法的要件（労働関係書類の保存期間）に準拠して7年間保持すること。
+- **FR-019**: システムはEnterキーが押下された場合に保存せず、次のフィールドに移動すること。
+- **FR-020**: システムは編集ロックを15分後に自動解放すること。
+- **FR-021**: システムは書類提出・預かり品を管理できること（提出ステータス、返却ステータスの追跡）。管理対象の書類は雇用契約書、雇用保険被保険者証、年金手帳、健康保険証、退職届、セキュリティカード等を含む。
+- **FR-022**: システムは契約履歴を表示できること（雇用期間、勤務時間、勤務日数、勤務場所、時給、雇用保険、社会保険）。
+- **FR-023**: システムは契約内容が変更された場合、既存の契約を無効化し、新しい契約書の作成を必須とすること。
+- **FR-024**: システムは契約書が出力された場合、雇用終了アラートを自動解除すること。
 
-## Success Criteria *(mandatory)*
+### 主要エンティティ *(データを含む機能の場合に含める)*
 
-### Measurable Outcomes
+- **従業員（Employee）**: パート従業員を表し、基本情報（従業員番号は一意性制約付きで手動入力、枝番、氏名、生年月日、国籍、入社日、退職日、雇用区分、ステータス、部門コード、個人番号）を含む。部門コードは以下の4部署から選択される：BPS課、オンサイト課、CC課、PS課。最終更新日時と更新者情報を含む。従業員番号はすべての従業員間で一意であること。従業員管理ページの「雇用情報」タブに表示される。
+- **雇用履歴（Employment History）**: 雇用・人事履歴を表し、期間、部門（BPS課、オンサイト課、CC課、PS課のいずれか）、有給休暇、給与参照、勤務場所履歴、勤務日数タイプ（週/月/シフト）を含む。注記：役職と等級はパート従業員には不要なため含まれない。最終更新日時と更新者情報を含む。
+- **給与（Salary）**: 給与情報を表し、時給（複数レート対応）、残業時給、社会保険フラグ、各種手当（基本手当、職務手当、皆勤手当、その他手当）、適用期間を含む。最終更新日時と更新者情報を含む。
+- **勤務条件（Work Condition）**: 包括的な勤務設定を表し、勤務時間（複数、正規化テーブル）、休憩時間（複数、正規化テーブル）、勤務場所（複数、正規化テーブル）、有給休暇付与基準日、交通費情報（ルート別、往復金額、月額定期、上限金額、最寄り駅、正規化テーブル）を含む。最終更新日時と更新者情報を含む。
+- **契約（Contract）**: 雇用契約を表し、契約種別、契約期間（開始/終了）、契約更新フラグ、有期契約基準日、業務内容、有給休暇条項、時給、残業時給、雇用終了アラートフラグを含む。最終更新日時と更新者情報を含む。
+- **契約アラート（Contract Alert）**: 契約更新アラートを表し、契約ID参照、アラート種別（期限前通知、雇用終了通知）、通知日時、通知対象、アラートステータス（未通知/通知済/確認済）、最終更新日時を含む。
+- **契約変更履歴（Contract Change History）**: 契約変更履歴を表し、契約ID参照、変更日時、変更項目、変更前値、変更後値、変更理由、更新者、変更承認者を含む。
+- **書類提出（Document Submission）**: 提出書類・預かり品を表し、従業員ID参照、書類種別（提出/預かり）、書類名（雇用契約書、雇用保険被保険者証、年金手帳、健康保険証、退職届、セキュリティカード等）、提出日、返却予定日、返却日、ステータス（未提出/提出済/返却済）、備考、最終更新日時、更新者を含む。
+- **書類（Document）**: 契約書類を表し、書類ID、承認番号、契約期間参照、書類種別、ステータス（現場作成中/事業部長押印待ち/総務提出済/本人返却済）、作成日時、承認日時、書類データ（PDF）、最終更新日時、更新者を含む。
+- **編集ロック（Edit Lock）**: 同時編集を防止するための編集ロックを表し、対象レコードID、ロック取得者、ロック取得時刻、ロック有効期限を含む。
 
-- **SC-001**: 統括人事管理者 can complete employee registration (basic information and work conditions) in under 5 minutes per employee
-- **SC-002**: 統括人事管理者 can generate employment contract PDFs in under 2 minutes per contract
-- **SC-003**: 統括人事管理者 can extract payroll calculation CSV data for 100 employees in under 30 seconds
-- **SC-004**: System displays search results for employee list within 2 seconds for queries with up to 1000 employees
-- **SC-005**: Contract renewal alerts are sent automatically with 100% accuracy (no missed notifications for contracts expiring within 30 days)
-- **SC-006**: Simultaneous editing conflicts are prevented 100% of the time (no data corruption from concurrent edits)
-- **SC-007**: All contract changes are recorded in audit logs with 100% accuracy (no unrecorded changes)
-- **SC-008**: Users can access only data permitted by their role with 100% accuracy (no unauthorized access to personal numbers or salary information)
-- **SC-009**: Manual data entry work for employment contracts is reduced by at least 80% compared to previous Excel-based process
-- **SC-010**: Manual data entry work for payroll data creation is reduced by at least 70% compared to previous process
-- **SC-011**: System supports at least 50 concurrent users without performance degradation
-- **SC-012**: Data extraction (CSV) for 500 employees completes within 10 seconds
-- **SC-013**: 90% of users successfully complete employee registration on first attempt without errors
-- **SC-014**: Contract renewal alerts are delivered to correct recipients (統括人事管理者 and relevant 現場マネージャー) with 100% accuracy
+## 成功基準 *(必須)*
 
-## Assumptions
+### 測定可能な成果
 
-- Users have appropriate access credentials and role assignments (統括人事管理者, 現場マネージャー, administrator, auditor)
-- Employee data is migrated from existing Excel files via CSV import
-- Personal information minimization policy is followed (no address, phone number, or bank account information stored)
-- Contract documents are legally valid when generated according to specified format
-- System operates during normal business hours (8:00-20:00) with standard availability expectations
-- Users have basic computer literacy and can navigate web-based interfaces
-- Network connectivity is available for all users accessing the system
-- Employee data (including retired employees) MUST be retained for 7 years after retirement date to comply with legal requirements (labor relations document retention period). After 7 years, data may be archived or deleted according to organizational policy.
+- **SC-001**: 統括人事管理者が従業員登録（基本情報と勤務条件）を従業員1人あたり5分以内に完了できること
+- **SC-002**: 統括人事管理者が雇用契約書PDFを契約1件あたり2分以内に生成できること
+- **SC-003**: 統括人事管理者が100人の従業員の給与計算用CSVデータを30秒以内に抽出できること
+- **SC-004**: システムが従業員一覧の検索結果を1000人までのクエリに対して2秒以内に表示すること
+- **SC-005**: 契約更新アラートが100%の精度で自動送信されること（30日以内に期限が切れる契約の通知漏れがないこと）
+- **SC-006**: 同時編集の競合が100%防止されること（同時編集によるデータ破損がないこと）
+- **SC-007**: すべての契約変更が100%の精度で監査ログに記録されること（記録漏れがないこと）
+- **SC-008**: ユーザーが自分のロールで許可されたデータのみに100%の精度でアクセスできること（個人番号や給与情報への不正アクセスがないこと）
+- **SC-009**: 雇用契約書の手入力作業が従来のExcelベースのプロセスと比較して少なくとも80%削減されること
+- **SC-010**: 給与データ作成の手入力作業が従来のプロセスと比較して少なくとも70%削減されること
+- **SC-011**: システムが少なくとも50人の同時ユーザーをパフォーマンス低下なくサポートすること
+- **SC-012**: 500人の従業員のデータ抽出（CSV）が10秒以内に完了すること
+- **SC-013**: 90%のユーザーがエラーなく最初の試行で従業員登録を成功させること
+- **SC-014**: 契約更新アラートが正しい受信者（統括人事管理者と関連する現場マネージャー）に100%の精度で配信されること
 
-## Dependencies
+## UI要件
 
-- Existing employee data in Excel format that needs to be imported
-- Legal requirements for employment contracts and personal information protection
-- Approval workflows within the organization (field → division → administrator)
-- Integration with future external systems (currently no external integrations planned)
+- **UI-001**: システムは従業員登録・編集フォームで雇用開始日と雇用終了日を近い場所に表示し、使いやすさを向上させ、入力エラーを削減すること
+- **UI-002**: システムは従業員一覧画面からチェックボックスと一括操作コントロールを使用して、複数選択した従業員の書類ステータスを更新できること
 
-## Out of Scope
+## 従業員管理ページの表示データ項目
 
-- Real-time synchronization with external payroll systems
-- Mobile application development (web application only)
-- Advanced analytics and reporting dashboards beyond basic employee search and listing
-- Automated contract renewal processing (alerts only, manual renewal required)
-- Integration with time tracking or attendance systems
-- Multi-language support (Japanese only)
-- Offline functionality
+従業員管理ページは以下の4つのタブで構成され、各タブに以下のデータ項目を表示する。
+
+### 雇用情報タブ
+
+- 社員番号（従業員番号）
+- 氏名
+- 部門（部門コード）
+- 契約番号（contractsテーブルのid）
+- 入社日（雇用開始日）
+- 雇用期間（契約開始日〜契約終了日）
+- 退社日（雇用終了日）
+
+### 勤務情報タブ
+
+- 契約書有給（有給休暇条項）
+- 勤務時間（複数の勤務時間帯）
+- 休憩時間（複数の休憩時間帯）
+- 勤務日数/週（勤務日数タイプと勤務日数）
+- 勤務場所（複数の勤務場所）
+- 業務内容（契約の業務内容）
+
+### 給与・手当タブ
+
+- 時給
+- 残業時給（残業時の時給）
+- 最寄り駅（交通費ルートの最寄り駅）
+- 交通費（片道/往復）（交通費ルート別の往復金額）
+- 控除申告書（甲乙）（源泉徴収の控除申告書の種類）
+- 雇用保険（加入/未加入）
+- 雇用保険書提出（雇用保険被保険者証の提出状況）
+- 社会保険（加入/未加入）
+- 社会保険関連書類の提出状況（年金手帳、健康保険証の提出状況）
+
+### 書類タブ
+
+- 保険証授（健康保険証の授受状況）
+- 雇用契約書他管理へ提出（日付）（雇用契約書等の管理部門への提出日）
+- 本人へ返却（書類の本人への返却状況）
+- 満了通知書発効（契約満了通知書の発行状況）
+- 退職届提出（退職届の提出状況）
+- 返却
+  - 保険証（健康保険証の返却状況）
+  - セキュリティカード（セキュリティカードの返却状況）
+
+## 前提条件
+
+- ユーザーは適切なアクセス認証情報とロール割り当て（統括人事管理者、現場マネージャー、管理者、監査人）を持っていること
+- 従業員データは既存のExcelファイルからCSVインポートで移行されること
+- 個人情報最小化ポリシーに従うこと（住所、電話番号、銀行口座情報は保存しない）。連絡先情報（住所、電話番号）は統括人事管理者には不要だが、現場マネージャーの必要性は検討中である。ただし、連絡先情報の保存は重要な個人情報の取り扱いを伴うため、慎重な検討が必要である。
+- 銀行口座情報はシステムに保存されないこと
+- 契約書類は指定された形式に従って生成された場合、法的に有効であること
+- システムは通常の営業時間（8:00-20:00）に標準的な可用性の期待値で動作すること
+- ユーザーは基本的なコンピュータリテラシーを持ち、Webベースのインターフェースを操作できること
+- システムにアクセスするすべてのユーザーに対してネットワーク接続が利用可能であること
+- 従業員データ（退職者を含む）は法的要件（労働関係書類の保存期間）に準拠して退職日から7年間保持されること。7年後は組織の方針に従ってアーカイブまたは削除されること。
+
+## 依存関係
+
+- インポートが必要な既存のExcel形式の従業員データ
+- 雇用契約と個人情報保護に関する法的要件
+- 組織内の承認ワークフロー（現場 → 事業部 → 管理者）
+- 将来の外部システムとの統合（現在、外部統合は計画されていない）
+- データベースに設定する部門情報：BPS課、オンサイト課、CC課、PS課の4部署
+
+## 対象外
+
+- 外部給与システムとのリアルタイム同期
+- モバイルアプリケーション開発（Webアプリケーションのみ）
+- 基本的な従業員検索・一覧表示を超えた高度な分析・レポートダッシュボード
+- 自動契約更新処理（アラートのみ、手動更新が必要）
+- 時間追跡または出勤管理システムとの統合
+- 多言語サポート（日本語のみ）
+- オフライン機能
+- 雇用履歴の役職・等級フィールド（パート従業員には不要）
+- 銀行口座情報の保存（個人情報最小化ポリシー）
+- 連絡先情報（住所、電話番号）の保存（個人情報最小化ポリシー、ただし現場マネージャーの必要性は検討中）

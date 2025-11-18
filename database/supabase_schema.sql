@@ -29,7 +29,8 @@ CREATE TABLE IF NOT EXISTS employees (
   
   CONSTRAINT chk_gender CHECK (gender IN ('MALE', 'FEMALE', 'OTHER')),
   CONSTRAINT chk_employment_type CHECK (employment_type IN ('FULL_TIME', 'PART_TIME', 'CONTRACT')),
-  CONSTRAINT chk_employment_status CHECK (employment_status IN ('ACTIVE', 'RETIRED', 'ON_LEAVE'))
+  CONSTRAINT chk_employment_status CHECK (employment_status IN ('ACTIVE', 'RETIRED', 'ON_LEAVE')),
+  CONSTRAINT chk_department_code CHECK (department_code IN ('BPS課', 'オンサイト課', 'CC課', 'PS課'))
 );
 
 CREATE INDEX IF NOT EXISTS idx_employees_employee_number ON employees(employee_number);
@@ -155,7 +156,6 @@ CREATE TABLE IF NOT EXISTS employment_history (
   effective_date DATE NOT NULL,
   event_type TEXT NOT NULL,
   department_code TEXT,
-  grade TEXT,
   paid_leave_days INTEGER,
   hourly_wage DECIMAL(10, 2),
   remarks TEXT,
@@ -167,7 +167,8 @@ CREATE TABLE IF NOT EXISTS employment_history (
   CONSTRAINT chk_event_type CHECK (event_type IN (
     'HIRE', 'TRANSFER', 'PROMOTION', 'SALARY_INCREASE', 
     'SALARY_DECREASE', 'CONCURRENT_POST', 'RETIRE', 'REINSTATE'
-  ))
+  )),
+  CONSTRAINT chk_employment_history_department_code CHECK (department_code IS NULL OR department_code IN ('BPS課', 'オンサイト課', 'CC課', 'PS課'))
 );
 
 CREATE INDEX IF NOT EXISTS idx_employment_history_employee_id ON employment_history(employee_id, effective_date DESC);
