@@ -180,12 +180,6 @@ export default async function EmployeeDetailPage({ params, searchParams }: Emplo
             label="備考"
             active={activeTab === "notes"}
           />
-          <button className="px-6 py-4 text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-white transition-all">
-            評価・スキル
-          </button>
-          <button className="px-6 py-4 text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-white transition-all">
-            備考
-          </button>
         </nav>
 
         {/* タブコンテンツ */}
