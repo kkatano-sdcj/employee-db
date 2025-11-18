@@ -139,6 +139,14 @@ export type EmployeeDetail = {
     hourlyWage?: number | null;
     remarks?: string | null;
   }>;
+  adminRecord: {
+    taxWithholdingCategory?: string | null;
+    employmentInsurance?: string | null;
+    employmentInsuranceCardSubmitted?: string | null;
+    socialInsurance?: string | null;
+    pensionBookSubmitted?: string | null;
+    healthInsuranceCardSubmitted?: string | null;
+  } | null;
 };
 
 type WorkConditionRow = {
@@ -328,6 +336,26 @@ export async function fetchEmployeeDetail(employeeId: string): Promise<EmployeeD
     remarks: string | null;
   }>;
 
+  const [adminRecord] = (await db`
+    SELECT
+      tax_withholding_category,
+      employment_insurance,
+      employment_insurance_card_submitted,
+      social_insurance,
+      pension_book_submitted,
+      health_insurance_card_submitted
+    FROM employee_admin_records
+    WHERE employee_id = ${employeeId}
+    LIMIT 1
+  `) as Array<{
+    tax_withholding_category: string | null;
+    employment_insurance: string | null;
+    employment_insurance_card_submitted: string | null;
+    social_insurance: string | null;
+    pension_book_submitted: string | null;
+    health_insurance_card_submitted: string | null;
+  }>;
+
   return {
     employee: employee
       ? {
@@ -365,5 +393,15 @@ export async function fetchEmployeeDetail(employeeId: string): Promise<EmployeeD
       hourlyWage: history.hourlyWage ? Number(history.hourlyWage) : null,
       remarks: history.remarks ?? undefined,
     })),
+    adminRecord: adminRecord
+      ? {
+          taxWithholdingCategory: adminRecord.tax_withholding_category,
+          employmentInsurance: adminRecord.employment_insurance,
+          employmentInsuranceCardSubmitted: adminRecord.employment_insurance_card_submitted,
+          socialInsurance: adminRecord.social_insurance,
+          pensionBookSubmitted: adminRecord.pension_book_submitted,
+          healthInsuranceCardSubmitted: adminRecord.health_insurance_card_submitted,
+        }
+      : null,
   };
 }

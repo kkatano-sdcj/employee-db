@@ -25,7 +25,8 @@ export default async function EmployeeDetailPage({ params, searchParams }: Emplo
 
   const employee = detail.employee;
 
-  const activeTab = resolvedSearchParams?.view === "work" ? "work" : "profile";
+  const viewParam = resolvedSearchParams?.view;
+  const activeTab = viewParam === "work" ? "work" : viewParam === "salary" ? "salary" : "profile";
 
   return (
     <div className="space-y-6">
@@ -148,9 +149,11 @@ export default async function EmployeeDetailPage({ params, searchParams }: Emplo
             label="勤務情報"
             active={activeTab === "work"}
           />
-          <button className="px-6 py-4 text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-white transition-all">
-            給与・手当
-          </button>
+          <TabLink
+            href={`/employees/${employee.id}?view=salary`}
+            label="給与・手当"
+            active={activeTab === "salary"}
+          />
           <button className="px-6 py-4 text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-white transition-all">
             契約履歴
           </button>
@@ -167,16 +170,21 @@ export default async function EmployeeDetailPage({ params, searchParams }: Emplo
 
         {/* タブコンテンツ */}
         <div className="p-8">
-          {activeTab === "profile" ? (
+          {activeTab === "profile" && (
             <ProfileSection
               employee={employee}
               contract={detail.contracts.length > 0 ? detail.contracts[0] : undefined}
             />
-          ) : (
-            <WorkSection detail={detail} />
+          )}
+          {activeTab === "work" && <WorkSection detail={detail} />}
+          {activeTab === "salary" && (
+            <SalarySection
+              contract={detail.contracts.length > 0 ? detail.contracts[0] : undefined}
+              adminRecord={detail.adminRecord}
+              workConditions={detail.workConditions}
+            />
           )}
 
-          {/* アクションボタン */}
           <div className="flex justify-end gap-3 mt-8 pt-8 border-t border-slate-200">
             <Link
               href="/employees"
@@ -342,6 +350,79 @@ const WorkSection = ({
     )}
   </div>
 );
+
+const SalarySection = ({
+  contract,
+  adminRecord,
+  workConditions,
+}: {
+  contract?: EmployeeDetailResponse["contracts"][number];
+  adminRecord: EmployeeDetailResponse["adminRecord"];
+  workConditions: EmployeeDetailResponse["workConditions"];
+}) => {
+  const currencyFormatter = new Intl.NumberFormat("ja-JP", {
+    style: "currency",
+    currency: "JPY",
+    maximumFractionDigits: 0,
+  });
+
+  const primaryRoute =
+    workConditions.find((condition) => condition.transportationRoutes.length > 0)?.transportationRoutes[0];
+
+  const formatCurrency = (value?: number | null) =>
+    value !== undefined && value !== null ? currencyFormatter.format(value) : "-";
+
+  const formatFlag = (value?: string | null) => {
+    if (!value) return "-";
+    if (value.toLowerCase() === "true" || value === "1" || value.toLowerCase() === "y") {
+      return "加入";
+    }
+    if (value.toLowerCase() === "false" || value === "0" || value.toLowerCase() === "n") {
+      return "未加入";
+    }
+    return value;
+  };
+
+  return (
+    <div className="space-y-8">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="space-y-4">
+          <h4 className="text-sm font-bold text-slate-900 uppercase tracking-wider mb-2">給与情報</h4>
+          <div className="bg-white border border-slate-100 rounded-2xl p-6 space-y-3">
+            <InfoRow label="時給" value={formatCurrency(contract?.hourlyWage)} />
+            <InfoRow label="残業時給" value={formatCurrency(contract?.overtimeHourlyWage ?? null)} />
+            <InfoRow label="最寄り駅" value={primaryRoute?.nearestStation ?? "-"} />
+            <InfoRow
+              label="交通費（往復）"
+              value={
+                primaryRoute
+                  ? `${formatCurrency(primaryRoute.roundTripAmount)} / 定期 ${formatCurrency(primaryRoute.monthlyPassAmount ?? null)}`
+                  : "-"
+              }
+            />
+          </div>
+        </div>
+        <div className="space-y-4">
+          <h4 className="text-sm font-bold text-slate-900 uppercase tracking-wider mb-2">申告・保険</h4>
+          <div className="bg-white border border-slate-100 rounded-2xl p-6 space-y-3">
+            <InfoRow label="控除申告書（甲乙）" value={adminRecord?.taxWithholdingCategory ?? "-"} />
+            <InfoRow label="雇用保険" value={formatFlag(adminRecord?.employmentInsurance)} />
+            <InfoRow
+              label="雇用保険証提出"
+              value={adminRecord?.employmentInsuranceCardSubmitted ?? "-"}
+            />
+            <InfoRow label="社会保険" value={formatFlag(adminRecord?.socialInsurance)} />
+            <InfoRow label="年金手帳提出" value={adminRecord?.pensionBookSubmitted ?? "-"} />
+            <InfoRow
+              label="健康保険証提出"
+              value={adminRecord?.healthInsuranceCardSubmitted ?? "-"}
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 // ヘルパー関数
 const genderLabel = (value: string) => {
