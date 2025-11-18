@@ -33,7 +33,9 @@ export default async function EmployeeDetailPage({ params, searchParams }: Emplo
         ? "salary"
         : viewParam === "contracts"
           ? "contracts"
-          : "profile";
+          : viewParam === "documents"
+            ? "documents"
+            : "profile";
 
   return (
     <div className="space-y-6">
@@ -166,6 +168,11 @@ export default async function EmployeeDetailPage({ params, searchParams }: Emplo
             label="契約履歴"
             active={activeTab === "contracts"}
           />
+          <TabLink
+            href={`/employees/${employee.id}?view=documents`}
+            label="書類"
+            active={activeTab === "documents"}
+          />
           <button className="px-6 py-4 text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-white transition-all">
             評価・スキル
           </button>
@@ -194,6 +201,9 @@ export default async function EmployeeDetailPage({ params, searchParams }: Emplo
             />
           )}
           {activeTab === "contracts" && <ContractsSection contracts={detail.contracts} />}
+          {activeTab === "documents" && (
+            <DocumentsSection adminRecord={detail.adminRecord} />
+          )}
 
           <div className="flex justify-end gap-3 mt-8 pt-8 border-t border-slate-200">
             <Link
@@ -466,6 +476,45 @@ const ContractsSection = ({ contracts }: { contracts: EmployeeDetailResponse["co
         </div>
       ))
     )}
+  </div>
+);
+
+const DocumentsSection = ({
+  adminRecord,
+}: {
+  adminRecord: EmployeeDetailResponse["adminRecord"];
+}) => (
+  <div className="space-y-6">
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <div className="bg-white border border-slate-100 rounded-2xl p-6 space-y-3">
+        <h4 className="text-sm font-bold text-slate-900 uppercase tracking-wider mb-2">
+          提出状況
+        </h4>
+        <InfoRow label="契約書提出日" value={adminRecord?.submittedToAdminOn ?? "-"} />
+        <InfoRow label="本人返却" value={adminRecord?.returnedToEmployee ?? "-"} />
+        <InfoRow
+          label="満了通知書"
+          value={adminRecord?.expirationNoticeIssued ?? "未発行"}
+        />
+        <InfoRow
+          label="退職届"
+          value={adminRecord?.resignationLetterSubmitted ?? "未提出"}
+        />
+      </div>
+      <div className="bg-white border border-slate-100 rounded-2xl p-6 space-y-3">
+        <h4 className="text-sm font-bold text-slate-900 uppercase tracking-wider mb-2">
+          返却物状況
+        </h4>
+        <InfoRow
+          label="健康保険証返却"
+          value={adminRecord?.returnHealthInsuranceCard ?? "未返却"}
+        />
+        <InfoRow
+          label="セキュリティカード返却"
+          value={adminRecord?.returnSecurityCard ?? "未返却"}
+        />
+      </div>
+    </div>
   </div>
 );
 
