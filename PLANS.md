@@ -156,6 +156,7 @@ crates/foo/planner.rsで、以下を定義：
 - UC-01〜UC-12 の**最低実装**を揃え、PDF/CSV/給与抽出/編集ロック/監査/RBAC/アラートが動作
 - 仕様の非機能（検索2秒目標、Enter非保存、最終更新日時表示）を満たす
 - UI要件（UI-001: 雇用開始日と雇用終了日を近い場所に配置、UI-002: 一覧画面からのステータス一括変更）を実装
+- 契約の雇用期間は `contract_start_date`〜`employment_expiry_scheduled_date` を表示し、`employment_expiry_date` を記録・表示する（`specs/002-contract-expiry-date/spec.md` 準拠）
 - 個人情報最小化（住所・電話番号・銀行口座は**保持しない**）がテストで担保
 - 部門コードはBPS課、オンサイト課、CC課、PS課の4部署から選択（FR-001準拠）
 
@@ -163,10 +164,10 @@ crates/foo/planner.rsで、以下を定義：
 ```md
 # Plan3ベースWeb MVP（Next.js + Supabase 連携）
 
-このExecPlanは生きている文書です。`Progress`、`Surprises & Discoveries`、`Decision Log`、`Outcomes & Retrospective`を随時更新し、`specs/001-employee-db-requirements/spec.md` の FR-001〜FR-009 に準拠した実装内容と `designs/plan3` のUI要件を同期させます。
+このExecPlanは生きている文書です。`Progress`、`Surprises & Discoveries`、`Decision Log`、`Outcomes & Retrospective`を随時更新し、`specs/001-employee-db-requirements/spec.md` の FR-001〜FR-009 と `specs/002-contract-expiry-date/spec.md` の FR-001〜FR-009（契約の雇用満了予定日/雇用満了日の管理）に準拠した実装内容と `designs/plan3` のUI要件を同期させます。
 
 ## 目的 / 全体像
-最新仕様（特に従業員登録/勤務条件/契約/CSV抽出のFR-001〜FR-009）と Plan3 のUIモックに沿った Next.js App Router アプリ（`apps/nextjs`）を構築し、Supabase上の既存テーブル（`database/supabase_schema.sql`）からデータを取得できるMVPを提供します。サイドバー付きのダッシュボード、従業員一覧・詳細・登録、契約管理、レポート、システム設定画面を提供し、最低限のCRUD/閲覧が動作することを確認します。
+最新仕様（従業員登録/勤務条件/契約/CSV抽出のFR-001〜FR-009および契約雇用満了日管理仕様 `specs/002-contract-expiry-date/spec.md`）と Plan3 のUIモックに沿った Next.js App Router アプリ（`apps/nextjs`）を構築し、Supabase上の既存テーブル（`database/supabase_schema.sql`）からデータを取得できるMVPを提供します。サイドバー付きのダッシュボード、従業員一覧・詳細・登録、契約管理、レポート、システム設定画面を提供し、最低限のCRUD/閲覧が動作することを確認します。
 
 ## Progress
 - [ ] (2025-11-16T11:09Z) PNPMワークスペース初期化・`apps/nextjs`作成・Lint/TS/Prettier/ Tailwind/daisyUI セットアップ
@@ -191,7 +192,7 @@ crates/foo/planner.rsで、以下を定義：
 ## コンテキストと方向性
 - 現状: ルートには`designs/plan3` のHTMLモックと Supabase スキーマSQLのみが存在し、Next.jsアプリやPNPM設定が未作成。
 - データソース: Supabase プロジェクト（`.env`の`DATABASE_URL`/`DIRECT_URL`）上に `employees` ほか12テーブルが既に作成済み。
-- 仕様: `specs/001-employee-db-requirements/spec.md` のFR-001〜FR-009, 非機能（最終更新日時表示、同時編集制御は将来Phase）を参照。
+- 仕様: `specs/001-employee-db-requirements/spec.md` のFR-001〜FR-009と `specs/002-contract-expiry-date/spec.md` のFR-001〜FR-009（契約開始日/雇用満了予定日/雇用満了日、アラート再計算）を参照。非機能（最終更新日時表示、同時編集制御は将来Phase）を順守。
 - UI要件: `designs/plan3/*.html`（ダッシュボード、従業員一覧/詳細/登録、契約管理、レポート、設定）。
 
 ## 作業計画
@@ -331,12 +332,19 @@ crates/foo/planner.rsで、以下を定義：
    - `getCurrentWorkCondition`: 有効期間による絞り込み + ソート
    - 時刻帯の重複/境界バリデーション（Zod スキーマ）
 3. 雇用契約 CRUD（`packages/api/src/router/contract.ts`）
-   - `create`: Prisma の `create`（`table.md` の contracts テーブル定義に準拠）
+   - `create`: Prisma の `create`（`table.md` および `specs/002-contract-expiry-date/spec.md` の contracts テーブル定義に準拠）
+     - 必須: `contract_start_date`, `employment_expiry_scheduled_date`（雇用満了予定日）
+     - 任意: `employment_expiry_date`（実際の雇用満了日）。設定時は `employment_expiry_date >= contract_start_date` をバリデーション
+   - `update`: Prisma の `update` + 楽観的ロック
+     - 雇用満了予定日を更新したら契約更新アラートを再計算（specs/002 FR-008）
+     - `employment_expiry_scheduled_date` は `contract_start_date` より後の日付のみ許容（FR-005）
+   - `delete`: 論理削除またはステータス変更
+   - マイグレーション: 既存の `contract_end_date` を `employment_expiry_scheduled_date` に移行し、実フィールドを削除（specs/002 FR-009）。移行スクリプトで `UPDATE contracts SET employment_expiry_scheduled_date = contract_end_date WHERE employment_expiry_scheduled_date IS NULL`
    - `update`: Prisma の `update` + 楽観的ロック
    - `delete`: 論理削除またはステータス変更
    - `findById`: `findUnique` + `include: { employee: true }`
-   - `findByEmployeeId`: インデックス活用（`idx_contracts_employee_id`）
-   - `findExpiringContracts`: 部分インデックス活用（`idx_contracts_status_end_date`）
+    - `findByEmployeeId`: インデックス活用（`idx_contracts_employee_id`）
+    - `findExpiringContracts`: `employment_expiry_scheduled_date` を使用した部分インデックス（例: `idx_contracts_expiry_schedule`）で 30/14/7 日前のレコードを取得
    - 契約更新時は新規レコード作成（履歴として保持）
 4. 雇用履歴管理（`packages/api/src/router/employmentHistory.ts`）
    - `create`: 履歴レコード作成（更新・削除不可）
@@ -347,11 +355,13 @@ crates/foo/planner.rsで、以下を定義：
 5. フロントエンド実装（`apps/nextjs/src/app/(dashboard)/employees/`）
    - 従業員一覧画面: TanStack Query + Server Components
      - チェックボックスと一括操作コントロールでステータス一括変更機能（UI-002, FR-026準拠）
-   - 従業員詳細画面: タブ UI（雇用情報/勤務情報/給与・手当/書類）
-     - 雇用情報タブ: 社員番号、氏名、部門、契約番号（contractsテーブルのid）、入社日、雇用期間、退社日を表示
-     - 勤務情報タブ: 契約書有給、勤務時間、休憩時間、勤務日数/週、勤務場所、業務内容を表示
-     - 給与・手当タブ: 時給、残業時給（overtime_hourly_wage）、最寄り駅（transportation_routes.nearest_station）、交通費（片道/往復）（transportation_routes.round_trip_amount）、控除申告書（甲乙）（employee_admin_records.tax_withholding_category）、雇用保険（加入/未加入）（employee_admin_records.employment_insurance）、雇用保険書提出（employee_admin_records.employment_insurance_card_submitted）、社会保険（加入/未加入）（employee_admin_records.social_insurance）、社会保険関連書類の提出状況（年金手帳、健康保険証）（employee_admin_records.pension_book_submitted, employee_admin_records.health_insurance_card_submitted）を表示（spec.mdの「従業員管理ページの表示データ項目」セクションに準拠）
-     - 書類タブ: 保険証授（健康保険証の授受状況）（employee_admin_records.health_insurance_card_submitted）、雇用契約書他管理へ提出（日付）（employee_admin_records.submitted_to_admin_on）、本人へ返却（書類の本人への返却状況）（employee_admin_records.returned_to_employee）、満了通知書発効（契約満了通知書の発行状況）（employee_admin_records.expiration_notice_issued）、退職届提出（employee_admin_records.resignation_letter_submitted）、返却（保険証（employee_admin_records.return_health_insurance_card）、セキュリティカード（employee_admin_records.return_security_card））を表示（spec.mdの「従業員管理ページの表示データ項目」セクションに準拠）
+  - 従業員詳細画面: タブ UI（雇用情報/勤務情報/給与・手当/契約履歴/書類/備考）
+    - 雇用情報タブ: 社員番号、氏名、部門、契約番号（contracts.id）、入社日、雇用期間（`contract_start_date`〜`employment_expiry_scheduled_date`）、実際の雇用満了日（`employment_expiry_date`、未設定時は「未設定」）と退社日を表示（specs/002 FR-001〜FR-007準拠）
+    - 勤務情報タブ: 契約書有給、勤務時間、休憩時間、勤務日数/週、勤務場所、業務内容を表示
+    - 給与・手当タブ: 時給、残業時給（overtime_hourly_wage）、最寄り駅（transportation_routes.nearest_station）、交通費（片道/往復）（transportation_routes.round_trip_amount）、控除申告書（甲乙）（employee_admin_records.tax_withholding_category）、雇用保険（加入/未加入）（employee_admin_records.employment_insurance）、雇用保険書提出（employee_admin_records.employment_insurance_card_submitted）、社会保険（加入/未加入）（employee_admin_records.social_insurance）、社会保険関連書類の提出状況（年金手帳、健康保険証）（employee_admin_records.pension_book_submitted, employee_admin_records.health_insurance_card_submitted）を表示（spec.mdの「従業員管理ページの表示データ項目」セクションに準拠）
+    - 契約履歴タブ: 契約開始日、雇用満了予定日（employment_expiry_scheduled_date）、実際の雇用満了日（employment_expiry_date）、契約タイプ、業務内容を時系列で表示（specs/002 FR-007準拠）
+    - 書類タブ: 保険証授（employee_admin_records.health_insurance_card_submitted）、雇用契約書他管理へ提出（日付）（employee_admin_records.submitted_to_admin_on）、本人へ返却（employee_admin_records.returned_to_employee）、満了通知書発効（employee_admin_records.expiration_notice_issued）、退職届提出（employee_admin_records.resignation_letter_submitted）、返却（保険証: employee_admin_records.return_health_insurance_card、セキュリティカード: employee_admin_records.return_security_card）を表示（spec.mdの「従業員管理ページの表示データ項目」セクションに準拠）
+    - 備考タブ: 契約メモ（hourly_wage_note など）の抜粋と任意メモ欄を表示（Plan3 UIの要件。必要に応じて評価・スキル情報を追記）
    - 従業員編集画面: TanStack Form + Zod バリデーション
      - 雇用開始日と雇用終了日を近い場所に配置（UI-001準拠）
      - 部門コード選択: BPS課、オンサイト課、CC課、PS課の4部署から選択（FR-001準拠）
@@ -366,8 +376,8 @@ crates/foo/planner.rsで、以下を定義：
 - 部門コードはBPS課、オンサイト課、CC課、PS課の4部署から選択可能（FR-001準拠）
 - 雇用開始日と雇用終了日が近い場所に配置されている（UI-001準拠）
 - 一覧画面から複数選択した従業員のステータスを一括変更できる（UI-002, FR-026準拠）
-- 従業員詳細画面のタブUI（雇用情報/勤務情報/給与・手当/書類）が正しく表示される
-- 雇用情報タブに契約番号（contractsテーブルのid）が表示される
+- 従業員詳細画面のタブUI（雇用情報/勤務情報/給与・手当/契約履歴/書類/備考）が正しく表示され、各タブが指定データ項目を満たしている
+- 雇用情報タブに契約番号（contractsテーブルのid）と雇用満了予定日/雇用満了日が表示される（specs/002準拠）
 - 勤務条件の複数時間帯入力が動作（重複バリデーション含む）
 - 従業員検索が 2 秒以内に完了（目標）
 - ページネーションが動作（1ページ50件）
@@ -454,12 +464,15 @@ crates/foo/planner.rsで、以下を定義：
 ---
 
 ## Phase 4: 契約・アラート（UC-05）
-**目的**: 契約更新/破棄、期限/基準日、雇用終了アラート（契約書出力で自動解除）  
+**目的**: 契約更新/破棄、期限/基準日、雇用終了アラート（契約書出力で自動解除）。`specs/002-contract-expiry-date/spec.md` で定義された「雇用満了予定日（employment_expiry_scheduled_date）」ベースでアラートを正確に運用し、実際の雇用満了日（employment_expiry_date）は履歴表示/監査用途に保持する。  
 **Steps**
-- スケジューラで期限監視、通知テーブル
-- PDF出力 Success をフックにアラート解除
+- スケジューラで `employment_expiry_scheduled_date` を監視し、30/14/7 日前に通知（FR-004, FR-008）
+- `employment_expiry_scheduled_date` 更新時に通知テーブルの対象日を再計算
+- 実際の雇用満了日 `employment_expiry_date` を登録しても、予定日ベースのアラートロジックは変更しない
+- PDF出力 Success をフックにアラート解除（既存要件を維持）
 **DoD**
 - 境界ケース（日跨ぎ・月跨ぎ）で期待動作
+- `employment_expiry_scheduled_date` のみを参照してアラートが発火し、`employment_expiry_date` 入力後も予定日基準で継続（specs/002 FR-004）
 **Risk**
 - タイムゾーン差異 → すべてサーバ TZ で正規化
 
