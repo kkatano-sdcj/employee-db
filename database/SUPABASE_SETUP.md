@@ -87,20 +87,18 @@
 
 ## テーブル一覧
 
-以下の12テーブルが作成されます：
+以下の8テーブルが作成されます：
 
 1. `employees` - 従業員マスター
-2. `work_conditions` - 勤務条件
-3. `working_hours` - 勤務時間帯
-4. `break_hours` - 休憩時間帯
-5. `work_locations` - 勤務場所
-6. `transportation_routes` - 交通費情報
-7. `contracts` - 雇用契約
-8. `employment_history` - 雇用・人事履歴
-9. `employee_admin_records` - 従業員事務管理
-10. `users` - 認証ユーザー（better-auth が作成）
-11. `edit_locks` - 編集ロック
-12. `audit_logs` - 監査ログ
+2. `work_conditions` - 勤務条件（勤務時間帯、休憩時間帯、勤務場所、交通費情報をJSONBで統合）
+3. `contracts` - 雇用契約
+4. `employment_history` - 雇用・人事履歴
+5. `employee_admin_records` - 従業員事務管理
+6. `users` - 認証ユーザー（better-auth が作成）
+7. `edit_locks` - 編集ロック
+8. `audit_logs` - 監査ログ
+
+**注意**: `work_conditions` テーブルは、以前の `working_hours`、`break_hours`、`work_locations`、`transportation_routes` テーブルを統合した構造です。これらの情報はJSONBカラムで管理されます。
 
 ## トラブルシューティング
 

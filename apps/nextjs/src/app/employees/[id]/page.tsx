@@ -33,7 +33,11 @@ export default async function EmployeeDetailPage({ params, searchParams }: Emplo
         ? "salary"
         : viewParam === "contracts"
           ? "contracts"
-          : "profile";
+          : viewParam === "documents"
+            ? "documents"
+            : viewParam === "notes"
+              ? "notes"
+              : "profile";
 
   return (
     <div className="space-y-6">
@@ -166,15 +170,16 @@ export default async function EmployeeDetailPage({ params, searchParams }: Emplo
             label="契約履歴"
             active={activeTab === "contracts"}
           />
-          <button className="px-6 py-4 text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-white transition-all">
-            評価・スキル
-          </button>
-          <button className="px-6 py-4 text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-white transition-all">
-            書類
-          </button>
-          <button className="px-6 py-4 text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-white transition-all">
-            備考
-          </button>
+          <TabLink
+            href={`/employees/${employee.id}?view=documents`}
+            label="書類"
+            active={activeTab === "documents"}
+          />
+          <TabLink
+            href={`/employees/${employee.id}?view=notes`}
+            label="備考"
+            active={activeTab === "notes"}
+          />
         </nav>
 
         {/* タブコンテンツ */}
@@ -194,6 +199,10 @@ export default async function EmployeeDetailPage({ params, searchParams }: Emplo
             />
           )}
           {activeTab === "contracts" && <ContractsSection contracts={detail.contracts} />}
+          {activeTab === "documents" && (
+            <DocumentsSection adminRecord={detail.adminRecord} />
+          )}
+          {activeTab === "notes" && <NotesSection employee={employee} contracts={detail.contracts} />}
 
           <div className="flex justify-end gap-3 mt-8 pt-8 border-t border-slate-200">
             <Link
@@ -466,6 +475,65 @@ const ContractsSection = ({ contracts }: { contracts: EmployeeDetailResponse["co
         </div>
       ))
     )}
+  </div>
+);
+
+const DocumentsSection = ({
+  adminRecord,
+}: {
+  adminRecord: EmployeeDetailResponse["adminRecord"];
+}) => (
+  <div className="space-y-6">
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <div className="bg-white border border-slate-100 rounded-2xl p-6 space-y-3">
+        <h4 className="text-sm font-bold text-slate-900 uppercase tracking-wider mb-2">
+          提出状況
+        </h4>
+        <InfoRow label="契約書提出日" value={adminRecord?.submittedToAdminOn ?? "-"} />
+        <InfoRow label="本人返却" value={adminRecord?.returnedToEmployee ?? "-"} />
+        <InfoRow
+          label="満了通知書"
+          value={adminRecord?.expirationNoticeIssued ?? "未発行"}
+        />
+        <InfoRow
+          label="退職届"
+          value={adminRecord?.resignationLetterSubmitted ?? "未提出"}
+        />
+      </div>
+      <div className="bg-white border border-slate-100 rounded-2xl p-6 space-y-3">
+        <h4 className="text-sm font-bold text-slate-900 uppercase tracking-wider mb-2">
+          返却物状況
+        </h4>
+        <InfoRow
+          label="健康保険証返却"
+          value={adminRecord?.returnHealthInsuranceCard ?? "未返却"}
+        />
+        <InfoRow
+          label="セキュリティカード返却"
+          value={adminRecord?.returnSecurityCard ?? "未返却"}
+        />
+      </div>
+    </div>
+  </div>
+);
+
+const NotesSection = ({
+  employee,
+  contracts,
+}: {
+  employee: NonNullable<EmployeeDetailResponse["employee"]>;
+  contracts: EmployeeDetailResponse["contracts"];
+}) => (
+  <div className="space-y-6">
+    <div className="bg-white border border-slate-100 rounded-2xl p-6 space-y-3">
+      <h4 className="text-sm font-bold text-slate-900 uppercase tracking-wider mb-2">特記事項</h4>
+      <InfoRow label="更新メモ" value={contracts[0]?.hourlyWageNote ?? "-"} />
+      <InfoRow label="最終更新者" value={employee.updatedAt ?? "-"} />
+    </div>
+    <div className="bg-white border border-slate-100 rounded-2xl p-6 space-y-3">
+      <h4 className="text-sm font-bold text-slate-900 uppercase tracking-wider mb-2">備考</h4>
+      <p className="text-sm text-slate-600">契約ごとの連絡メモを記載予定です。</p>
+    </div>
   </div>
 );
 
