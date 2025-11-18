@@ -35,7 +35,9 @@ export default async function EmployeeDetailPage({ params, searchParams }: Emplo
           ? "contracts"
           : viewParam === "documents"
             ? "documents"
-            : "profile";
+            : viewParam === "notes"
+              ? "notes"
+              : "profile";
 
   return (
     <div className="space-y-6">
@@ -173,6 +175,11 @@ export default async function EmployeeDetailPage({ params, searchParams }: Emplo
             label="書類"
             active={activeTab === "documents"}
           />
+          <TabLink
+            href={`/employees/${employee.id}?view=notes`}
+            label="備考"
+            active={activeTab === "notes"}
+          />
           <button className="px-6 py-4 text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-white transition-all">
             評価・スキル
           </button>
@@ -201,6 +208,7 @@ export default async function EmployeeDetailPage({ params, searchParams }: Emplo
           {activeTab === "documents" && (
             <DocumentsSection adminRecord={detail.adminRecord} />
           )}
+          {activeTab === "notes" && <NotesSection employee={employee} contracts={detail.contracts} />}
 
           <div className="flex justify-end gap-3 mt-8 pt-8 border-t border-slate-200">
             <Link
@@ -511,6 +519,26 @@ const DocumentsSection = ({
           value={adminRecord?.returnSecurityCard ?? "未返却"}
         />
       </div>
+    </div>
+  </div>
+);
+
+const NotesSection = ({
+  employee,
+  contracts,
+}: {
+  employee: NonNullable<EmployeeDetailResponse["employee"]>;
+  contracts: EmployeeDetailResponse["contracts"];
+}) => (
+  <div className="space-y-6">
+    <div className="bg-white border border-slate-100 rounded-2xl p-6 space-y-3">
+      <h4 className="text-sm font-bold text-slate-900 uppercase tracking-wider mb-2">特記事項</h4>
+      <InfoRow label="更新メモ" value={contracts[0]?.hourlyWageNote ?? "-"} />
+      <InfoRow label="最終更新者" value={employee.updatedAt ?? "-"} />
+    </div>
+    <div className="bg-white border border-slate-100 rounded-2xl p-6 space-y-3">
+      <h4 className="text-sm font-bold text-slate-900 uppercase tracking-wider mb-2">備考</h4>
+      <p className="text-sm text-slate-600">契約ごとの連絡メモを記載予定です。</p>
     </div>
   </div>
 );
