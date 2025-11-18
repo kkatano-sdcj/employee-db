@@ -177,9 +177,6 @@ export default async function EmployeeDetailPage({ params, searchParams }: Emplo
             評価・スキル
           </button>
           <button className="px-6 py-4 text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-white transition-all">
-            書類
-          </button>
-          <button className="px-6 py-4 text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-white transition-all">
             備考
           </button>
         </nav>
