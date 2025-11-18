@@ -146,6 +146,12 @@ export type EmployeeDetail = {
     socialInsurance?: string | null;
     pensionBookSubmitted?: string | null;
     healthInsuranceCardSubmitted?: string | null;
+    submittedToAdminOn?: string | null;
+    returnedToEmployee?: string | null;
+    expirationNoticeIssued?: string | null;
+    resignationLetterSubmitted?: string | null;
+    returnHealthInsuranceCard?: string | null;
+    returnSecurityCard?: string | null;
   } | null;
 };
 
@@ -343,7 +349,13 @@ export async function fetchEmployeeDetail(employeeId: string): Promise<EmployeeD
       employment_insurance_card_submitted,
       social_insurance,
       pension_book_submitted,
-      health_insurance_card_submitted
+      health_insurance_card_submitted,
+      submitted_to_admin_on,
+      returned_to_employee,
+      expiration_notice_issued,
+      resignation_letter_submitted,
+      return_health_insurance_card,
+      return_security_card
     FROM employee_admin_records
     WHERE employee_id = ${employeeId}
     LIMIT 1
@@ -354,6 +366,12 @@ export async function fetchEmployeeDetail(employeeId: string): Promise<EmployeeD
     social_insurance: string | null;
     pension_book_submitted: string | null;
     health_insurance_card_submitted: string | null;
+    submitted_to_admin_on: Date | string | null;
+    returned_to_employee: string | null;
+    expiration_notice_issued: string | null;
+    resignation_letter_submitted: string | null;
+    return_health_insurance_card: string | null;
+    return_security_card: string | null;
   }>;
 
   return {
@@ -401,6 +419,12 @@ export async function fetchEmployeeDetail(employeeId: string): Promise<EmployeeD
           socialInsurance: adminRecord.social_insurance,
           pensionBookSubmitted: adminRecord.pension_book_submitted,
           healthInsuranceCardSubmitted: adminRecord.health_insurance_card_submitted,
+          submittedToAdminOn: toDateString(adminRecord.submitted_to_admin_on as unknown as Date),
+          returnedToEmployee: adminRecord.returned_to_employee,
+          expirationNoticeIssued: adminRecord.expiration_notice_issued,
+          resignationLetterSubmitted: adminRecord.resignation_letter_submitted,
+          returnHealthInsuranceCard: adminRecord.return_health_insurance_card,
+          returnSecurityCard: adminRecord.return_security_card,
         }
       : null,
   };

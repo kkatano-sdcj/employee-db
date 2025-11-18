@@ -49,6 +49,11 @@ CREATE TABLE IF NOT EXISTS work_conditions (
   work_days_count INTEGER NOT NULL,
   work_days_count_note TEXT,
   paid_leave_base_date DATE,
+  -- 統合構造: JSONBカラムで勤務時間帯、休憩時間帯、勤務場所、交通費情報を保存
+  working_hours_jsonb JSONB NOT NULL DEFAULT '[]'::jsonb, -- 勤務時間帯（複数）: [{id, start_time, end_time}, ...]
+  break_hours_jsonb JSONB NOT NULL DEFAULT '[]'::jsonb, -- 休憩時間帯（複数、任意）: [{id, start_time, end_time}, ...]
+  work_locations_jsonb JSONB NOT NULL DEFAULT '[]'::jsonb, -- 勤務場所（複数）: [{id, location}, ...]
+  transportation_routes_jsonb JSONB NOT NULL DEFAULT '[]'::jsonb, -- 交通費情報（複数、任意）: [{id, route, round_trip_amount, monthly_pass_amount, max_amount, nearest_station}, ...]
   created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
   updated_by TEXT NOT NULL,
@@ -58,74 +63,27 @@ CREATE TABLE IF NOT EXISTS work_conditions (
 );
 
 CREATE INDEX IF NOT EXISTS idx_work_conditions_employee_id ON work_conditions(employee_id, effective_from DESC);
+-- JSONBカラムのGINインデックス（検索・フィルタリング用）
+CREATE INDEX IF NOT EXISTS idx_work_conditions_working_hours_jsonb 
+ON work_conditions USING GIN (working_hours_jsonb);
+CREATE INDEX IF NOT EXISTS idx_work_conditions_break_hours_jsonb 
+ON work_conditions USING GIN (break_hours_jsonb);
+CREATE INDEX IF NOT EXISTS idx_work_conditions_work_locations_jsonb 
+ON work_conditions USING GIN (work_locations_jsonb);
+CREATE INDEX IF NOT EXISTS idx_work_conditions_transportation_routes_jsonb 
+ON work_conditions USING GIN (transportation_routes_jsonb);
 
 -- ==========================================
--- 3. working_hours テーブル（勤務時間帯）
--- ==========================================
-CREATE TABLE IF NOT EXISTS working_hours (
-  id TEXT PRIMARY KEY,
-  work_condition_id TEXT NOT NULL,
-  start_time TIME NOT NULL,
-  end_time TIME NOT NULL,
-  
-  CONSTRAINT fk_work_condition FOREIGN KEY (work_condition_id) REFERENCES work_conditions(id) ON DELETE CASCADE
-);
-
-CREATE INDEX IF NOT EXISTS idx_working_hours_work_condition_id ON working_hours(work_condition_id);
-
--- ==========================================
--- 4. break_hours テーブル（休憩時間帯）
--- ==========================================
-CREATE TABLE IF NOT EXISTS break_hours (
-  id TEXT PRIMARY KEY,
-  work_condition_id TEXT NOT NULL,
-  start_time TIME NOT NULL,
-  end_time TIME NOT NULL,
-  
-  CONSTRAINT fk_work_condition FOREIGN KEY (work_condition_id) REFERENCES work_conditions(id) ON DELETE CASCADE
-);
-
-CREATE INDEX IF NOT EXISTS idx_break_hours_work_condition_id ON break_hours(work_condition_id);
-
--- ==========================================
--- 5. work_locations テーブル（勤務場所）
--- ==========================================
-CREATE TABLE IF NOT EXISTS work_locations (
-  id TEXT PRIMARY KEY,
-  work_condition_id TEXT NOT NULL,
-  location TEXT NOT NULL,
-  
-  CONSTRAINT fk_work_condition FOREIGN KEY (work_condition_id) REFERENCES work_conditions(id) ON DELETE CASCADE
-);
-
-CREATE INDEX IF NOT EXISTS idx_work_locations_work_condition_id ON work_locations(work_condition_id);
-
--- ==========================================
--- 6. transportation_routes テーブル（交通費情報）
--- ==========================================
-CREATE TABLE IF NOT EXISTS transportation_routes (
-  id TEXT PRIMARY KEY,
-  work_condition_id TEXT NOT NULL,
-  route TEXT NOT NULL,
-  round_trip_amount DECIMAL(10, 2) NOT NULL,
-  monthly_pass_amount DECIMAL(10, 2),
-  max_amount DECIMAL(10, 2),
-  nearest_station TEXT,
-  
-  CONSTRAINT fk_work_condition FOREIGN KEY (work_condition_id) REFERENCES work_conditions(id) ON DELETE CASCADE
-);
-
-CREATE INDEX IF NOT EXISTS idx_transportation_routes_work_condition_id ON transportation_routes(work_condition_id);
-
--- ==========================================
--- 7. contracts テーブル（雇用契約）
+-- 3. contracts テーブル（雇用契約）
 -- ==========================================
 CREATE TABLE IF NOT EXISTS contracts (
   id TEXT PRIMARY KEY,
   employee_id TEXT NOT NULL,
   contract_type TEXT NOT NULL,
   contract_start_date DATE NOT NULL,
-  contract_end_date DATE,
+  contract_end_date DATE, -- 後方互換性のため保持（段階的移行後削除予定）
+  employment_expiry_scheduled_date DATE, -- 雇用満了予定日（契約時に設定する予定の満了日）
+  employment_expiry_date DATE, -- 雇用満了日（実際の雇用終了日、任意項目）
   is_renewable BOOLEAN NOT NULL DEFAULT false,
   fixed_term_base_date DATE,
   job_description TEXT,
@@ -141,14 +99,32 @@ CREATE TABLE IF NOT EXISTS contracts (
   
   CONSTRAINT fk_employee FOREIGN KEY (employee_id) REFERENCES employees(id) ON DELETE CASCADE,
   CONSTRAINT chk_contract_type CHECK (contract_type IN ('INDEFINITE', 'FIXED_TERM')),
-  CONSTRAINT chk_status CHECK (status IN ('DRAFT', 'AWAITING_APPROVAL', 'SUBMITTED', 'RETURNED'))
+  CONSTRAINT chk_status CHECK (status IN ('DRAFT', 'AWAITING_APPROVAL', 'SUBMITTED', 'RETURNED')),
+  CONSTRAINT chk_contract_expiry_scheduled_date CHECK (
+    employment_expiry_scheduled_date IS NULL 
+    OR employment_expiry_scheduled_date > contract_start_date
+  ),
+  CONSTRAINT chk_contract_expiry_date CHECK (
+    employment_expiry_date IS NULL 
+    OR employment_expiry_date >= contract_start_date
+  )
 );
 
 CREATE INDEX IF NOT EXISTS idx_contracts_employee_id ON contracts(employee_id, contract_start_date DESC);
+-- 契約更新アラート用インデックス（employment_expiry_scheduled_dateベース）
+CREATE INDEX IF NOT EXISTS idx_contracts_expiry_scheduled_date 
+ON contracts(employment_expiry_scheduled_date) 
+WHERE termination_alert_flag = true 
+  AND employment_expiry_scheduled_date IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_contracts_status_expiry_scheduled 
+ON contracts(status, employment_expiry_scheduled_date) 
+WHERE termination_alert_flag = true 
+  AND employment_expiry_scheduled_date IS NOT NULL;
+-- 後方互換性のため、contract_end_dateベースのインデックスも保持（段階的移行後削除予定）
 CREATE INDEX IF NOT EXISTS idx_contracts_status_end_date ON contracts(status, contract_end_date) WHERE termination_alert_flag = true;
 
 -- ==========================================
--- 8. employment_history テーブル（雇用・人事履歴）
+-- 4. employment_history テーブル（雇用・人事履歴）
 -- ==========================================
 CREATE TABLE IF NOT EXISTS employment_history (
   id TEXT PRIMARY KEY,
@@ -174,7 +150,7 @@ CREATE TABLE IF NOT EXISTS employment_history (
 CREATE INDEX IF NOT EXISTS idx_employment_history_employee_id ON employment_history(employee_id, effective_date DESC);
 
 -- ==========================================
--- 9. employee_admin_records テーブル（従業員事務管理）
+-- 5. employee_admin_records テーブル（従業員事務管理）
 -- ==========================================
 CREATE TABLE IF NOT EXISTS employee_admin_records (
   id TEXT PRIMARY KEY,
@@ -202,7 +178,7 @@ CREATE TABLE IF NOT EXISTS employee_admin_records (
 CREATE INDEX IF NOT EXISTS idx_employee_admin_updated_at ON employee_admin_records(updated_at DESC);
 
 -- ==========================================
--- 10. users テーブル（認証ユーザー）
+-- 6. users テーブル（認証ユーザー）
 -- 注意: better-auth が基本テーブルを作成するため、追加カラムのみ定義
 -- ==========================================
 -- users テーブルは better-auth が作成するため、存在確認後にカラムを追加
@@ -230,7 +206,7 @@ CREATE INDEX IF NOT EXISTS idx_users_role ON users(role);
 CREATE INDEX IF NOT EXISTS idx_users_department_code ON users(department_code);
 
 -- ==========================================
--- 11. edit_locks テーブル（編集ロック）
+-- 7. edit_locks テーブル（編集ロック）
 -- ==========================================
 CREATE TABLE IF NOT EXISTS edit_locks (
   resource_id TEXT PRIMARY KEY,
@@ -260,7 +236,7 @@ END $$;
 CREATE INDEX IF NOT EXISTS idx_edit_locks_expires_at ON edit_locks(expires_at);
 
 -- ==========================================
--- 12. audit_logs テーブル（監査ログ）
+-- 8. audit_logs テーブル（監査ログ）
 -- ==========================================
 CREATE TABLE IF NOT EXISTS audit_logs (
   id TEXT PRIMARY KEY,
@@ -299,6 +275,6 @@ CREATE INDEX IF NOT EXISTS idx_audit_logs_created_at ON audit_logs(created_at DE
 -- ==========================================
 DO $$
 BEGIN
-  RAISE NOTICE 'スキーマ作成が完了しました。全12テーブルが作成されました。';
+  RAISE NOTICE 'スキーマ作成が完了しました。全8テーブルが作成されました。';
 END $$;
 
