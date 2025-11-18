@@ -350,8 +350,8 @@ crates/foo/planner.rsで、以下を定義：
    - 従業員詳細画面: タブ UI（雇用情報/勤務情報/給与・手当/書類）
      - 雇用情報タブ: 社員番号、氏名、部門、契約番号（contractsテーブルのid）、入社日、雇用期間、退社日を表示
      - 勤務情報タブ: 契約書有給、勤務時間、休憩時間、勤務日数/週、勤務場所、業務内容を表示
-     - 給与・手当タブ: 時給、残業時給、最寄り駅、交通費、控除申告書、雇用保険、社会保険関連情報を表示
-     - 書類タブ: 保険証授、雇用契約書提出、本人へ返却、満了通知書発効、退職届提出、返却状況を表示
+     - 給与・手当タブ: 時給、残業時給（overtime_hourly_wage）、最寄り駅（transportation_routes.nearest_station）、交通費（片道/往復）（transportation_routes.round_trip_amount）、控除申告書（甲乙）（employee_admin_records.tax_withholding_category）、雇用保険（加入/未加入）（employee_admin_records.employment_insurance）、雇用保険書提出（employee_admin_records.employment_insurance_card_submitted）、社会保険（加入/未加入）（employee_admin_records.social_insurance）、社会保険関連書類の提出状況（年金手帳、健康保険証）（employee_admin_records.pension_book_submitted, employee_admin_records.health_insurance_card_submitted）を表示（spec.mdの「従業員管理ページの表示データ項目」セクションに準拠）
+     - 書類タブ: 保険証授（健康保険証の授受状況）（employee_admin_records.health_insurance_card_submitted）、雇用契約書他管理へ提出（日付）（employee_admin_records.submitted_to_admin_on）、本人へ返却（書類の本人への返却状況）（employee_admin_records.returned_to_employee）、満了通知書発効（契約満了通知書の発行状況）（employee_admin_records.expiration_notice_issued）、退職届提出（employee_admin_records.resignation_letter_submitted）、返却（保険証（employee_admin_records.return_health_insurance_card）、セキュリティカード（employee_admin_records.return_security_card））を表示（spec.mdの「従業員管理ページの表示データ項目」セクションに準拠）
    - 従業員編集画面: TanStack Form + Zod バリデーション
      - 雇用開始日と雇用終了日を近い場所に配置（UI-001準拠）
      - 部門コード選択: BPS課、オンサイト課、CC課、PS課の4部署から選択（FR-001準拠）
@@ -666,7 +666,7 @@ crates/foo/planner.rsで、以下を定義：
    - 給与抽出: `hrManagerProcedure` or `adminProcedure`
 5. 列レベル制御
    - `myNumber` (個人番号), `hourlyWage` (給与情報) は統括/管理者のみ取得可能
-   - 注記: `overtimeHourlyWage`（残業時給）はパート従業員には不要なため実装しない（spec.md準拠）
+   - 注記: `overtimeHourlyWage`（残業時給）は必要である（spec.md準拠、従業員管理情報.mdに記載、給与・手当タブに表示）
    - `employee_admin_records` の税務・保険・書類管理項目は HR/ADMIN のみ編集可（閲覧は役割に応じて制限）
    - tRPC resolver で条件付き `select` を使用
 6. 行レベル制御
@@ -844,8 +844,14 @@ crates/foo/planner.rsで、以下を定義：
   - Phase 2: UI-001（雇用開始日と雇用終了日を近い場所に配置）をフロントエンド実装に追加
   - Phase 2: UI-002（一覧画面からのステータス一括変更、FR-026）を追加
   - Phase 2: 雇用履歴に役職・等級フィールドが不要であることを明記（spec.md準拠）
-  - Phase 10: 残業時給は不要であることを明記（spec.md準拠）
+  - Phase 10: 残業時給は必要であることを確認（spec.md準拠、従業員管理情報.mdに記載）
 - 2025-01-28 (later): spec.mdの従業員管理ページ表示データ項目の明確化をPLANS.mdに反映
   - Phase 2: 従業員詳細画面のタブUIを「雇用情報/勤務情報/給与・手当/書類」に更新
   - Phase 2: 雇用情報タブに契約番号（contractsテーブルのid）を表示する要件を追加
   - Phase 2: 各タブの表示データ項目を明確化（spec.mdの「従業員管理ページの表示データ項目」セクションに準拠）
+- 2025-01-28 (final): spec.mdの最新要件をPLANS.mdに完全反映
+  - Global Goal: 部門コード4部署（BPS課、オンサイト課、CC課、PS課）の要件を確認
+  - Phase 2: 従業員管理ページの4つのタブ（雇用情報/勤務情報/給与・手当/書類）の表示項目をspec.mdに完全準拠
+  - Phase 2: 給与・手当タブに残業時給（overtime_hourly_wage）の表示を追加
+  - Phase 2: 書類タブの表示項目をspec.mdに完全準拠（保険証授、雇用契約書提出、本人へ返却、満了通知書発効、退職届提出、返却状況）
+  - Phase 10: 残業時給（overtime_hourly_wage）は必要であることを確認（spec.md準拠、従業員管理情報.mdに記載）
