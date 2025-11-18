@@ -168,7 +168,10 @@ export default async function EmployeeDetailPage({ params, searchParams }: Emplo
         {/* タブコンテンツ */}
         <div className="p-8">
           {activeTab === "profile" ? (
-            <ProfileSection employee={employee} />
+            <ProfileSection
+              employee={employee}
+              contract={detail.contracts.length > 0 ? detail.contracts[0] : undefined}
+            />
           ) : (
             <WorkSection detail={detail} />
           )}
@@ -217,10 +220,14 @@ const TabLink = ({ href, label, active }: { href: string; label: string; active:
   </Link>
 );
 
+type EmployeeDetailResponse = Awaited<ReturnType<typeof fetchEmployeeDetail>>;
+
 const ProfileSection = ({
   employee,
+  contract,
 }: {
-  employee: NonNullable<Awaited<ReturnType<typeof fetchEmployeeDetail>>["employee"]>;
+  employee: NonNullable<EmployeeDetailResponse["employee"]>;
+  contract?: EmployeeDetailResponse["contracts"][number];
 }) => (
   <div className="space-y-8">
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -244,11 +251,16 @@ const ProfileSection = ({
           雇用情報
         </h4>
         <div className="bg-blue-50/30 border border-blue-100 rounded-xl p-6 space-y-4">
-          <InfoRow label="雇用形態" value={employmentTypeLabel(employee.employmentType)} />
+          <InfoRow label="社員番号" value={employee.employeeNumber} />
+          <InfoRow label="氏名" value={employee.name} />
           <InfoRow label="部門" value={employee.departmentCode} />
-          <InfoRow label="従業員番号" value={employee.employeeNumber} />
-          <InfoRow label="支店番号" value={String(employee.branchNumber)} />
-          {employee.retiredAt && <InfoRow label="退職日" value={employee.retiredAt} />}
+          <InfoRow label="契約番号" value={contract?.id ?? "-"} />
+          <InfoRow label="入社日" value={employee.hiredAt ?? "-"} />
+          <InfoRow
+            label="雇用期間"
+            value={`${contract?.contractStartDate ?? "-"} ~ ${contract?.contractEndDate ?? "継続"}`}
+          />
+          <InfoRow label="退社日" value={employee.retiredAt ?? "-"} />
         </div>
       </div>
     </div>
