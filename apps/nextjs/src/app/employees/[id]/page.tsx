@@ -26,7 +26,14 @@ export default async function EmployeeDetailPage({ params, searchParams }: Emplo
   const employee = detail.employee;
 
   const viewParam = resolvedSearchParams?.view;
-  const activeTab = viewParam === "work" ? "work" : viewParam === "salary" ? "salary" : "profile";
+  const activeTab =
+    viewParam === "work"
+      ? "work"
+      : viewParam === "salary"
+        ? "salary"
+        : viewParam === "contracts"
+          ? "contracts"
+          : "profile";
 
   return (
     <div className="space-y-6">
@@ -154,9 +161,11 @@ export default async function EmployeeDetailPage({ params, searchParams }: Emplo
             label="給与・手当"
             active={activeTab === "salary"}
           />
-          <button className="px-6 py-4 text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-white transition-all">
-            契約履歴
-          </button>
+          <TabLink
+            href={`/employees/${employee.id}?view=contracts`}
+            label="契約履歴"
+            active={activeTab === "contracts"}
+          />
           <button className="px-6 py-4 text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-white transition-all">
             評価・スキル
           </button>
@@ -184,6 +193,7 @@ export default async function EmployeeDetailPage({ params, searchParams }: Emplo
               workConditions={detail.workConditions}
             />
           )}
+          {activeTab === "contracts" && <ContractsSection contracts={detail.contracts} />}
 
           <div className="flex justify-end gap-3 mt-8 pt-8 border-t border-slate-200">
             <Link
@@ -423,6 +433,41 @@ const SalarySection = ({
     </div>
   );
 };
+
+const ContractsSection = ({ contracts }: { contracts: EmployeeDetailResponse["contracts"] }) => (
+  <div className="space-y-6">
+    {contracts.length === 0 ? (
+      <p className="text-sm text-slate-500">契約履歴がありません。</p>
+    ) : (
+      contracts.map((contract) => (
+        <div key={contract.id} className="border border-slate-100 rounded-2xl p-6 space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs text-slate-500 uppercase tracking-wider">契約番号</p>
+              <p className="text-lg font-semibold text-slate-900">{contract.id}</p>
+            </div>
+            <span className="px-3 py-1 text-xs rounded-full bg-slate-100 text-slate-700">
+              {contract.status}
+            </span>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <InfoRow label="契約タイプ" value={contract.contractType === "FIXED_TERM" ? "有期" : "無期"} />
+            <InfoRow
+              label="契約期間"
+              value={`${contract.contractStartDate ?? "-"} ~ ${contract.contractEndDate ?? "継続"}`}
+            />
+            <InfoRow label="時給" value={`¥${contract.hourlyWage.toLocaleString()}`} />
+            <InfoRow
+              label="残業時給"
+              value={contract.overtimeHourlyWage ? `¥${contract.overtimeHourlyWage.toLocaleString()}` : "-"}
+            />
+            <InfoRow label="業務内容" value={contract.jobDescription ?? "-"} />
+          </div>
+        </div>
+      ))
+    )}
+  </div>
+);
 
 // ヘルパー関数
 const genderLabel = (value: string) => {
