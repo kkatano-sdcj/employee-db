@@ -191,7 +191,7 @@ crates/foo/planner.rsで、以下を定義：
 
 ## コンテキストと方向性
 - 現状: ルートには`designs/plan3` のHTMLモックと Supabase スキーマSQLのみが存在し、Next.jsアプリやPNPM設定が未作成。
-- データソース: Supabase プロジェクト（`.env`の`DATABASE_URL`/`DIRECT_URL`）上に `employees` ほか12テーブルが既に作成済み。
+- データソース: Supabase プロジェクト（`.env`の`DATABASE_URL`/`DIRECT_URL`）上に `employees` ほか8テーブルが既に作成済み。
 - 仕様: `specs/001-employee-db-requirements/spec.md` のFR-001〜FR-009と `specs/002-contract-expiry-date/spec.md` のFR-001〜FR-009（契約開始日/雇用満了予定日/雇用満了日、アラート再計算）を参照。非機能（最終更新日時表示、同時編集制御は将来Phase）を順守。
 - UI要件: `designs/plan3/*.html`（ダッシュボード、従業員一覧/詳細/登録、契約管理、レポート、設定）。
 
@@ -218,7 +218,7 @@ crates/foo/planner.rsで、以下を定義：
    - `app/(dashboard)/settings/page.tsx`: システム設定・通知設定UI.  
    - 主要フォームは spec のエラーメッセージ要件 (FR-025) に沿ってフィールド直下へ表示。
 5. **データ取得/保存ロジック**  
-   - 暫定: Supabase SQLビュー or `pg`クエリ (server actions) で employees, work_conditions,... 12テーブル join.  
+   - 暫定: Supabase SQLビュー or `pg`クエリ (server actions) で employees, work_conditions,... 8テーブル join.  
    - 従業員登録: サーバーアクション `createEmployeeAction` で employees + work_conditions + child tables + transactions (FR-002〜FR-005).  
    - 契約保存: `contracts` insert + branch number increment stub (Phase6 detail).  
    - 集計: Dashboard KPI (Active employees count, expiring contracts, pending alerts).  
@@ -260,11 +260,12 @@ crates/foo/planner.rsで、以下を定義：
 - ORM: Prisma
 - マイグレーション: Prisma Migrate
 
-**詳細スキーマ定義**: `table.md` を参照（12テーブルの完全定義、フィールド、制約、インデックス、Prismaスキーマ例を含む）
+**詳細スキーマ定義**: `table.md` を参照（8テーブルの完全定義、フィールド、制約、インデックス、Prismaスキーマ例を含む）
 
 **Steps**
 1. `table.md` のスキーマ定義に基づいて `packages/db/prisma/schema.prisma` にモデル定義
-   - 12テーブル: employees, work_conditions, working_hours, break_hours, work_locations, transportation_routes, contracts, employment_history, employee_admin_records, users, edit_locks, audit_logs
+   - 8テーブル: employees, work_conditions, contracts, employment_history, employee_admin_records, users, edit_locks, audit_logs
+   - 注記: work_conditionsテーブルは、working_hours、break_hours、work_locations、transportation_routesをJSONBカラムで統合した構造
    - すべての外部キー制約、CHECK制約、インデックスをPrismaで表現
    - カスケード削除は `@relation(onDelete: Cascade)` で定義
    - 複合インデックスは `@@index([field1, field2])` で定義
@@ -283,12 +284,12 @@ crates/foo/planner.rsで、以下を定義：
    - `table.md` の「アクセスパターン最適化」セクションを参照
    - 主要クエリパターンと対応インデックスを確認
 
-**DoD**
 - Prisma マイグレーションファイル生成済み（`prisma/migrations/`）
 - Supabaseにスキーマ適用済み
 - Prisma Studioで全テーブル確認可能
-- `table.md` 記載の全12テーブルが存在（フィールド数、インデックス数が一致）
-- 主要外部キー制約、UNIQUE制約、CHECK制約、インデックス定義済み
+- `table.md` 記載の全8テーブルが存在（フィールド数、インデックス数が一致）
+- work_conditionsテーブルがJSONB統合構造に移行済み（旧 working_hours/break_hours/work_locations/transportation_routes テーブルは廃止）
+- 主要外部キー制約、UNIQUE制約、CHECK制約、インデックス定義済み（JSONB用GINインデックス含む）
 - `pnpm db:migrate reset` でロールバック可能
 - シードデータ（`prisma/seed.ts`）実行可能
 
@@ -323,14 +324,15 @@ crates/foo/planner.rsで、以下を定義：
      - 複数選択した従業員の書類ステータスを一括更新
      - チェックボックスと一括操作コントロールを使用
 2. 勤務条件 CRUD（`packages/api/src/router/workCondition.ts`）
-   - `create`: Prisma トランザクションで親子レコードを一括保存（正規化テーブル構造）
-   - 子テーブル: working_hours, break_hours, work_locations, transportation_routes（`table.md` 参照）
-   - `get`: `findUnique` + `include` で子レコードを一括取得
-   - `update`: 既存の子レコードを全削除して再作成（差分更新は Phase 11 で検討）
-   - `delete`: CASCADE削除で子レコードも自動削除
-   - `findByEmployeeId`: インデックス活用（`idx_work_conditions_employee_id`）
-   - `getCurrentWorkCondition`: 有効期間による絞り込み + ソート
-   - 時刻帯の重複/境界バリデーション（Zod スキーマ）
+   - `create`: JSONBカラム（例: `working_hours`, `break_hours`, `locations`, `transportation_routes`）への統合保存（`specs/003-work-conditions-consolidation/spec.md`）
+     - 既存の `working_hours` 等4テーブルから移行した構造を1リクエストで登録
+   - `get`: `findUnique` でJSONBカラムを一括取得
+   - `update`: JSONBカラム内の特定セクションをマージ更新（差分更新対応: 時間帯の追加/削除をJSON mergeで実現）
+   - `delete`: work_conditionsレコードを削除（統合JSONBフィールドのみで管理）
+   - `findByEmployeeId`: JSONB構造から特定勤務日/時間を抽出するフィルタを追加（`specs/003` の検索・フィルタリング要件）
+   - `getCurrentWorkCondition`: 有効期間による絞り込み + JSONBデータをアプリ用のタイプへ整形
+   - 時刻帯/休憩/勤務地/交通費の配列に対する重複/境界バリデーション（Zod スキーマ）
+   - `specs/003` 移行手順: 既存 `working_hours`, `break_hours`, `work_locations`, `transportation_routes` のデータを JSONB へ移行するスクリプトを Phase 1 で実装し、子テーブルを削除
 3. 雇用契約 CRUD（`packages/api/src/router/contract.ts`）
    - `create`: Prisma の `create`（`table.md` および `specs/002-contract-expiry-date/spec.md` の contracts テーブル定義に準拠）
      - 必須: `contract_start_date`, `employment_expiry_scheduled_date`（雇用満了予定日）
@@ -358,7 +360,7 @@ crates/foo/planner.rsで、以下を定義：
   - 従業員詳細画面: タブ UI（雇用情報/勤務情報/給与・手当/契約履歴/書類/備考）
     - 雇用情報タブ: 社員番号、氏名、部門、契約番号（contracts.id）、入社日、雇用期間（`contract_start_date`〜`employment_expiry_scheduled_date`）、実際の雇用満了日（`employment_expiry_date`、未設定時は「未設定」）と退社日を表示（specs/002 FR-001〜FR-007準拠）
     - 勤務情報タブ: 契約書有給、勤務時間、休憩時間、勤務日数/週、勤務場所、業務内容を表示
-    - 給与・手当タブ: 時給、残業時給（overtime_hourly_wage）、最寄り駅（transportation_routes.nearest_station）、交通費（片道/往復）（transportation_routes.round_trip_amount）、控除申告書（甲乙）（employee_admin_records.tax_withholding_category）、雇用保険（加入/未加入）（employee_admin_records.employment_insurance）、雇用保険書提出（employee_admin_records.employment_insurance_card_submitted）、社会保険（加入/未加入）（employee_admin_records.social_insurance）、社会保険関連書類の提出状況（年金手帳、健康保険証）（employee_admin_records.pension_book_submitted, employee_admin_records.health_insurance_card_submitted）を表示（spec.mdの「従業員管理ページの表示データ項目」セクションに準拠）
+    - 給与・手当タブ: 時給、残業時給（overtime_hourly_wage）、最寄り駅（work_conditions.transportation_routes_jsonbから取得）、交通費（片道/往復）（work_conditions.transportation_routes_jsonbから取得）、控除申告書（甲乙）（employee_admin_records.tax_withholding_category）、雇用保険（加入/未加入）（employee_admin_records.employment_insurance）、雇用保険書提出（employee_admin_records.employment_insurance_card_submitted）、社会保険（加入/未加入）（employee_admin_records.social_insurance）、社会保険関連書類の提出状況（年金手帳、健康保険証）（employee_admin_records.pension_book_submitted, employee_admin_records.health_insurance_card_submitted）を表示（spec.mdの「従業員管理ページの表示データ項目」セクションに準拠）
     - 契約履歴タブ: 契約開始日、雇用満了予定日（employment_expiry_scheduled_date）、実際の雇用満了日（employment_expiry_date）、契約タイプ、業務内容を時系列で表示（specs/002 FR-007準拠）
     - 書類タブ: 保険証授（employee_admin_records.health_insurance_card_submitted）、雇用契約書他管理へ提出（日付）（employee_admin_records.submitted_to_admin_on）、本人へ返却（employee_admin_records.returned_to_employee）、満了通知書発効（employee_admin_records.expiration_notice_issued）、退職届提出（employee_admin_records.resignation_letter_submitted）、返却（保険証: employee_admin_records.return_health_insurance_card、セキュリティカード: employee_admin_records.return_security_card）を表示（spec.mdの「従業員管理ページの表示データ項目」セクションに準拠）
     - 備考タブ: 契約メモ（hourly_wage_note など）の抜粋と任意メモ欄を表示（Plan3 UIの要件。必要に応じて評価・スキル情報を追記）
@@ -529,7 +531,7 @@ crates/foo/planner.rsで、以下を定義：
 1. 指定日時点のデータ抽出ロジック（`packages/api/src/router/export.ts`）
    - 従業員マスター: employees テーブル（`table.md` の定義を参照）
    - 勤務条件: 指定日時点で有効な勤務条件（有効期間による絞り込み）
-   - 正規化テーブル: work_conditions + working_hours + break_hours + work_locations + transportation_routes
+   - 統合テーブル: work_conditions（JSONBカラムで統合）
    - 契約: 指定日時点で有効な契約（契約期間による絞り込み）
 2. 抽出項目選択機能
    - フロントエンドで項目選択UI（チェックボックス）
@@ -570,18 +572,18 @@ crates/foo/planner.rsで、以下を定義：
 1. 給与計算用データの抽出仕様定義
    - 従業員情報: employees テーブル（employeeNumber, name）
    - 時給情報: contracts.hourlyWage（`table.md` の contracts テーブル定義を参照）
-   - 通勤費: transportation_routes テーブル（route, roundTripAmount, monthlyPassAmount, maxAmount）
+   - 通勤費: work_conditions.transportation_routes_jsonb から取得（route, roundTripAmount, monthlyPassAmount, maxAmount）
    - 社会保険加入フラグ（将来拡張: contracts テーブルに追加予定）
    - 各種手当（将来拡張: contracts テーブルまたは別テーブルに追加予定）
    - 勤務日数: work_conditions（workDaysType + workDaysCount）
-   - 勤務時間: working_hours から算出（SUM(endTime - startTime)）
+   - 勤務時間: work_conditions.working_hours_jsonb から算出（SUM(endTime - startTime)）
 2. Prisma クエリでのデータ取得（`packages/api/src/router/export.ts`）
    - 在籍中の従業員を抽出（employmentStatus = 'ACTIVE'）
    - 現在有効な契約（最新1件）を結合
-   - 現在有効な勤務条件（最新1件）を結合（正規化テーブル含む）
+   - 現在有効な勤務条件（最新1件）を結合（JSONBカラム含む）
 3. データ変換処理
-   - 勤務時間の合計計算（working_hours から算出）
-   - 交通費の集計（transportation_routes から月額定期を優先）
+   - 勤務時間の合計計算（work_conditions.working_hours_jsonb から算出）
+   - 交通費の集計（work_conditions.transportation_routes_jsonb から月額定期を優先）
    - 各種手当の集計
 4. CSV生成 API（`apps/nextjs/src/app/api/export/payroll/route.ts`）
    - CSV形式での出力（UTF-8 BOM付き）
@@ -809,12 +811,13 @@ crates/foo/planner.rsで、以下を定義：
   - Test: Vitest, Playwright, k6 の使用
 - 2025-11-04 (later): スキーマ整合性確保とドキュメント整理
   - Phase 1: 詳細なテーブル定義（SQL CREATE TABLE）を反映
-   - 全12テーブルのフィールド定義を明示（employees, work_conditions, working_hours, break_hours, work_locations, transportation_routes, contracts, employment_history, employee_admin_records, users, edit_locks, audit_logs）
+   - 全8テーブルのフィールド定義を明示（employees, work_conditions, contracts, employment_history, employee_admin_records, users, edit_locks, audit_logs）
+   - 注記: work_conditionsテーブルは、working_hours、break_hours、work_locations、transportation_routesをJSONBカラムで統合した構造
     - 外部キー制約、CHECK制約、インデックスの詳細を追加
     - アクセスパターンの最適化指針を追加
   - Phase 4: リポジトリ層実装詳細を反映
     - 従業員CRUD: findByEmployeeNumber, 検索条件の詳細化、ページネーション（50件/ページ）
-    - 勤務条件CRUD: 正規化テーブル（working_hours, break_hours, work_locations, transportation_routes）の一括保存ロジック
+    - 勤務条件CRUD: work_conditionsテーブルのJSONBカラム（working_hours, break_hours, locations, transportation_routes）への統合保存ロジック（`specs/003-work-conditions-consolidation/spec.md` 準拠）
     - 雇用契約CRUD: findExpiringContracts の実装詳細
     - 雇用履歴: eventType の8種類（HIRE/TRANSFER/PROMOTION等）を明示
   - Phase 6: 枝番管理の詳細を反映
@@ -824,12 +827,12 @@ crates/foo/planner.rsで、以下を定義：
    - 選択可能フィールドの明示（`table.md` の employees テーブル定義）
     - myNumber の権限チェック
   - Phase 8: 給与支払データ抽出の詳細を反映
-    - transportation_routes テーブルの使用
-    - working_hours からの勤務時間算出
+    - work_conditions.transportation_routes_jsonb からの交通費取得
+    - work_conditions.working_hours_jsonb からの勤務時間算出
   - すべてのフェーズでスキーマ定義を単一の真実の源 (SoT) として統一
   - 外部ドキュメント参照を削除し、PLANS.md を自己完結型の実行可能仕様書として完成
 - 2025-11-04 (final): ドキュメント分割によるPLANS.mdの文字数削減
-   - データベーススキーマ詳細を table.md に分離（12テーブルの完全定義、Prismaスキーマ例、インデックス戦略、マイグレーション手順）
+   - データベーススキーマ詳細を table.md に分離（8テーブルの完全定義、Prismaスキーマ例、インデックス戦略、マイグレーション手順）
   - Phase 1: table.md への参照を追加、スキーマ詳細を削除（Steps 1の詳細なフィールド定義を簡略化）
   - Phase 4: table.md への参照を追加、フィールド詳細を削除（従業員CRUD、勤務条件CRUD、雇用契約CRUD、雇用履歴の詳細説明を簡略化）
   - Phase 6: 枝番管理の実装コード例を削除、概要のみ保持
@@ -842,7 +845,7 @@ crates/foo/planner.rsで、以下を定義：
    - `contracts` に `hourly_wage_note`（原文メモ）, `overtime_hourly_wage`（残業時給）, `paid_leave_clause`（有休条項）を追加、`job_description` を任意項目に変更
    - `work_conditions` に `work_days_count_note` を追加（例: 2～3）
    - `transportation_routes` に `nearest_station` を追加、往復単価の扱いを明確化
-   - これに伴いテーブル総数は12件に増加、関連RBACとアクセスパターン記述を更新
+   - これに伴いテーブル総数は8件（work_conditionsテーブルにJSONB統合構造を採用）、関連RBACとアクセスパターン記述を更新
 - 2025-11-05 (later): 認証機能の実装タイミングを変更
   - Phase 2のRBAC実装を削除し、Phase 10に移動（MVP完成後に実装）
   - Phase 2をCRUD機能に変更（認証なしで実装）
