@@ -225,6 +225,7 @@ export type EmployeeDetail = {
     contractType: string;
     contractStartDate?: string;
     contractEndDate?: string | null;
+    isRenewable: boolean;
     employmentExpiryScheduledDate?: string | null;
     employmentExpiryDate?: string | null;
     needsUpdate: boolean;
@@ -367,6 +368,7 @@ export async function fetchEmployeeDetail(employeeId: string): Promise<EmployeeD
       contract_type as "contractType",
       contract_start_date as "contractStartDate",
       contract_end_date as "contractEndDate",
+      is_renewable as "isRenewable",
       employment_expiry_scheduled_date as "employmentExpiryScheduledDate",
       employment_expiry_date as "employmentExpiryDate",
       hourly_wage as "hourlyWage",

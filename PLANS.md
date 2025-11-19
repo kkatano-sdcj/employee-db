@@ -251,6 +251,83 @@ crates/foo/planner.rsで、以下を定義：
 - **時間不足**: MVPでは閲覧/簡易登録を優先し、PDF/CSV/ロック/RBACは既存Phaseで追認。  
 - **UIとの乖離**: Plan3 HTML のクラス/配色をTailwindテーマに落とし込み、Storybook的 `components/demo` page で検証。
 ```
+
+## Plan: 従業員編集画面（Next.js App Router）
+```md
+# 従業員編集フォームと更新APIを整備する
+
+このExecPlanは生きている文書です。`specs/008-comprehensive-spec/spec.md` の User Story 1 / FR-050 / SC-038 / UI-001 / UI-010 / UI-016 節と `designs/plan3/employee-detail.html` のモックを常に参照しながら進め、`Progress`、`Surprises & Discoveries`、`Decision Log`、`Outcomes & Retrospective` を最新に保ちます。
+
+## 目的 / 全体像
+統括人事管理者が従業員詳細ページから「編集モード」を開き、既存の基本情報・勤務条件・契約情報を`specs/008`に沿って修正できるようにします。編集後は `/employees` 一覧や詳細ページで即時に更新内容が確認でき、`pnpm --filter @acme/nextjs dev` で立ち上げたUI上でフォーム送信→成功トースト→詳細へ戻る動線を手動確認できる状態をゴールとします。
+
+## Progress
+- [x] (2025-11-19T13:24Z) `fetchEmployeeDetail` に `is_renewable` を追加し、`mapEmployeeDetailToFormValues` ユーティリティで `EmployeeFormValues` へ射影
+- [x] (2025-11-19T13:28Z) `apps/nextjs/src/server/actions/update-employee.ts` + `/api/employees/[id]` を追加し、従業員・勤務条件・契約の更新処理とトランザクションを実装
+- [x] (2025-11-19T13:34Z) `EmployeeForm` を編集モード対応にリファクタし、`apps/nextjs/src/app/employees/[id]/edit/page.tsx` から初期値とメタデータを受け渡す
+- [x] (2025-11-19T13:40Z) `pnpm --filter @acme/nextjs lint` を実行し、UI要件の手動検証手順を整理（ブラウザ確認は後続作業で実施）
+
+## 驚きと発見
+- 観察: `create-employee` は依然として `working_hours` 系の旧テーブルにINSERTしている一方、詳細画面は `work_conditions.*_jsonb` から値を読み出している。  
+  証拠: `apps/nextjs/src/server/actions/create-employee.ts` と `apps/nextjs/src/server/queries/employees.ts` の実装差異。今回の `updateEmployee` ではJSONBを直接更新し、将来的に登録処理も同じ構造へ寄せる必要がある。
+
+## 決定ログ
+- 決定: 更新リクエストは `PUT /api/employees/[employeeId]` に集約し、サーバーアクション `updateEmployee` を介してPostgresトランザクションを張る。  
+  根拠: 従業員・勤務条件・契約の3テーブルを同時に更新するため、1か所にまとめてロールバック可能にする必要がある。  
+  日付/作成者: 2025-11-19 / Codex
+- 決定: 編集フォームは既存 `EmployeeForm` を拡張し、`mode`（"create" | "edit"）と `initialValues` + `resourceIds` をpropsで受ける。  
+  根拠: 新規登録とのUI一貫性を維持し、UI-001/010で求められる配置/ラベルを単一コンポーネントから保証する。  
+  日付/作成者: 2025-11-19 / Codex
+
+## 結果と振り返り
+- 着手前のため未記入。完了時に実装内容・問題・次のアクションをまとめます。
+
+## コンテキストと方向性
+- `apps/nextjs/src/components/employees/EmployeeForm.tsx`: React Hook Form + Zod で新規登録専用のUIを提供中。編集モードは未対応。
+- `apps/nextjs/src/app/employees/[id]/page.tsx`: 詳細ページに「編集モード」リンクが存在するが、遷移先は未実装。
+- `apps/nextjs/src/server/actions/create-employee.ts`: INSERT専用のトランザクション。
+- `apps/nextjs/src/server/queries/employees.ts`: 詳細取得に `fetchEmployeeDetail` を提供。これを編集フォーム初期値へマップする。
+- `specs/008-comprehensive-spec/spec.md`: 従業員管理ページの表示項目、UI-001/010/016、FR-050/FR-067〜073、SC-038を本タスクの受入基準とする。
+
+## 作業計画
+1. `apps/nextjs/src/lib/schemas/employee.ts` に編集で必要なIDフィールド（employeeId, workConditionId, contractIdなど）を追加するか、別の型を導入してAPIリクエストボディに含められるようにする。`defaultEmployeeFormValues` は変わらないが、初期値を外部から差し込めるよう `EmployeeForm` の `useForm` 初期化を props 経由に変更する。
+2. `fetchEmployeeDetail` の戻り値をフォーム値へ変換する `mapEmployeeDetailToFormValues` ユーティリティを `apps/nextjs/src/lib/mappers/employee-form.ts`（新規）として作成。複数勤務条件のうち最新(0番目)を編集対象にし、`workConditions[0]` が無い場合は既定値を使用するロジックを記述。
+3. `apps/nextjs/src/server/actions/update-employee.ts` を追加し、従業員情報・勤務条件・契約テーブルを `db.begin` で更新。`workConditionId` が存在する場合は関連の `working_hours` 等を一旦DELETE→INSERTで差し替える。存在しない場合は `createEmployee` と同じように新規作成。`contracts` も同様に `contractId` を更新し、未指定の場合は新規発行。
+4. API ルート `apps/nextjs/src/app/api/employees/[id]/route.ts` を作り、`PUT` で `updateEmployee` を呼び出す。エラー時は `400` + message、成功時は JSON `{ ok: true }`。
+5. `EmployeeForm` を `mode`, `initialValues`, `employeeId`, `workConditionId`, `contractId`, `onSuccessRedirect` などのpropsに対応させ、`fetch` 先を `mode` で切り替える。成功後は `onSuccessRedirect ?? "/employees"` へ `router.push`。失敗メッセージやボタンラベルを編集/登録で分岐。
+6. `apps/nextjs/src/app/employees/[id]/edit/page.tsx` を作成し、Server Componentで `fetchEmployeeDetail` を呼んで `EmployeeForm` に初期値・IDを渡す。ページヘッダーやパンくず、キャンセルボタンなどPlan3準拠のUIを追加。
+7. `apps/nextjs/src/app/employees/[id]/page.tsx` の「編集モード」リンクおよび下部ボタンが新ページに遷移することを確認し、必要なら `Link` 先を `/employees/${id}/edit` に統一する。
+
+## 具体的なステップ
+1. `pnpm --filter @acme/nextjs lint` — 既存状態がLintグリーンであることを確認。成功時は `Done in <time>` が表示される。
+2. 実装後に `pnpm --filter @acme/nextjs lint` を再実行して静的チェックを通す。
+3. 必要に応じて `pnpm --filter @acme/nextjs dev` を起動し、`http://localhost:3000/employees/<id>/edit` をブラウザで動作確認。
+
+## 検証と受け入れ
+- 手動: 既存の従業員を開き「編集モード」→フォームの各タブで値が初期表示され、雇用開始/終了日が隣接(UI-001)し、雇用区分が表示ラベル「常勤/パートタイム/契約社員」(UI-010)で選択できる。保存成功後は `/employees/<id>` に戻り、表示値が更新される。
+- コマンド: `pnpm --filter @acme/nextjs lint` が成功すること。
+
+## 冪等性と回復
+- `updateEmployee` は単一トランザクション内でDELETE→INSERTを行うため、途中失敗時はロールバックされ、再送信しても整合性が保たれる。`PUT` APIは冪等：同じペイロードを再実行すると同じレコード状態に収束する。
+
+## 成果物とメモ
+- 主要変更ファイル:  
+  - `apps/nextjs/src/app/employees/[id]/edit/page.tsx`（新規）  
+  - `apps/nextjs/src/components/employees/EmployeeForm.tsx`（編集対応）  
+  - `apps/nextjs/src/server/actions/update-employee.ts` / `apps/nextjs/src/app/api/employees/[id]/route.ts`（更新処理）  
+  - `apps/nextjs/src/lib/mappers/employee-form.ts`（詳細→フォームのマッピング）
+
+## インターフェースと依存関係
+- `updateEmployee({
+    employeeId,
+    workConditionId?,
+    contractId?,
+    values: EmployeeFormValues
+  }): Promise<{ employeeId: string; contractId: string; workConditionId: string }>` を `apps/nextjs/src/server/actions/update-employee.ts` に定義。
+- `mapEmployeeDetailToFormValues(detail: EmployeeDetail): { values: EmployeeFormValues; ids: { workConditionId?: string; contractId?: string } }` を `apps/nextjs/src/lib/mappers/employee-form.ts` に定義。
+- フロントは `EmployeeForm` コンポーネントで `mode` prop に応じて `POST /api/employees` か `PUT /api/employees/[id]` を呼び分ける。
+```
+
 ---
 
 ## Phase 0: 既存フォーム保存不具合の修正（前提）
