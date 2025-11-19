@@ -1,0 +1,352 @@
+{
+  "title": "契約書PDFデータベースフィールドマッピング",
+  "description": "PDF出力用のデータベースフィールドとテンプレートフィールドのマッピング定義",
+  "version": "1.0.0",
+  "mappings": {
+    "employee": {
+      "description": "従業員マスター情報",
+      "table": "employees",
+      "fields": {
+        "id": {
+          "dbColumn": "id",
+          "type": "string",
+          "description": "従業員ID（UUID）"
+        },
+        "employeeNumber": {
+          "dbColumn": "employee_number",
+          "type": "string",
+          "description": "社員番号"
+        },
+        "branchNumber": {
+          "dbColumn": "branch_number",
+          "type": "number",
+          "description": "枝番"
+        },
+        "name": {
+          "dbColumn": "name",
+          "type": "string",
+          "description": "氏名",
+          "required": true
+        },
+        "nameKana": {
+          "dbColumn": "name_kana",
+          "type": "string",
+          "description": "氏名（カナ）"
+        },
+        "hourlyWage": {
+          "dbColumn": "hourly_wage",
+          "type": "decimal",
+          "description": "時給",
+          "format": "currency"
+        },
+        "hasEmploymentInsurance": {
+          "dbColumn": "has_employment_insurance",
+          "type": "boolean",
+          "description": "雇用保険加入フラグ"
+        },
+        "hasHealthInsurance": {
+          "dbColumn": "has_health_insurance",
+          "type": "boolean",
+          "description": "健康保険加入フラグ"
+        },
+        "hasWelfarePension": {
+          "dbColumn": "has_welfare_pension",
+          "type": "boolean",
+          "description": "厚生年金加入フラグ"
+        },
+        "hasCorporatePension": {
+          "dbColumn": "has_corporate_pension",
+          "type": "boolean",
+          "description": "企業年金基金加入フラグ"
+        }
+      }
+    },
+    "contract": {
+      "description": "雇用契約情報",
+      "table": "employment_contracts",
+      "fields": {
+        "id": {
+          "dbColumn": "id",
+          "type": "string",
+          "description": "契約ID（UUID）"
+        },
+        "employeeId": {
+          "dbColumn": "employee_id",
+          "type": "string",
+          "description": "従業員ID（外部キー）",
+          "reference": "employees.id"
+        },
+        "contractNumber": {
+          "dbColumn": "contract_number",
+          "type": "string",
+          "description": "契約番号",
+          "format": "YYYYMMDD-NNNN"
+        },
+        "contractDate": {
+          "dbColumn": "contract_date",
+          "type": "date",
+          "description": "契約締結日"
+        },
+        "startDate": {
+          "dbColumn": "start_date",
+          "type": "date",
+          "description": "契約開始日",
+          "required": true
+        },
+        "endDate": {
+          "dbColumn": "end_date",
+          "type": "date",
+          "description": "契約終了日"
+        },
+        "hasFixedTerm": {
+          "dbColumn": "has_fixed_term",
+          "type": "boolean",
+          "description": "期間の定めフラグ"
+        },
+        "renewalPossibility": {
+          "dbColumn": "renewal_possibility",
+          "type": "enum",
+          "values": ["有", "無"],
+          "description": "契約更新可能性"
+        },
+        "maxContractPeriod": {
+          "dbColumn": "max_contract_period",
+          "type": "string",
+          "description": "最長契約期間"
+        },
+        "baseDate": {
+          "dbColumn": "base_date",
+          "type": "date",
+          "description": "基準日"
+        },
+        "workplaceName": {
+          "dbColumn": "workplace_name",
+          "type": "string",
+          "description": "就業場所名",
+          "default": "システムズ・デザイン株式会社　東京本社"
+        },
+        "workplaceAddress": {
+          "dbColumn": "workplace_address",
+          "type": "string",
+          "description": "就業場所住所",
+          "default": "東京都新宿区西新宿二丁目１番１号　新宿三井ビルディング32F"
+        },
+        "workplacePhone": {
+          "dbColumn": "workplace_phone",
+          "type": "string",
+          "description": "就業場所電話番号",
+          "default": "03-6737-5000"
+        },
+        "workplaceChangeScope": {
+          "dbColumn": "workplace_change_scope",
+          "type": "string",
+          "description": "就業場所変更範囲",
+          "default": "会社の定める事業所"
+        },
+        "jobDescription": {
+          "dbColumn": "job_description",
+          "type": "text",
+          "description": "業務内容"
+        },
+        "jobChangeScope": {
+          "dbColumn": "job_change_scope",
+          "type": "string",
+          "description": "業務変更範囲",
+          "default": "会社の定める業務"
+        },
+        "approver": {
+          "dbColumn": "approver_name",
+          "type": "string",
+          "description": "承認者（事業部長）名"
+        },
+        "approvalNumber": {
+          "dbColumn": "approval_number",
+          "type": "string",
+          "description": "承認番号"
+        },
+        "bonusTerms": {
+          "dbColumn": "bonus_terms",
+          "type": "text",
+          "description": "賞与条件"
+        },
+        "salaryIncreaseTerms": {
+          "dbColumn": "salary_increase_terms",
+          "type": "text",
+          "description": "昇給条件"
+        },
+        "paymentSchedule": {
+          "dbColumn": "payment_schedule",
+          "type": "string",
+          "description": "給与支払スケジュール",
+          "default": "当月1日起算当月末日締、翌月15日支払"
+        },
+        "consultationPerson": {
+          "dbColumn": "consultation_person",
+          "type": "string",
+          "description": "相談窓口担当者名"
+        },
+        "agreementDate": {
+          "dbColumn": "agreement_date",
+          "type": "date",
+          "description": "労働者同意日"
+        },
+        "status": {
+          "dbColumn": "status",
+          "type": "enum",
+          "values": ["DRAFT", "APPROVED", "SIGNED", "EXPIRED", "CANCELLED"],
+          "description": "契約ステータス"
+        },
+        "pdfPath": {
+          "dbColumn": "pdf_path",
+          "type": "string",
+          "description": "生成済みPDFファイルパス"
+        }
+      }
+    },
+    "workCondition": {
+      "description": "勤務条件情報",
+      "table": "work_conditions",
+      "fields": {
+        "id": {
+          "dbColumn": "id",
+          "type": "string",
+          "description": "勤務条件ID（UUID）"
+        },
+        "employeeId": {
+          "dbColumn": "employee_id",
+          "type": "string",
+          "description": "従業員ID（外部キー）",
+          "reference": "employees.id"
+        },
+        "startTime": {
+          "dbColumn": "start_time",
+          "type": "time",
+          "description": "始業時間",
+          "format": "HH:mm"
+        },
+        "endTime": {
+          "dbColumn": "end_time",
+          "type": "time",
+          "description": "終業時間",
+          "format": "HH:mm"
+        },
+        "breakTime": {
+          "dbColumn": "break_time",
+          "type": "string",
+          "description": "休憩時間",
+          "example": "正午より午後1時まで"
+        },
+        "workPattern": {
+          "dbColumn": "work_pattern",
+          "type": "string",
+          "description": "勤務パターン",
+          "examples": ["週5日勤務", "シフト制"]
+        },
+        "regularHolidays": {
+          "dbColumn": "regular_holidays",
+          "type": "string",
+          "description": "定例休日",
+          "default": "毎週土曜日、日曜日、祝日"
+        },
+        "irregularHolidays": {
+          "dbColumn": "irregular_holidays",
+          "type": "string",
+          "description": "非定例休日"
+        },
+        "hasOvertime": {
+          "dbColumn": "has_overtime",
+          "type": "boolean",
+          "description": "残業有無"
+        },
+        "hasHolidayWork": {
+          "dbColumn": "has_holiday_work",
+          "type": "boolean",
+          "description": "休日労働有無"
+        },
+        "annualLeaveDays": {
+          "dbColumn": "annual_leave_days",
+          "type": "number",
+          "description": "年次有給休暇日数"
+        },
+        "leaveBaseDate": {
+          "dbColumn": "leave_base_date",
+          "type": "date",
+          "description": "有給休暇基準日",
+          "format": "MM-DD"
+        },
+        "commutingAllowance": {
+          "dbColumn": "commuting_allowance",
+          "type": "decimal",
+          "description": "通勤手当",
+          "format": "currency"
+        },
+        "commutingAllowanceLimit": {
+          "dbColumn": "commuting_allowance_limit",
+          "type": "decimal",
+          "description": "通勤手当上限",
+          "default": 15000
+        }
+      }
+    },
+    "pledge": {
+      "description": "誓約書情報",
+      "table": "pledges",
+      "fields": {
+        "id": {
+          "dbColumn": "id",
+          "type": "string",
+          "description": "誓約書ID（UUID）"
+        },
+        "employeeId": {
+          "dbColumn": "employee_id",
+          "type": "string",
+          "description": "従業員ID（外部キー）",
+          "reference": "employees.id"
+        },
+        "signatureDate": {
+          "dbColumn": "signature_date",
+          "type": "date",
+          "description": "署名日"
+        },
+        "status": {
+          "dbColumn": "status",
+          "type": "enum",
+          "values": ["DRAFT", "SIGNED", "ARCHIVED"],
+          "description": "誓約書ステータス"
+        },
+        "pdfPath": {
+          "dbColumn": "pdf_path",
+          "type": "string",
+          "description": "生成済みPDFファイルパス"
+        }
+      }
+    }
+  },
+  "relationships": [
+    {
+      "from": "employment_contracts.employee_id",
+      "to": "employees.id",
+      "type": "many-to-one",
+      "description": "1人の従業員に対して複数の契約が存在可能"
+    },
+    {
+      "from": "work_conditions.employee_id",
+      "to": "employees.id",
+      "type": "many-to-one",
+      "description": "1人の従業員に対して複数の勤務条件が存在可能（履歴管理）"
+    },
+    {
+      "from": "pledges.employee_id",
+      "to": "employees.id",
+      "type": "many-to-one",
+      "description": "1人の従業員に対して複数の誓約書が存在可能"
+    }
+  ],
+  "notes": [
+    "PDFテンプレートのdbFieldプロパティはこのマッピング定義に従う",
+    "日付フォーマットは用途に応じて変換（yyyy年MM月dd日、MM月dd日など）",
+    "通貨フィールドは適切にフォーマット（￥記号、カンマ区切り）",
+    "ブール値は日本語表記に変換（true→有/はい、false→無/いいえ）",
+    "枝番管理により同一社員番号で複数の契約を管理可能"
+  ]
+}

@@ -1,0 +1,510 @@
+{
+  "documentType": "employment_contract",
+  "title": "雇用契約書",
+  "version": "A2025.09",
+  "company": {
+    "name": "システムズ・デザイン株式会社",
+    "branch": "東京本社",
+    "address": "東京都新宿区西新宿二丁目１番１号",
+    "building": "新宿三井ビルディング32F",
+    "phone": "03-6737-5000"
+  },
+  "sections": [
+    {
+      "id": "header",
+      "type": "header",
+      "fields": [
+        {
+          "id": "contractDate",
+          "label": "契約日",
+          "type": "date",
+          "format": "yyyy年MM月dd日",
+          "dbField": "contract.contractDate"
+        },
+        {
+          "id": "employeeName",
+          "label": "従業員名",
+          "type": "text",
+          "suffix": "殿",
+          "dbField": "employee.name"
+        },
+        {
+          "id": "departmentHead",
+          "label": "事業部長",
+          "type": "text",
+          "suffix": "印",
+          "dbField": "contract.approver"
+        }
+      ]
+    },
+    {
+      "id": "employment_period",
+      "type": "section",
+      "title": "雇用期間",
+      "fields": [
+        {
+          "id": "hasFixedTerm",
+          "label": "期間の定め",
+          "type": "boolean",
+          "trueText": "有り",
+          "falseText": "無し",
+          "dbField": "contract.hasFixedTerm"
+        },
+        {
+          "id": "startDate",
+          "label": "開始日",
+          "type": "date",
+          "format": "yyyy年MM月dd日",
+          "dbField": "contract.startDate",
+          "condition": "hasFixedTerm === true"
+        },
+        {
+          "id": "endDate",
+          "label": "終了日",
+          "type": "date",
+          "format": "yyyy年MM月dd日",
+          "dbField": "contract.endDate",
+          "condition": "hasFixedTerm === true"
+        },
+        {
+          "id": "renewalPossibility",
+          "label": "契約更新の有無",
+          "type": "select",
+          "options": ["有", "無"],
+          "dbField": "contract.renewalPossibility"
+        },
+        {
+          "id": "renewalCriteria",
+          "label": "更新の判断基準",
+          "type": "multiline",
+          "defaultText": "・契約期間満了時の業務量\n・従事している業務の進捗状況\n・能力、業務成績、勤務態度\n・会社・組織の業績",
+          "condition": "renewalPossibility === '有'"
+        },
+        {
+          "id": "maxContractPeriod",
+          "label": "有期契約最長期間",
+          "type": "text",
+          "defaultText": "最長5年まで",
+          "dbField": "contract.maxContractPeriod"
+        },
+        {
+          "id": "baseDate",
+          "label": "基準日",
+          "type": "date",
+          "format": "yyyy年MM月dd日",
+          "dbField": "contract.baseDate"
+        }
+      ]
+    },
+    {
+      "id": "workplace",
+      "type": "section",
+      "title": "就業の場所",
+      "fields": [
+        {
+          "id": "initialWorkplace",
+          "label": "雇い入れ直後",
+          "type": "composite",
+          "components": [
+            {
+              "id": "workplaceName",
+              "type": "text",
+              "dbField": "contract.workplaceName"
+            },
+            {
+              "id": "workplaceAddress",
+              "type": "text",
+              "prefix": "住所：",
+              "dbField": "contract.workplaceAddress"
+            },
+            {
+              "id": "workplacePhone",
+              "type": "text",
+              "prefix": "電話番号：",
+              "dbField": "contract.workplacePhone"
+            }
+          ]
+        },
+        {
+          "id": "changeScope",
+          "label": "変更の範囲",
+          "type": "text",
+          "defaultText": "会社の定める事業所",
+          "dbField": "contract.workplaceChangeScope"
+        }
+      ]
+    },
+    {
+      "id": "job_description",
+      "type": "section",
+      "title": "業務の内容",
+      "fields": [
+        {
+          "id": "initialJobContent",
+          "label": "雇い入れ直後",
+          "type": "multiline",
+          "dbField": "contract.jobDescription"
+        },
+        {
+          "id": "jobChangeScope",
+          "label": "変更の範囲",
+          "type": "text",
+          "defaultText": "会社の定める業務",
+          "dbField": "contract.jobChangeScope"
+        }
+      ]
+    },
+    {
+      "id": "working_hours",
+      "type": "section",
+      "title": "始業・終業の時刻及び休憩時間",
+      "fields": [
+        {
+          "id": "startTime",
+          "label": "始業時間",
+          "type": "time",
+          "format": "HH:mm",
+          "prefix": "午前/午後",
+          "dbField": "workCondition.startTime"
+        },
+        {
+          "id": "endTime",
+          "label": "終業時間",
+          "type": "time",
+          "format": "HH:mm",
+          "prefix": "午前/午後",
+          "dbField": "workCondition.endTime"
+        },
+        {
+          "id": "breakTime",
+          "label": "休憩時間",
+          "type": "text",
+          "dbField": "workCondition.breakTime"
+        }
+      ]
+    },
+    {
+      "id": "working_days",
+      "type": "section",
+      "title": "勤務日",
+      "fields": [
+        {
+          "id": "workPattern",
+          "label": "勤務パターン",
+          "type": "text",
+          "examples": ["週○日、○曜日勤務", "月○日勤務", "現場作成のシフト表による"],
+          "dbField": "workCondition.workPattern"
+        }
+      ]
+    },
+    {
+      "id": "social_insurance",
+      "type": "section",
+      "title": "社会保険加入",
+      "fields": [
+        {
+          "id": "workersCompensation",
+          "label": "労災保険",
+          "type": "checkbox",
+          "defaultChecked": true,
+          "disabled": true
+        },
+        {
+          "id": "employmentInsurance",
+          "label": "雇用保険",
+          "type": "checkbox",
+          "dbField": "employee.hasEmploymentInsurance"
+        },
+        {
+          "id": "healthInsurance",
+          "label": "健康保険",
+          "type": "checkbox",
+          "dbField": "employee.hasHealthInsurance"
+        },
+        {
+          "id": "welfareRension",
+          "label": "厚生年金",
+          "type": "checkbox",
+          "dbField": "employee.hasWelfarePension"
+        },
+        {
+          "id": "corporatePension",
+          "label": "企業年金基金",
+          "type": "checkbox",
+          "dbField": "employee.hasCorporatePension"
+        }
+      ]
+    },
+    {
+      "id": "holidays",
+      "type": "section",
+      "title": "休日",
+      "fields": [
+        {
+          "id": "regularHolidays",
+          "label": "定例日",
+          "type": "text",
+          "defaultText": "原則として、毎週土曜日、日曜日、祝日",
+          "dbField": "workCondition.regularHolidays"
+        },
+        {
+          "id": "irregularHolidays",
+          "label": "非定例日",
+          "type": "text",
+          "placeholder": "週○日",
+          "dbField": "workCondition.irregularHolidays"
+        }
+      ]
+    },
+    {
+      "id": "overtime",
+      "type": "section",
+      "title": "所定外労働等",
+      "fields": [
+        {
+          "id": "hasOvertime",
+          "label": "所定外労働",
+          "type": "select",
+          "options": ["無", "有"],
+          "dbField": "workCondition.hasOvertime"
+        },
+        {
+          "id": "hasHolidayWork",
+          "label": "休日労働",
+          "type": "select",
+          "options": ["無", "有"],
+          "dbField": "workCondition.hasHolidayWork"
+        },
+        {
+          "id": "agreement36",
+          "label": "36協定",
+          "type": "text",
+          "defaultText": "36協定を上限とする"
+        }
+      ]
+    },
+    {
+      "id": "vacation",
+      "type": "section",
+      "title": "休暇",
+      "fields": [
+        {
+          "id": "annualPaidLeave",
+          "label": "年次有給休暇",
+          "type": "composite",
+          "components": [
+            {
+              "id": "leaveDays",
+              "type": "number",
+              "suffix": "日",
+              "dbField": "workCondition.annualLeaveDays"
+            },
+            {
+              "id": "leaveBaseDate",
+              "type": "date",
+              "prefix": "基準日：",
+              "format": "MM月dd日",
+              "suffix": "（付与予定日）",
+              "dbField": "workCondition.leaveBaseDate"
+            }
+          ]
+        },
+        {
+          "id": "leaveNote",
+          "type": "note",
+          "text": "※詳細はパートタイマー就業規則第30条による"
+        }
+      ]
+    },
+    {
+      "id": "salary",
+      "type": "section",
+      "title": "賃金",
+      "fields": [
+        {
+          "id": "hourlyWage",
+          "label": "時間給",
+          "type": "currency",
+          "prefix": "1時間につき",
+          "currency": "￥",
+          "dbField": "employee.hourlyWage"
+        },
+        {
+          "id": "calculationMethod",
+          "label": "計算方法",
+          "type": "note",
+          "text": "但し、日々は1分単位で計算し、月間合計就業時間が1時間に満たない部分に対する計算は下記とする。\n0～14分:0分 15分:15分 16～44分:30分 45分:45分 46～59分：1時間"
+        },
+        {
+          "id": "bonus",
+          "label": "賞与",
+          "type": "multiline",
+          "defaultText": "支給する。額については、個人の業務内容、業務の責任の範囲、会社・組織の業績などに基づき、個人ごとに個別に決定する。\n※詳細はパートタイマー就業規則第44条による",
+          "dbField": "contract.bonusTerms"
+        },
+        {
+          "id": "salaryIncrease",
+          "label": "昇給",
+          "type": "multiline",
+          "defaultText": "契約期間途中は原則なし\n※なお、勤務態度、技能能力、業務成績等を勘案し契約更新時に賃金の変更可能性あり",
+          "dbField": "contract.salaryIncreaseTerms"
+        }
+      ]
+    },
+    {
+      "id": "allowances",
+      "type": "section",
+      "title": "諸手当",
+      "fields": [
+        {
+          "id": "commutingAllowance",
+          "label": "通勤手当",
+          "type": "text",
+          "defaultText": "実費交通費（月額15,000円を限度とする・学生の通学経路は支給しない。バス利用は1.2kmから）",
+          "dbField": "workCondition.commutingAllowance"
+        },
+        {
+          "id": "overtimeAllowance",
+          "label": "残業手当",
+          "type": "multiline",
+          "defaultText": "割増率\n(a) 実働時間7.5時間を超えない時間外労働: 0%\n(b) 実働時間7.5時間を超える時間外労働: 25%"
+        },
+        {
+          "id": "holidayAllowance",
+          "label": "休日手当",
+          "type": "multiline",
+          "defaultText": "割増率\n(a) 法定外休日(会社年間休日表の休日): 25%\n(b) 法定休日: 35%"
+        },
+        {
+          "id": "nightAllowance",
+          "label": "深夜手当",
+          "type": "text",
+          "defaultText": "割増率: 25%"
+        },
+        {
+          "id": "overtime60",
+          "label": "60時間超時間外勤務手当",
+          "type": "text",
+          "defaultText": "25% × 60時間超時間外労働時間（法定休日除く）"
+        },
+        {
+          "id": "retirementAllowance",
+          "label": "退職金",
+          "type": "text",
+          "defaultText": "退職金は支給しない"
+        }
+      ]
+    },
+    {
+      "id": "salary_payment",
+      "type": "section",
+      "title": "賃金の支払",
+      "fields": [
+        {
+          "id": "paymentSchedule",
+          "label": "支払スケジュール",
+          "type": "text",
+          "defaultText": "当月1日起算当月末日締、翌月15日支払(原則振込、支給日が休日の場合その前日に支払う)",
+          "dbField": "contract.paymentSchedule"
+        }
+      ]
+    },
+    {
+      "id": "retirement",
+      "type": "section",
+      "title": "退職に関する事項",
+      "fields": [
+        {
+          "id": "voluntaryRetirement",
+          "label": "自己都合退職",
+          "type": "text",
+          "defaultText": "退職する30日以上前に届けること"
+        },
+        {
+          "id": "dismissal",
+          "label": "解雇の事由及び手続",
+          "type": "text",
+          "defaultText": "パートタイマー就業規則第53条による"
+        },
+        {
+          "id": "contractExpiry",
+          "label": "雇用契約満了",
+          "type": "text",
+          "defaultText": "雇用契約満了"
+        }
+      ]
+    },
+    {
+      "id": "other",
+      "type": "section",
+      "title": "その他",
+      "fields": [
+        {
+          "id": "consultationDesk",
+          "label": "相談窓口",
+          "type": "composite",
+          "components": [
+            {
+              "id": "deskDepartment",
+              "type": "text",
+              "defaultText": "人事部"
+            },
+            {
+              "id": "deskPerson",
+              "type": "text",
+              "dbField": "contract.consultationPerson"
+            },
+            {
+              "id": "deskContact",
+              "type": "text",
+              "prefix": "連絡先：",
+              "defaultText": "03-6737-5000"
+            }
+          ]
+        },
+        {
+          "id": "jurisdiction",
+          "label": "管轄裁判所",
+          "type": "text",
+          "defaultText": "本契約に関する紛争については、東京地方裁判所を第一審の専属的管轄裁判所とする。"
+        },
+        {
+          "id": "contractFormality",
+          "label": "契約締結の証",
+          "type": "multiline",
+          "defaultText": "本契約締結の証として、本書を書面又は電磁的記録として作成し、雇用者及び雇用契約者が合意の後、記名押印又は電子署名を施し、各自その書面又は電磁的記録を保管する。"
+        }
+      ]
+    },
+    {
+      "id": "signature",
+      "type": "signature",
+      "fields": [
+        {
+          "id": "agreementDate",
+          "label": "同意日",
+          "type": "date",
+          "format": "yyyy年MM月dd日",
+          "dbField": "contract.agreementDate"
+        },
+        {
+          "id": "agreementText",
+          "type": "text",
+          "defaultText": "上記労働条件で契約致します。"
+        },
+        {
+          "id": "employeeSignature",
+          "label": "労働者氏名",
+          "type": "signature",
+          "suffix": "印",
+          "dbField": "employee.name"
+        }
+      ]
+    }
+  ],
+  "metadata": {
+    "createdDate": "2024-11-19",
+    "lastModified": "2024-11-19",
+    "basedOnDocument": "パート雇入通知書見本ver_A2025.09.docx"
+  }
+}

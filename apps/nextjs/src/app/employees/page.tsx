@@ -213,6 +213,9 @@ export default async function EmployeesPage({
                 <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
                   ステータス
                 </th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                  アラート
+                </th>
                 <th className="px-6 py-4 text-center text-xs font-semibold text-slate-600 uppercase tracking-wider">
                   操作
                 </th>
@@ -289,6 +292,22 @@ export default async function EmployeesPage({
                         ? "退職済み"
                         : "休職中"}
                     </span>
+                  </td>
+                  <td className="px-6 py-4">
+                    {employee.needsContractUpdate ? (
+                      <div className="space-y-1">
+                        <span className="inline-flex items-center rounded-full bg-rose-50 px-2 py-1 text-xs font-semibold text-rose-600">
+                          要更新
+                        </span>
+                        {employee.employmentExpiryScheduledDate && (
+                          <span className="block text-xs text-rose-500">
+                            満了予定日: {employee.employmentExpiryScheduledDate}
+                          </span>
+                        )}
+                      </div>
+                    ) : (
+                      <span className="text-xs text-slate-400">-</span>
+                    )}
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex items-center justify-center gap-1">

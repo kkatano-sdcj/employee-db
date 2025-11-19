@@ -47,7 +47,12 @@ export default async function ContractsPage() {
                 </td>
                 <td className="px-4 py-4 text-sm">
                   {contract.contractStartDate ?? "-"} ~{" "}
-                  {contract.contractEndDate ?? "継続"}
+                  {contract.employmentExpiryScheduledDate ?? "継続"}
+                  {contract.employmentExpiryDate && (
+                    <span className="ml-2 text-xs text-slate-400">
+                      （実満了: {contract.employmentExpiryDate}）
+                    </span>
+                  )}
                 </td>
                 <td className="px-4 py-4 text-sm">
                   {formatCurrency(contract.hourlyWage)}
@@ -58,10 +63,17 @@ export default async function ContractsPage() {
                   </span>
                 </td>
                 <td className="px-4 py-4 text-sm">
-                  {contract.terminationAlertFlag ? (
-                    <span className="rounded-full bg-rose-50 px-2 py-1 text-xs font-semibold text-rose-600">
-                      要更新
-                    </span>
+                  {contract.needsUpdate ? (
+                    <div className="space-y-1">
+                      <span className="inline-flex items-center gap-1 rounded-full bg-rose-50 px-2 py-1 text-xs font-semibold text-rose-600">
+                        要更新
+                      </span>
+                      {contract.employmentExpiryScheduledDate && (
+                        <span className="block text-xs text-rose-500">
+                          満了予定日: {contract.employmentExpiryScheduledDate}
+                        </span>
+                      )}
+                    </div>
                   ) : (
                     <span className="text-slate-400">-</span>
                   )}

@@ -1,0 +1,115 @@
+{
+  "documentType": "pledge",
+  "title": "誓約書",
+  "version": "SDPMS-M-07-R03-12",
+  "recipient": "システムズ・デザイン株式会社　御中",
+  "sections": [
+    {
+      "id": "introduction",
+      "type": "paragraph",
+      "content": "私は、以下の事項を厳守することを誓約いたします。"
+    },
+    {
+      "id": "pledge_items",
+      "type": "numbered_list",
+      "title": "記",
+      "items": [
+        {
+          "id": "confidentiality",
+          "number": "1",
+          "content": "業務上知り得た、技術および営業に関する機密情報（個人情報注1を含み、以下同じ。）に関して、以下のことを守ります。",
+          "subitems": [
+            {
+              "id": "no_removal",
+              "label": "(1)",
+              "content": "会社の許可なく所定の場所より持ち出さないこと。"
+            },
+            {
+              "id": "no_duplication",
+              "label": "(2)",
+              "content": "会社の許可なく複製しないこと。"
+            },
+            {
+              "id": "no_misuse",
+              "label": "(3)",
+              "content": "会社の許可なく目的外の利用をしないこと。"
+            },
+            {
+              "id": "no_disposal",
+              "label": "(4)",
+              "content": "会社の許可なく廃棄または残置しないこと。"
+            }
+          ]
+        },
+        {
+          "id": "compliance",
+          "number": "2",
+          "content": "在職中は法令等を遵守し、また、会社の定める情報セキュリティ関連の各種ルール（情報資産関係規程、「情報セキュリティガイドライン」、「ISMSセキュリティルールブック」等）、個人情報保護規程並びにその他細則に従い、個人情報を含む情報資産の取扱いには細心の注意を払い誠実に業務を遂行いたします。"
+        },
+        {
+          "id": "post_employment",
+          "number": "3",
+          "content": "私が会社を退職した後も、勤務中と同様に、業務上知り得た技術および営業に関する機密情報を会社の許可なく発表、公開、漏洩、利用いたしません。"
+        },
+        {
+          "id": "incident_response",
+          "number": "4",
+          "content": "万が一事件事故が発生した場合は、速やかに会社に報告し、会社の指示に従うとともに調査に全面的に協力いたします。"
+        },
+        {
+          "id": "liability",
+          "number": "5",
+          "content": "故意又は過失により、私が原因で機密情報の紛失、漏洩などによる事故が発生し、会社及び第三者に損害を生じさせた場合は、就業規則等会社規則に従いその全部又は一部の賠償を求められたり処罰されても不服を申し立てません。"
+        }
+      ]
+    },
+    {
+      "id": "signature",
+      "type": "signature_block",
+      "fields": [
+        {
+          "id": "signatureDate",
+          "label": "日付",
+          "type": "date",
+          "format": "yyyy年MM月dd日",
+          "dbField": "pledge.signatureDate"
+        },
+        {
+          "id": "employeeNumber",
+          "label": "社員番号",
+          "type": "text",
+          "parentheses": true,
+          "dbField": "employee.employeeNumber"
+        },
+        {
+          "id": "employeeName",
+          "label": "氏名",
+          "type": "text",
+          "parentheses": true,
+          "dbField": "employee.name"
+        }
+      ]
+    },
+    {
+      "id": "footer",
+      "type": "footer",
+      "content": "以上"
+    },
+    {
+      "id": "footnote",
+      "type": "footnote",
+      "notes": [
+        {
+          "id": "note1",
+          "number": "注1",
+          "content": "「個人情報の保護に関する法律」に定める個人情報をいう。"
+        }
+      ]
+    }
+  ],
+  "metadata": {
+    "createdDate": "2024-11-19",
+    "lastModified": "2024-11-19",
+    "basedOnDocument": "(SDPMS-M-07-R03-12)誓約書.docx"
+  }
+}
