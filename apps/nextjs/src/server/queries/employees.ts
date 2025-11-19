@@ -35,16 +35,46 @@ export type EmployeeListItem = {
   updatedAt?: string;
 };
 
+const statusValueMap: Record<string, string> = {
+  ACTIVE: "ACTIVE",
+  INACTIVE: "RETIRED",
+  RETIRED: "RETIRED",
+  SUSPENDED: "ON_LEAVE",
+  ON_LEAVE: "ON_LEAVE",
+};
+
 export type EmployeeSearchOptions = {
   query?: string;
   status?: string;
   employmentType?: string;
+  department?: string;
+  contractFrom?: string;
+  contractTo?: string;
+  minHourlyWage?: number;
+  maxHourlyWage?: number;
+  hasDocuments?: boolean;
+  hasAlert?: boolean;
   limit?: number;
   offset?: number;
 };
 
 export async function fetchEmployees(options: EmployeeSearchOptions = {}) {
-  const { query, status, employmentType, limit = 25, offset = 0 } = options;
+  const {
+    query,
+    status,
+    employmentType,
+    department,
+    contractFrom,
+    contractTo,
+    minHourlyWage,
+    maxHourlyWage,
+    hasDocuments,
+    hasAlert,
+    limit = 25,
+    offset = 0,
+  } = options;
+  const normalizedStatus =
+    status && status !== "ALL" ? statusValueMap[status] ?? status : undefined;
 
   const rows = await db<
     Array<{
@@ -91,8 +121,52 @@ export async function fetchEmployees(options: EmployeeSearchOptions = {}) {
     ) c ON TRUE
     WHERE TRUE
     ${query ? db`AND (e.name ILIKE ${"%" + query + "%"} OR e.name_kana ILIKE ${"%" + query + "%"} OR e.employee_number ILIKE ${"%" + query + "%"})` : db``}
-    ${status && status !== "ALL" ? db`AND e.employment_status = ${status}` : db``}
+    ${normalizedStatus ? db`AND e.employment_status = ${normalizedStatus}` : db``}
     ${employmentType && employmentType !== "ALL" ? db`AND e.employment_type = ${employmentType}` : db``}
+    ${department ? db`AND e.department_code = ${department}` : db``}
+    ${
+      contractFrom
+        ? db`AND (c.contract_start_date IS NULL OR c.contract_start_date >= ${contractFrom})`
+        : db``
+    }
+    ${
+      contractTo
+        ? db`AND (c.contract_start_date IS NULL OR c.contract_start_date <= ${contractTo})`
+        : db``
+    }
+    ${
+      typeof minHourlyWage === "number"
+        ? db`AND (c.hourly_wage IS NULL OR c.hourly_wage >= ${minHourlyWage})`
+        : db``
+    }
+    ${
+      typeof maxHourlyWage === "number"
+        ? db`AND (c.hourly_wage IS NULL OR c.hourly_wage <= ${maxHourlyWage})`
+        : db``
+    }
+    ${
+      hasDocuments
+        ? db`AND EXISTS (
+            SELECT 1 FROM employee_admin_records docs
+            WHERE docs.employee_id = e.id
+              AND (
+                docs.return_health_insurance_card IS NULL
+                OR docs.return_security_card IS NULL
+                OR docs.submitted_to_admin_on IS NULL
+              )
+          )`
+        : db``
+    }
+    ${
+      hasAlert
+        ? db`AND EXISTS (
+            SELECT 1 FROM contracts ca
+            WHERE ca.employee_id = e.id
+              AND ca.employment_expiry_scheduled_date IS NOT NULL
+              AND ca.employment_expiry_scheduled_date < CURRENT_DATE
+          )`
+        : db``
+    }
     ORDER BY e.updated_at DESC NULLS LAST
     LIMIT ${limit} OFFSET ${offset}
   `;

@@ -1,17 +1,74 @@
 import type { ReactNode } from "react";
+import Link from "next/link";
 
-import {
-  UsersIcon,
-  DocumentTextIcon,
-  ClockIcon,
-  CurrencyYenIcon,
-} from "@heroicons/react/24/outline";
+import { UsersIcon, DocumentTextIcon, ClockIcon } from "@heroicons/react/24/outline";
 import { EllipsisVerticalIcon } from "@heroicons/react/24/solid";
 
 import { fetchDashboardMetrics } from "@/server/queries/dashboard";
-import type { EmployeeListItem } from "@/server/queries/employees";
+import type { DashboardMetrics } from "@/server/queries/dashboard";
 
 const formatter = new Intl.NumberFormat("ja-JP");
+
+type RenewalTask = DashboardMetrics["renewalPipeline"][number];
+type PriorityLevel = "HIGH" | "MEDIUM" | "LOW";
+type StatusTone = "danger" | "warning" | "neutral";
+type TaskWithMeta = RenewalTask & {
+  priority: PriorityLevel;
+  priorityLabel: string;
+  priorityClass: string;
+  statusLabel: string;
+  statusClass: string;
+};
+
+const PRIORITY_ORDER: Record<PriorityLevel, number> = {
+  HIGH: 0,
+  MEDIUM: 1,
+  LOW: 2,
+};
+
+const PRIORITY_STYLES: Record<PriorityLevel, { label: string; className: string }> = {
+  HIGH: { label: "高", className: "bg-rose-50 text-rose-600 border-rose-200" },
+  MEDIUM: { label: "中", className: "bg-amber-50 text-amber-700 border-amber-200" },
+  LOW: { label: "低", className: "bg-slate-100 text-slate-600 border-slate-200" },
+};
+
+const STATUS_STYLES: Record<StatusTone, string> = {
+  danger: "bg-rose-50 text-rose-600 border-rose-200",
+  warning: "bg-amber-50 text-amber-700 border-amber-200",
+  neutral: "bg-slate-100 text-slate-600 border-slate-200",
+};
+
+const enrichTaskMeta = (task: RenewalTask): TaskWithMeta => {
+  const days = typeof task.daysUntilExpiry === "number" ? task.daysUntilExpiry : null;
+  const isOverdue = days !== null && days < 0;
+
+  let priority: PriorityLevel = "LOW";
+  if (isOverdue || (days !== null && days < 60)) {
+    priority = "HIGH";
+  } else if (days !== null && days < 90) {
+    priority = "MEDIUM";
+  }
+
+  const statusLabel = isOverdue
+    ? "要更新"
+    : days === null
+      ? "確認中"
+      : days === 0
+        ? "本日まで"
+        : `残り${days}日`;
+
+  const statusTone: StatusTone =
+    isOverdue || (days !== null && days < 60) ? "danger" : days !== null && days < 90 ? "warning" : "neutral";
+
+  return {
+    ...task,
+    priority,
+    priorityLabel: PRIORITY_STYLES[priority].label,
+    priorityClass: PRIORITY_STYLES[priority].className,
+    statusLabel,
+    statusClass: STATUS_STYLES[statusTone],
+  };
+};
 
 export default async function DashboardPage() {
   const metrics = await fetchDashboardMetrics();
@@ -20,18 +77,29 @@ export default async function DashboardPage() {
     100,
   );
 
+  const prioritizedTasks = metrics.renewalPipeline
+    .map(enrichTaskMeta)
+    .sort((a, b) => {
+      const diff = PRIORITY_ORDER[a.priority] - PRIORITY_ORDER[b.priority];
+      if (diff !== 0) return diff;
+      const aDays = a.daysUntilExpiry ?? Number.POSITIVE_INFINITY;
+      const bDays = b.daysUntilExpiry ?? Number.POSITIVE_INFINITY;
+      return aDays - bDays;
+    });
+
   return (
     <div className="space-y-8">
       {/* KPIメトリクス */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <KpiCard
-          label="総従業員数"
+          label="従業員数"
           value={metrics.totals.employees}
-          change="+4.9%"
-          changeLabel="前月比 12名増加"
+          change={`${formatter.format(metrics.totals.activeEmployees)}名稼働中`}
+          changeLabel="従業員一覧へ移動"
           icon={<UsersIcon className="w-6 h-6 text-accent-blue" />}
           bgColor="from-accent-blue/10 to-accent-blue/5"
           changeType="positive"
+          href="/employees"
         />
         <KpiCard
           label="今月の契約処理"
@@ -41,24 +109,17 @@ export default async function DashboardPage() {
           icon={<DocumentTextIcon className="w-6 h-6 text-accent-emerald" />}
           bgColor="from-accent-emerald/10 to-accent-emerald/5"
           changeType="positive"
+          href="/contracts"
         />
         <KpiCard
-          label="契約更新予定"
+          label="契約更新予定 (30日以内)"
           value={metrics.totals.expiringContracts}
           change="要対応"
-          changeLabel="3日以内に期限"
+          changeLabel="契約一覧で確認"
           icon={<ClockIcon className="w-6 h-6 text-accent-amber" />}
           bgColor="from-accent-amber/10 to-accent-amber/5"
           changeType="warning"
-        />
-        <KpiCard
-          label="月額給与総額"
-          value={`¥${formatter.format(Math.round(metrics.payroll.monthlyTotal))}`}
-          change=""
-          changeLabel="稼働中の契約ベース"
-          icon={<CurrencyYenIcon className="w-6 h-6 text-accent-violet" />}
-          bgColor="from-accent-violet/10 to-accent-violet/5"
-          changeType="positive"
+          href="/contracts?view=expiring"
         />
       </div>
 
@@ -115,7 +176,7 @@ export default async function DashboardPage() {
             </div>
           </div>
         </div>
-        <TaskTable employees={metrics.latestEmployees} />
+        <TaskTable tasks={prioritizedTasks} />
       </div>
     </div>
   );
@@ -129,6 +190,7 @@ type KpiCardProps = {
   icon: ReactNode;
   bgColor: string;
   changeType: "positive" | "warning";
+  href?: string;
 };
 
 const KpiCard = ({
@@ -139,45 +201,67 @@ const KpiCard = ({
   icon,
   bgColor,
   changeType,
-}: KpiCardProps) => (
-  <div className="bg-white rounded-2xl p-6 border border-slate-200/50 shadow-soft hover-lift group">
-    <div className="flex items-start justify-between mb-4">
-      <div
-        className={`p-3 bg-gradient-to-br ${bgColor} rounded-xl group-hover:scale-110 transition-transform`}
-      >
-        {icon}
-      </div>
-      <span
-        className={`px-2.5 py-1 text-xs font-medium rounded-full ${
-          changeType === "positive"
-            ? "text-accent-emerald bg-accent-emerald/10"
-            : "text-accent-amber bg-accent-amber/10"
-        }`}
-      >
-        {change}
-      </span>
-    </div>
-    <h3 className="text-3xl font-bold text-slate-900 mb-1">
-      {typeof value === "number" ? formatter.format(value) : value}
-    </h3>
-    <p className="text-sm text-slate-500 font-medium">{label}</p>
-    <div className="mt-4 flex items-center text-xs text-slate-400">
-      <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth="2"
-          d={
+  href,
+}: KpiCardProps) => {
+  const content = (
+    <>
+      <div className="flex items-start justify-between mb-4">
+        <div
+          className={`p-3 bg-gradient-to-br ${bgColor} rounded-xl group-hover:scale-110 transition-transform`}
+        >
+          {icon}
+        </div>
+        <span
+          className={`px-2.5 py-1 text-xs font-medium rounded-full ${
             changeType === "positive"
-              ? "M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"
-              : "M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-          }
-        />
-      </svg>
-      {changeLabel}
+              ? "text-accent-emerald bg-accent-emerald/10"
+              : "text-accent-amber bg-accent-amber/10"
+          }`}
+        >
+          {change}
+        </span>
+      </div>
+      <h3 className="text-3xl font-bold text-slate-900 mb-1">
+        {typeof value === "number" ? formatter.format(value) : value}
+      </h3>
+      <p className="text-sm text-slate-500 font-medium">{label}</p>
+      <div className="mt-4 flex items-center text-xs text-slate-400">
+        <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth="2"
+            d={
+              changeType === "positive"
+                ? "M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"
+                : "M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+            }
+          />
+        </svg>
+        {changeLabel}
+      </div>
+    </>
+  );
+
+  const inner = (
+    <div className="bg-white rounded-2xl p-6 border border-slate-200/50 shadow-soft hover-lift group transition-colors">
+      {content}
     </div>
-  </div>
-);
+  );
+
+  if (href) {
+    return (
+      <Link
+        href={href}
+        className="block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-blue/40 rounded-2xl"
+      >
+        {inner}
+      </Link>
+    );
+  }
+
+  return inner;
+};
 
 const DepartmentChart = ({
   stats,
@@ -290,120 +374,82 @@ const ProgressIndicator = ({
   );
 };
 
-const TaskTable = ({ employees }: { employees: EmployeeListItem[] }) => {
-  const indicatorColors = ["bg-accent-rose", "bg-accent-amber", "bg-accent-emerald"];
-  const priorityBadges: Array<{ label: string; className: string }> = [
-    { label: "高", className: "bg-red-50 text-red-700 border border-red-200" },
-    { label: "中", className: "bg-amber-50 text-amber-700 border border-amber-200" },
-    { label: "低", className: "bg-slate-100 text-slate-700 border border-slate-200" },
-  ];
-  const statusBadges = ["進行中", "準備中", "レビュー待ち"];
-
-  const rows =
-    employees.length > 0
-      ? employees.slice(0, 4).map((employee, index) => {
-          const overdue = employee.needsContractUpdate;
-          return {
-            task: `${employee.name} の契約更新`,
-            assignee: employee.name,
-            initial: employee.name.charAt(0),
-            dueDate:
-              employee.employmentExpiryScheduledDate ??
-              employee.contractEndDate ??
-              "未設定",
-            priority: priorityBadges[index % priorityBadges.length],
-            status: overdue ? "要更新" : statusBadges[index % statusBadges.length],
-            indicatorColor: overdue ? indicatorColors[0] : indicatorColors[index % indicatorColors.length],
-          };
-        })
-      : [
-          {
-            task: "田中太郎の契約更新",
-            assignee: "山田花子",
-            initial: "山",
-            dueDate: "2024/11/08",
-            priority: priorityBadges[0],
-            status: statusBadges[0],
-            indicatorColor: indicatorColors[0],
-          },
-          {
-            task: "新入社員オリエンテーション",
-            assignee: "佐藤次郎",
-            initial: "佐",
-            dueDate: "2024/11/10",
-            priority: priorityBadges[1],
-            status: statusBadges[1],
-            indicatorColor: indicatorColors[1],
-          },
-        ];
-
-  return (
-    <div className="overflow-x-auto">
-      <table className="w-full">
-        <thead>
-          <tr className="bg-slate-50/50 border-b border-slate-100">
-            <th className="text-left px-6 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wider">
-              タスク
-            </th>
-            <th className="text-left px-6 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wider">
-              担当者
-            </th>
-            <th className="text-left px-6 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wider">
-              期限
-            </th>
-            <th className="text-left px-6 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wider">
-              優先度
-            </th>
-            <th className="text-left px-6 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wider">
-              ステータス
-            </th>
-            <th className="text-left px-6 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wider">
-              操作
-            </th>
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-slate-100">
-          {rows.map((row, index) => (
-            <tr
-              key={`${row.task}-${index}`}
-              className="hover:bg-slate-50/50 transition-colors"
-            >
-              <td className="px-6 py-4">
-                <div className="flex items-center">
-                  <div className={`w-2 h-2 rounded-full mr-3 ${row.indicatorColor}`} />
-                  <span className="text-sm font-medium text-slate-900">{row.task}</span>
-                </div>
-              </td>
-              <td className="px-6 py-4">
-                <div className="flex items-center">
-                  <div className="w-8 h-8 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center text-xs font-semibold mr-2">
-                    {row.initial}
-                  </div>
-                  <span className="text-sm text-slate-600">{row.assignee}</span>
-                </div>
-              </td>
-              <td className="px-6 py-4 text-sm text-slate-600">{row.dueDate}</td>
-              <td className="px-6 py-4">
-                <span
-                  className={`px-2.5 py-1 text-xs font-semibold rounded-full ${row.priority.className}`}
+const TaskTable = ({ tasks }: { tasks: TaskWithMeta[] }) => (
+  <div className="overflow-x-auto">
+    <table className="w-full">
+      <thead>
+        <tr className="bg-slate-50/50 border-b border-slate-100">
+          <th className="text-left px-6 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wider">
+            従業員
+          </th>
+          <th className="text-left px-6 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wider">
+            契約満了予定日
+          </th>
+          <th className="text-left px-6 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wider">
+            ステータス
+          </th>
+          <th className="text-left px-6 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wider">
+            優先度
+          </th>
+          <th className="text-left px-6 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wider">
+            操作
+          </th>
+        </tr>
+      </thead>
+      <tbody className="divide-y divide-slate-100">
+        {tasks.map((task) => (
+          <tr key={task.contractId} className="hover:bg-slate-50/50 transition-colors">
+            <td className="px-6 py-4">
+              <div className="flex flex-col">
+                <span className="text-sm font-semibold text-slate-900">{task.name}</span>
+                <span className="text-xs text-slate-500">{task.departmentCode}</span>
+              </div>
+            </td>
+            <td className="px-6 py-4">
+              <span className="text-sm font-medium text-slate-900">
+                {task.employmentExpiryScheduledDate ?? "未設定"}
+              </span>
+              {typeof task.daysUntilExpiry === "number" && (
+                <span className="ml-2 text-xs text-slate-500">
+                  {task.daysUntilExpiry < 0
+                    ? `遅延${Math.abs(task.daysUntilExpiry)}日`
+                    : `残り${task.daysUntilExpiry}日`}
+                </span>
+              )}
+            </td>
+            <td className="px-6 py-4">
+              <span className={`px-2.5 py-1 text-xs font-semibold rounded-full border ${task.statusClass}`}>
+                {task.statusLabel}
+              </span>
+            </td>
+            <td className="px-6 py-4">
+              <span className={`px-2.5 py-1 text-xs font-semibold rounded-full border ${task.priorityClass}`}>
+                {task.priorityLabel}
+              </span>
+            </td>
+            <td className="px-6 py-4">
+              <div className="flex items-center gap-1">
+                <Link
+                  href={`/employees/${task.employeeId}`}
+                  className="px-2 py-1 text-xs font-medium text-slate-600 hover:text-slate-900 transition-colors"
                 >
-                  {row.priority.label}
-                </span>
-              </td>
-              <td className="px-6 py-4">
-                <span className="px-2.5 py-1 text-xs font-medium rounded-full bg-slate-100 text-slate-700">
-                  {row.status}
-                </span>
-              </td>
-              <td className="px-6 py-4">
-                <button className="p-1 hover:bg-slate-100 rounded-lg transition-colors">
+                  詳細
+                </Link>
+                <button className="p-1.5 hover:bg-slate-100 rounded-lg transition-colors" title="その他">
                   <EllipsisVerticalIcon className="w-4 h-4 text-slate-400" />
                 </button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
-};
+              </div>
+            </td>
+          </tr>
+        ))}
+        {tasks.length === 0 && (
+          <tr>
+            <td colSpan={5} className="px-6 py-6 text-center text-sm text-slate-500">
+              表示するタスクはありません。
+            </td>
+          </tr>
+        )}
+      </tbody>
+    </table>
+  </div>
+);

@@ -90,16 +90,12 @@ export default async function EmployeeDetailPage({ params, searchParams }: Emplo
                 className={`px-3 py-1 rounded-full text-xs font-bold ${
                   employee.employmentStatus === "ACTIVE"
                     ? "bg-accent-emerald/10 text-accent-emerald"
-                    : employee.employmentStatus === "INACTIVE"
+                    : employee.employmentStatus === "RETIRED"
                       ? "bg-slate-100 text-slate-600"
                       : "bg-amber-50 text-amber-700"
                 }`}
               >
-                {employee.employmentStatus === "ACTIVE"
-                  ? "在職中"
-                  : employee.employmentStatus === "INACTIVE"
-                    ? "退職済み"
-                    : "休職中"}
+                {employmentStatusLabel(employee.employmentStatus)}
               </span>
             </div>
           </div>
@@ -568,6 +564,19 @@ const employmentTypeLabel = (value: string) => {
       return "契約社員";
     default:
       return "パート";
+  }
+};
+
+const employmentStatusLabel = (value: string) => {
+  switch (value) {
+    case "ACTIVE":
+      return "在職中";
+    case "RETIRED":
+      return "退職済み";
+    case "ON_LEAVE":
+      return "休職中";
+    default:
+      return value;
   }
 };
 

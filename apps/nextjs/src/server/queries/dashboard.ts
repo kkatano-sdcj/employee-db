@@ -1,5 +1,4 @@
 import { db } from "@/server/db";
-import { fetchEmployees } from "@/server/queries/employees";
 
 export type DashboardMetrics = {
   totals: {
@@ -8,7 +7,6 @@ export type DashboardMetrics = {
     expiringContracts: number;
     alerts: number;
   };
-  latestEmployees: Awaited<ReturnType<typeof fetchEmployees>>;
   renewalPipeline: Array<{
     contractId: string;
     employeeId: string;
@@ -16,6 +14,7 @@ export type DashboardMetrics = {
     employmentExpiryScheduledDate?: string;
     status: string;
     departmentCode: string;
+    daysUntilExpiry: number | null;
   }>;
   departmentStats: Array<{ departmentCode: string; count: number }>;
   contractProgress: {
@@ -39,7 +38,7 @@ export async function fetchDashboardMetrics(): Promise<DashboardMetrics> {
   const [contractTotals] = await db`
     SELECT
       COUNT(*) FILTER (
-        WHERE employment_expiry_scheduled_date BETWEEN CURRENT_DATE AND CURRENT_DATE + INTERVAL '60 days'
+        WHERE employment_expiry_scheduled_date BETWEEN CURRENT_DATE AND CURRENT_DATE + INTERVAL '30 days'
       )::int as "expiringContracts",
       COUNT(*) FILTER (
         WHERE employment_expiry_scheduled_date IS NOT NULL
@@ -56,8 +55,6 @@ export async function fetchDashboardMetrics(): Promise<DashboardMetrics> {
     GROUP BY department_code
     ORDER BY department_code
   `;
-
-  const latestEmployees = await fetchEmployees({ limit: 6 });
 
   const [contractProgress] = await db`
     SELECT
@@ -88,21 +85,42 @@ export async function fetchDashboardMetrics(): Promise<DashboardMetrics> {
       name: string;
       departmentCode: string;
       employmentExpiryScheduledDate: Date | string | null;
+      daysUntilExpiry: number | null;
       status: string;
     }>
   >`
+    WITH ranked_contracts AS (
+      SELECT
+        c.id,
+        c.employee_id,
+        e.name,
+        e.department_code,
+        c.employment_expiry_scheduled_date,
+        c.status,
+        ROW_NUMBER() OVER (
+          PARTITION BY c.employee_id
+          ORDER BY c.employment_expiry_scheduled_date ASC
+        ) as row_num
+      FROM contracts c
+      INNER JOIN employees e ON e.id = c.employee_id
+      WHERE c.employment_expiry_scheduled_date IS NOT NULL
+        AND c.employment_expiry_scheduled_date <= CURRENT_DATE + INTERVAL '120 days'
+    )
     SELECT
-      c.id as "contractId",
-      c.employee_id as "employeeId",
-      e.name,
-      e.department_code as "departmentCode",
-      c.employment_expiry_scheduled_date as "employmentExpiryScheduledDate",
-      c.status
-    FROM contracts c
-    INNER JOIN employees e ON e.id = c.employee_id
-    WHERE c.employment_expiry_scheduled_date BETWEEN CURRENT_DATE AND CURRENT_DATE + INTERVAL '120 days'
-    ORDER BY c.employment_expiry_scheduled_date ASC
-    LIMIT 8
+      rc.id as "contractId",
+      rc.employee_id as "employeeId",
+      rc.name,
+      rc.department_code as "departmentCode",
+      rc.employment_expiry_scheduled_date as "employmentExpiryScheduledDate",
+      CASE
+        WHEN rc.employment_expiry_scheduled_date IS NULL THEN NULL
+        ELSE (rc.employment_expiry_scheduled_date::date - CURRENT_DATE)::int
+      END as "daysUntilExpiry",
+      rc.status
+    FROM ranked_contracts rc
+    WHERE rc.row_num = 1
+    ORDER BY rc.employment_expiry_scheduled_date ASC
+    LIMIT 12
   `;
 
   return {
@@ -112,12 +130,13 @@ export async function fetchDashboardMetrics(): Promise<DashboardMetrics> {
       expiringContracts: Number(contractTotals?.expiringContracts ?? 0),
       alerts: Number(contractTotals?.alerts ?? 0),
     },
-    latestEmployees,
     renewalPipeline: renewalPipeline.map((item) => ({
       ...item,
       employmentExpiryScheduledDate: item.employmentExpiryScheduledDate
         ? new Date(item.employmentExpiryScheduledDate).toISOString().slice(0, 10)
         : undefined,
+      daysUntilExpiry:
+        typeof item.daysUntilExpiry === "number" ? item.daysUntilExpiry : null,
     })),
     departmentStats: departmentRows.map((row) => ({
       departmentCode: row.departmentCode ?? "未設定",
