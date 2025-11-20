@@ -2,6 +2,7 @@ import { db } from "@/server/db";
 
 export type ContractSummary = {
   id: string;
+  contractNumber: string;
   employeeId: string;
   employeeNumber: string;
   name: string;
@@ -19,6 +20,7 @@ export async function fetchContractSummaries(): Promise<ContractSummary[]> {
   const rows = await db<
     Array<{
       id: string;
+      contractNumber: string;
       employeeId: string;
       employeeNumber: string;
       name: string;
@@ -34,6 +36,7 @@ export async function fetchContractSummaries(): Promise<ContractSummary[]> {
   >`
     SELECT
       c.id,
+      c.id as "contractNumber",
       c.employee_id as "employeeId",
       e.employee_number as "employeeNumber",
       e.name,
@@ -56,6 +59,7 @@ export async function fetchContractSummaries(): Promise<ContractSummary[]> {
 
   return rows.map((row) => ({
     ...row,
+    contractNumber: row.contractNumber ?? row.id,
     hourlyWage: Number(row.hourlyWage ?? 0),
     contractStartDate: row.contractStartDate
       ? new Date(row.contractStartDate).toISOString().slice(0, 10)
