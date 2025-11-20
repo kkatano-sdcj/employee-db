@@ -1,5 +1,4 @@
 import { db } from "@/server/db";
-import { fetchEmployees } from "@/server/queries/employees";
 
 export type DashboardMetrics = {
   totals: {
@@ -8,15 +7,24 @@ export type DashboardMetrics = {
     expiringContracts: number;
     alerts: number;
   };
-  latestEmployees: Awaited<ReturnType<typeof fetchEmployees>>;
   renewalPipeline: Array<{
     contractId: string;
     employeeId: string;
     name: string;
-    contractEndDate?: string;
+    employmentExpiryScheduledDate?: string;
     status: string;
     departmentCode: string;
+    daysUntilExpiry: number | null;
   }>;
+  departmentStats: Array<{ departmentCode: string; count: number }>;
+  contractProgress: {
+    processedThisMonth: number;
+    backlog: number;
+    target: number;
+  };
+  payroll: {
+    monthlyTotal: number;
+  };
 };
 
 export async function fetchDashboardMetrics(): Promise<DashboardMetrics> {
@@ -30,13 +38,45 @@ export async function fetchDashboardMetrics(): Promise<DashboardMetrics> {
   const [contractTotals] = await db`
     SELECT
       COUNT(*) FILTER (
-        WHERE contract_end_date BETWEEN NOW() AND NOW() + INTERVAL '60 days'
+        WHERE employment_expiry_scheduled_date BETWEEN CURRENT_DATE AND CURRENT_DATE + INTERVAL '30 days'
       )::int as "expiringContracts",
-      COUNT(*) FILTER (WHERE termination_alert_flag = true)::int as "alerts"
+      COUNT(*) FILTER (
+        WHERE employment_expiry_scheduled_date IS NOT NULL
+          AND employment_expiry_scheduled_date < CURRENT_DATE
+      )::int as "alerts"
     FROM contracts
   `;
 
-  const latestEmployees = await fetchEmployees({ limit: 6 });
+  const departmentRows = await db<
+    Array<{ departmentCode: string | null; count: number }>
+  >`
+    SELECT department_code as "departmentCode", COUNT(*)::int as "count"
+    FROM employees
+    GROUP BY department_code
+    ORDER BY department_code
+  `;
+
+  const [contractProgress] = await db`
+    SELECT
+      COUNT(*) FILTER (
+        WHERE date_trunc('month', updated_at) = date_trunc('month', NOW())
+      )::int as "processed",
+      COUNT(*) FILTER (
+        WHERE status IN ('DRAFT', 'AWAITING_APPROVAL')
+      )::int as "backlog"
+    FROM contracts
+  `;
+
+  const [payrollRow] = await db`
+    SELECT COALESCE(SUM(c.hourly_wage * 160), 0)::numeric as "monthlyTotal"
+    FROM contracts c
+    INNER JOIN employees e ON e.id = c.employee_id
+    WHERE e.employment_status = 'ACTIVE'
+      AND (
+        c.employment_expiry_scheduled_date IS NULL
+        OR c.employment_expiry_scheduled_date >= CURRENT_DATE
+      )
+  `;
 
   const renewalPipeline = await db<
     Array<{
@@ -44,22 +84,43 @@ export async function fetchDashboardMetrics(): Promise<DashboardMetrics> {
       employeeId: string;
       name: string;
       departmentCode: string;
-      contractEndDate: Date | string | null;
+      employmentExpiryScheduledDate: Date | string | null;
+      daysUntilExpiry: number | null;
       status: string;
     }>
   >`
+    WITH ranked_contracts AS (
+      SELECT
+        c.id,
+        c.employee_id,
+        e.name,
+        e.department_code,
+        c.employment_expiry_scheduled_date,
+        c.status,
+        ROW_NUMBER() OVER (
+          PARTITION BY c.employee_id
+          ORDER BY c.employment_expiry_scheduled_date ASC
+        ) as row_num
+      FROM contracts c
+      INNER JOIN employees e ON e.id = c.employee_id
+      WHERE c.employment_expiry_scheduled_date IS NOT NULL
+        AND c.employment_expiry_scheduled_date <= CURRENT_DATE + INTERVAL '120 days'
+    )
     SELECT
-      c.id as "contractId",
-      c.employee_id as "employeeId",
-      e.name,
-      e.department_code as "departmentCode",
-      c.contract_end_date as "contractEndDate",
-      c.status
-    FROM contracts c
-    INNER JOIN employees e ON e.id = c.employee_id
-    WHERE c.contract_end_date BETWEEN NOW() AND NOW() + INTERVAL '120 days'
-    ORDER BY c.contract_end_date ASC
-    LIMIT 8
+      rc.id as "contractId",
+      rc.employee_id as "employeeId",
+      rc.name,
+      rc.department_code as "departmentCode",
+      rc.employment_expiry_scheduled_date as "employmentExpiryScheduledDate",
+      CASE
+        WHEN rc.employment_expiry_scheduled_date IS NULL THEN NULL
+        ELSE (rc.employment_expiry_scheduled_date::date - CURRENT_DATE)::int
+      END as "daysUntilExpiry",
+      rc.status
+    FROM ranked_contracts rc
+    WHERE rc.row_num = 1
+    ORDER BY rc.employment_expiry_scheduled_date ASC
+    LIMIT 12
   `;
 
   return {
@@ -69,12 +130,25 @@ export async function fetchDashboardMetrics(): Promise<DashboardMetrics> {
       expiringContracts: Number(contractTotals?.expiringContracts ?? 0),
       alerts: Number(contractTotals?.alerts ?? 0),
     },
-    latestEmployees,
     renewalPipeline: renewalPipeline.map((item) => ({
       ...item,
-      contractEndDate: item.contractEndDate
-        ? new Date(item.contractEndDate).toISOString().slice(0, 10)
+      employmentExpiryScheduledDate: item.employmentExpiryScheduledDate
+        ? new Date(item.employmentExpiryScheduledDate).toISOString().slice(0, 10)
         : undefined,
+      daysUntilExpiry:
+        typeof item.daysUntilExpiry === "number" ? item.daysUntilExpiry : null,
     })),
+    departmentStats: departmentRows.map((row) => ({
+      departmentCode: row.departmentCode ?? "未設定",
+      count: Number(row.count ?? 0),
+    })),
+    contractProgress: {
+      processedThisMonth: Number(contractProgress?.processed ?? 0),
+      backlog: Number(contractProgress?.backlog ?? 0),
+      target: Math.max(Number(contractProgress?.processed ?? 0) + Number(contractProgress?.backlog ?? 0), 1),
+    },
+    payroll: {
+      monthlyTotal: Number(payrollRow?.monthlyTotal ?? 0),
+    },
   };
 }

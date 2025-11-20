@@ -1,7 +1,8 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { useFieldArray, useForm, type UseFormReturn } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { MinusCircleIcon, PlusCircleIcon } from "@heroicons/react/24/outline";
@@ -12,12 +13,41 @@ import {
   type EmployeeFormValues,
 } from "@/lib/schemas/employee";
 
-export const EmployeeForm = () => {
-  const [statusMessage, setStatusMessage] = useState<string>();
+type EmployeeFormProps = {
+  mode?: "create" | "edit";
+  initialValues?: EmployeeFormValues;
+  employeeId?: string;
+  workConditionId?: string;
+  contractId?: string;
+  redirectTo?: string;
+};
+
+export const EmployeeForm = ({
+  mode = "create",
+  initialValues,
+  employeeId,
+  workConditionId,
+  contractId,
+  redirectTo,
+}: EmployeeFormProps) => {
+  const router = useRouter();
+  const [status, setStatus] = useState<{ type: "success" | "error"; message: string }>();
+  const memoizedDefaultValues = useMemo(
+    () => initialValues ?? defaultEmployeeFormValues,
+    [initialValues],
+  );
   const form = useForm<EmployeeFormValues>({
     resolver: zodResolver(employeeFormSchema),
-    defaultValues: defaultEmployeeFormValues,
+    defaultValues: memoizedDefaultValues,
   });
+  const previousInitialValues = useRef<EmployeeFormValues | undefined>(initialValues);
+
+  useEffect(() => {
+    if (initialValues && previousInitialValues.current !== initialValues) {
+      form.reset(initialValues);
+      previousInitialValues.current = initialValues;
+    }
+  }, [initialValues, form]);
 
   const workingHours = useFieldArray({ control: form.control, name: "workingHours" });
   const breakHours = useFieldArray({ control: form.control, name: "breakHours" });
@@ -28,23 +58,56 @@ export const EmployeeForm = () => {
   });
 
   const onSubmit = async (values: EmployeeFormValues) => {
-    setStatusMessage(undefined);
-    const response = await fetch("/api/employees", {
-      method: "POST",
+    setStatus(undefined);
+
+    if (mode === "edit" && !employeeId) {
+      setStatus({
+        type: "error",
+        message: "従業員IDが見つかりません。もう一度やり直してください。",
+      });
+      return;
+    }
+
+    const isEdit = mode === "edit";
+    const endpoint = isEdit ? `/api/employees/${employeeId}` : "/api/employees";
+    const payload = isEdit
+      ? {
+          values,
+          workConditionId,
+          contractId,
+        }
+      : values;
+
+    const response = await fetch(endpoint, {
+      method: isEdit ? "PUT" : "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(values),
+      body: JSON.stringify(payload),
     });
 
     if (!response.ok) {
       const payload = await response
         .json()
         .catch(() => ({ message: "保存に失敗しました" }));
-      setStatusMessage(payload.message ?? "登録に失敗しました");
+      setStatus({
+        type: "error",
+        message: payload.message ?? "保存に失敗しました",
+      });
       return;
     }
 
-    setStatusMessage("登録が完了しました。従業員一覧を確認してください。");
-    form.reset(defaultEmployeeFormValues);
+    if (isEdit) {
+      setStatus({ type: "success", message: "更新が完了しました。" });
+      if (redirectTo) {
+        router.push(redirectTo);
+        router.refresh();
+      }
+    } else {
+      setStatus({
+        type: "success",
+        message: "登録が完了しました。従業員一覧を確認してください。",
+      });
+      form.reset(defaultEmployeeFormValues);
+    }
   };
 
   return (
@@ -358,9 +421,15 @@ export const EmployeeForm = () => {
         />
       </FormSection>
 
-      {statusMessage && (
-        <p className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-700">
-          {statusMessage}
+      {status && (
+        <p
+          className={`rounded-2xl border p-4 text-sm ${
+            status.type === "error"
+              ? "border-rose-200 bg-rose-50 text-rose-700"
+              : "border-emerald-200 bg-emerald-50 text-emerald-700"
+          }`}
+        >
+          {status.message}
         </p>
       )}
 
@@ -369,7 +438,7 @@ export const EmployeeForm = () => {
           className="rounded-2xl bg-slate-900 px-6 py-3 text-sm font-semibold text-white shadow-soft"
           type="submit"
         >
-          従業員を登録
+          {mode === "edit" ? "変更を保存" : "従業員を登録"}
         </button>
       </div>
     </form>

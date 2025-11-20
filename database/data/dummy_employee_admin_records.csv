@@ -1,0 +1,12 @@
+id,employee_id,tax_withholding_category,employment_insurance,employment_insurance_card_submitted,social_insurance,pension_book_submitted,health_insurance_card_submitted,submitted_to_admin_on,returned_to_employee,expiration_notice_issued,resignation_letter_submitted,return_health_insurance_card,return_security_card,notes,updated_by
+ear-EMP001,EMP001,甲,加入済み,2024-04-05,加入済み,2024-04-05,2024-04-05,2024-04-05,,,2024-04-05,,,特記事項なし,system
+ear-EMP002,EMP002,甲,加入済み,2023-06-05,加入済み,2023-06-05,2023-06-05,2023-06-05,,,2023-06-05,,,特記事項なし,system
+ear-EMP003,EMP003,乙,加入済み,2024-01-20,加入済み,2024-01-20,2024-01-20,2024-01-20,,,2024-01-20,,,特記事項なし,system
+ear-EMP004,EMP004,甲,加入済み,2022-09-05,加入済み,2022-09-05,2022-09-05,2022-09-05,,,2024-10-31,2024-11-05,2024-11-05,退職手続き完了,system
+ear-EMP005,EMP005,乙,加入済み,2023-11-05,加入済み,2023-11-05,2023-11-05,2023-11-05,,,2023-11-05,,,特記事項なし,system
+ear-EMP006,EMP006,甲,加入済み,2024-03-05,加入済み,2024-03-05,2024-03-05,2024-03-05,,,2024-03-05,,,特記事項なし,system
+ear-EMP007,EMP007,乙,加入済み,2023-07-20,加入済み,2023-07-20,2023-07-20,2023-07-20,,,2023-07-20,,,特記事項なし,system
+ear-EMP008,EMP008,甲,加入済み,2022-12-05,加入済み,2022-12-05,2022-12-05,2022-12-05,,,2022-12-05,,,特記事項なし,system
+ear-EMP009,EMP009,乙,加入済み,2024-05-05,加入済み,2024-05-05,2024-05-05,2024-05-05,,,2024-05-05,,,特記事項なし,system
+ear-EMP010,EMP010,甲,加入済み,2023-02-05,加入済み,2023-02-05,2023-02-05,2023-02-05,,,2023-02-05,,,特記事項なし,system
+

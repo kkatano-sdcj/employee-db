@@ -30,21 +30,68 @@ export type EmployeeListItem = {
   hourlyWage?: number;
   contractStartDate?: string;
   contractEndDate?: string;
+  employmentExpiryScheduledDate?: string;
+  needsContractUpdate: boolean;
   updatedAt?: string;
+};
+
+const statusValueMap: Record<string, string> = {
+  ACTIVE: "ACTIVE",
+  INACTIVE: "RETIRED",
+  RETIRED: "RETIRED",
+  SUSPENDED: "ON_LEAVE",
+  ON_LEAVE: "ON_LEAVE",
 };
 
 export type EmployeeSearchOptions = {
   query?: string;
   status?: string;
   employmentType?: string;
+  department?: string;
+  contractFrom?: string;
+  contractTo?: string;
+  minHourlyWage?: number;
+  maxHourlyWage?: number;
+  hasDocuments?: boolean;
+  hasAlert?: boolean;
   limit?: number;
   offset?: number;
 };
 
 export async function fetchEmployees(options: EmployeeSearchOptions = {}) {
-  const { query, status, employmentType, limit = 25, offset = 0 } = options;
+  const {
+    query,
+    status,
+    employmentType,
+    department,
+    contractFrom,
+    contractTo,
+    minHourlyWage,
+    maxHourlyWage,
+    hasDocuments,
+    hasAlert,
+    limit = 25,
+    offset = 0,
+  } = options;
+  const normalizedStatus =
+    status && status !== "ALL" ? statusValueMap[status] ?? status : undefined;
 
-  const rows = await db<EmployeeListItem[]>`
+  const rows = await db<
+    Array<{
+      id: string;
+      employeeNumber: string;
+      name: string;
+      employmentType: string;
+      employmentStatus: string;
+      departmentCode: string;
+      updatedAt: Date | string | null;
+      contractStartDate: Date | string | null;
+      contractEndDate: Date | string | null;
+      employmentExpiryScheduledDate: Date | string | null;
+      hourlyWage?: number;
+      needsContractUpdate: boolean;
+    }>
+  >`
     SELECT
       e.id,
       e.employee_number as "employeeNumber",
@@ -55,10 +102,18 @@ export async function fetchEmployees(options: EmployeeSearchOptions = {}) {
       e.updated_at as "updatedAt",
       c.contract_start_date as "contractStartDate",
       c.contract_end_date as "contractEndDate",
-      c.hourly_wage as "hourlyWage"
+      c.employment_expiry_scheduled_date as "employmentExpiryScheduledDate",
+      c.hourly_wage as "hourlyWage",
+      EXISTS (
+        SELECT 1
+        FROM contracts c_alert
+        WHERE c_alert.employee_id = e.id
+          AND c_alert.employment_expiry_scheduled_date IS NOT NULL
+          AND c_alert.employment_expiry_scheduled_date < CURRENT_DATE
+      ) as "needsContractUpdate"
     FROM employees e
     LEFT JOIN LATERAL (
-      SELECT contract_start_date, contract_end_date, hourly_wage
+      SELECT contract_start_date, contract_end_date, employment_expiry_scheduled_date, hourly_wage
       FROM contracts c
       WHERE c.employee_id = e.id
       ORDER BY c.contract_start_date DESC
@@ -66,8 +121,52 @@ export async function fetchEmployees(options: EmployeeSearchOptions = {}) {
     ) c ON TRUE
     WHERE TRUE
     ${query ? db`AND (e.name ILIKE ${"%" + query + "%"} OR e.name_kana ILIKE ${"%" + query + "%"} OR e.employee_number ILIKE ${"%" + query + "%"})` : db``}
-    ${status && status !== "ALL" ? db`AND e.employment_status = ${status}` : db``}
+    ${normalizedStatus ? db`AND e.employment_status = ${normalizedStatus}` : db``}
     ${employmentType && employmentType !== "ALL" ? db`AND e.employment_type = ${employmentType}` : db``}
+    ${department ? db`AND e.department_code = ${department}` : db``}
+    ${
+      contractFrom
+        ? db`AND (c.contract_start_date IS NULL OR c.contract_start_date >= ${contractFrom})`
+        : db``
+    }
+    ${
+      contractTo
+        ? db`AND (c.contract_start_date IS NULL OR c.contract_start_date <= ${contractTo})`
+        : db``
+    }
+    ${
+      typeof minHourlyWage === "number"
+        ? db`AND (c.hourly_wage IS NULL OR c.hourly_wage >= ${minHourlyWage})`
+        : db``
+    }
+    ${
+      typeof maxHourlyWage === "number"
+        ? db`AND (c.hourly_wage IS NULL OR c.hourly_wage <= ${maxHourlyWage})`
+        : db``
+    }
+    ${
+      hasDocuments
+        ? db`AND EXISTS (
+            SELECT 1 FROM employee_admin_records docs
+            WHERE docs.employee_id = e.id
+              AND (
+                docs.return_health_insurance_card IS NULL
+                OR docs.return_security_card IS NULL
+                OR docs.submitted_to_admin_on IS NULL
+              )
+          )`
+        : db``
+    }
+    ${
+      hasAlert
+        ? db`AND EXISTS (
+            SELECT 1 FROM contracts ca
+            WHERE ca.employee_id = e.id
+              AND ca.employment_expiry_scheduled_date IS NOT NULL
+              AND ca.employment_expiry_scheduled_date < CURRENT_DATE
+          )`
+        : db``
+    }
     ORDER BY e.updated_at DESC NULLS LAST
     LIMIT ${limit} OFFSET ${offset}
   `;
@@ -76,7 +175,11 @@ export async function fetchEmployees(options: EmployeeSearchOptions = {}) {
     ...row,
     contractStartDate: toDateString(row.contractStartDate as unknown as Date),
     contractEndDate: toDateString(row.contractEndDate as unknown as Date),
+    employmentExpiryScheduledDate: toDateString(
+      row.employmentExpiryScheduledDate as unknown as Date,
+    ),
     updatedAt: toDateTimeString(row.updatedAt as unknown as Date),
+    needsContractUpdate: Boolean(row.needsContractUpdate),
   }));
 }
 
@@ -122,6 +225,10 @@ export type EmployeeDetail = {
     contractType: string;
     contractStartDate?: string;
     contractEndDate?: string | null;
+    isRenewable: boolean;
+    employmentExpiryScheduledDate?: string | null;
+    employmentExpiryDate?: string | null;
+    needsUpdate: boolean;
     hourlyWage: number;
     hourlyWageNote?: string | null;
     overtimeHourlyWage?: number | null;
@@ -164,31 +271,10 @@ type WorkConditionRow = {
   work_days_count: number;
   work_days_count_note: string | null;
   paid_leave_base_date: Date | string | null;
-};
-
-type WorkingHourRow = {
-  id: string;
-  work_condition_id: string;
-  start_time: string;
-  end_time: string;
-};
-
-type BreakHourRow = WorkingHourRow;
-
-type WorkLocationRow = {
-  id: string;
-  work_condition_id: string;
-  location: string;
-};
-
-type TransportationRouteRow = {
-  id: string;
-  work_condition_id: string;
-  route: string;
-  round_trip_amount: number | null;
-  monthly_pass_amount: number | null;
-  max_amount: number | null;
-  nearest_station: string | null;
+  working_hours_jsonb: unknown;
+  break_hours_jsonb: unknown;
+  work_locations_jsonb: unknown;
+  transportation_routes_jsonb: unknown;
 };
 
 export async function fetchEmployeeDetail(employeeId: string): Promise<EmployeeDetail> {
@@ -236,30 +322,6 @@ export async function fetchEmployeeDetail(employeeId: string): Promise<EmployeeD
     LIMIT 5
   `;
 
-  const workConditionIds = workConditions.map((c) => c.id);
-
-  let workingHours: WorkingHourRow[] = [];
-  let breakHours: BreakHourRow[] = [];
-  let workLocations: WorkLocationRow[] = [];
-  let transportationRoutes: TransportationRouteRow[] = [];
-
-  if (workConditionIds.length) {
-    [workingHours, breakHours, workLocations, transportationRoutes] = await Promise.all([
-      db<
-        WorkingHourRow[]
-      >`SELECT * FROM working_hours WHERE work_condition_id = ANY(${db.array(workConditionIds)})`,
-      db<
-        BreakHourRow[]
-      >`SELECT * FROM break_hours WHERE work_condition_id = ANY(${db.array(workConditionIds)})`,
-      db<
-        WorkLocationRow[]
-      >`SELECT * FROM work_locations WHERE work_condition_id = ANY(${db.array(workConditionIds)})`,
-      db<
-        TransportationRouteRow[]
-      >`SELECT * FROM transportation_routes WHERE work_condition_id = ANY(${db.array(workConditionIds)})`,
-    ]);
-  }
-
   const workConditionDetails = workConditions.map((condition) => ({
     id: condition.id,
     effectiveFrom: toDateString(condition.effective_from),
@@ -268,26 +330,36 @@ export async function fetchEmployeeDetail(employeeId: string): Promise<EmployeeD
     workDaysCount: condition.work_days_count,
     workDaysCountNote: condition.work_days_count_note,
     paidLeaveBaseDate: toDateString(condition.paid_leave_base_date),
-    workingHours: workingHours
-      .filter((hour) => hour.work_condition_id === condition.id)
-      .map((hour) => ({ start: hour.start_time, end: hour.end_time })),
-    breakHours: breakHours
-      .filter((slot) => slot.work_condition_id === condition.id)
-      .map((slot) => ({ start: slot.start_time, end: slot.end_time })),
-    workLocations: workLocations
-      .filter((location) => location.work_condition_id === condition.id)
-      .map((location) => ({ location: location.location })),
-    transportationRoutes: transportationRoutes
-      .filter((route) => route.work_condition_id === condition.id)
-      .map((route) => ({
-        route: route.route,
-        roundTripAmount: Number(route.round_trip_amount ?? 0),
-        monthlyPassAmount: route.monthly_pass_amount
-          ? Number(route.monthly_pass_amount)
-          : null,
-        maxAmount: route.max_amount ? Number(route.max_amount) : null,
-        nearestStation: route.nearest_station,
-      })),
+    workingHours: Array.isArray(condition.working_hours_jsonb)
+      ? (condition.working_hours_jsonb as Array<{ start_time?: string; end_time?: string }>).map(
+          (slot) => ({ start: slot.start_time ?? "", end: slot.end_time ?? "" }),
+        )
+      : [],
+    breakHours: Array.isArray(condition.break_hours_jsonb)
+      ? (condition.break_hours_jsonb as Array<{ start_time?: string; end_time?: string }>).map(
+          (slot) => ({ start: slot.start_time ?? "", end: slot.end_time ?? "" }),
+        )
+      : [],
+    workLocations: Array.isArray(condition.work_locations_jsonb)
+      ? (condition.work_locations_jsonb as Array<{ location?: string }>).map((location) => ({
+          location: location.location ?? "",
+        }))
+      : [],
+    transportationRoutes: Array.isArray(condition.transportation_routes_jsonb)
+      ? (condition.transportation_routes_jsonb as Array<{
+          route?: string;
+          round_trip_amount?: number;
+          monthly_pass_amount?: number;
+          max_amount?: number;
+          nearest_station?: string;
+        }>).map((route) => ({
+          route: route.route ?? "",
+          roundTripAmount: Number(route.round_trip_amount ?? 0),
+          monthlyPassAmount: route.monthly_pass_amount ? Number(route.monthly_pass_amount) : null,
+          maxAmount: route.max_amount ? Number(route.max_amount) : null,
+          nearestStation: route.nearest_station ?? undefined,
+        }))
+      : [],
   }));
 
   const contracts = (await db`
@@ -296,13 +368,21 @@ export async function fetchEmployeeDetail(employeeId: string): Promise<EmployeeD
       contract_type as "contractType",
       contract_start_date as "contractStartDate",
       contract_end_date as "contractEndDate",
+      is_renewable as "isRenewable",
+      employment_expiry_scheduled_date as "employmentExpiryScheduledDate",
+      employment_expiry_date as "employmentExpiryDate",
       hourly_wage as "hourlyWage",
       hourly_wage_note as "hourlyWageNote",
       overtime_hourly_wage as "overtimeHourlyWage",
       job_description as "jobDescription",
       paid_leave_clause as "paidLeaveClause",
       status,
-      updated_at as "updatedAt"
+      updated_at as "updatedAt",
+      CASE
+        WHEN employment_expiry_scheduled_date IS NULL THEN false
+        WHEN employment_expiry_scheduled_date < CURRENT_DATE THEN true
+        ELSE false
+      END as "needsUpdate"
     FROM contracts
     WHERE employee_id = ${employeeId}
     ORDER BY contract_start_date DESC
@@ -311,6 +391,8 @@ export async function fetchEmployeeDetail(employeeId: string): Promise<EmployeeD
     contractType: string;
     contractStartDate: Date | string | null;
     contractEndDate: Date | string | null;
+    employmentExpiryScheduledDate: Date | string | null;
+    employmentExpiryDate: Date | string | null;
     hourlyWage: number;
     hourlyWageNote: string | null;
     overtimeHourlyWage: number | null;
@@ -318,6 +400,7 @@ export async function fetchEmployeeDetail(employeeId: string): Promise<EmployeeD
     paidLeaveClause: string | null;
     status: string;
     updatedAt: Date | string | null;
+    needsUpdate: boolean;
   }>;
 
   const employmentHistory = (await db`
@@ -392,6 +475,11 @@ export async function fetchEmployeeDetail(employeeId: string): Promise<EmployeeD
       contractType: contract.contractType,
       contractStartDate: toDateString(contract.contractStartDate as unknown as Date),
       contractEndDate: toDateString(contract.contractEndDate as unknown as Date),
+      employmentExpiryScheduledDate: toDateString(
+        contract.employmentExpiryScheduledDate as unknown as Date,
+      ),
+      employmentExpiryDate: toDateString(contract.employmentExpiryDate as unknown as Date),
+      needsUpdate: Boolean(contract.needsUpdate),
       hourlyWage: Number(contract.hourlyWage ?? 0),
       hourlyWageNote: contract.hourlyWageNote ?? undefined,
       overtimeHourlyWage: contract.overtimeHourlyWage

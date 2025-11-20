@@ -156,7 +156,7 @@ crates/foo/planner.rsで、以下を定義：
 - UC-01〜UC-12 の**最低実装**を揃え、PDF/CSV/給与抽出/編集ロック/監査/RBAC/アラートが動作
 - 仕様の非機能（検索2秒目標、Enter非保存、最終更新日時表示）を満たす
 - UI要件（UI-001: 雇用開始日と雇用終了日を近い場所に配置、UI-002: 一覧画面からのステータス一括変更）を実装
-- 契約の雇用期間は `contract_start_date`〜`employment_expiry_scheduled_date` を表示し、`employment_expiry_date` を記録・表示する（`specs/002-contract-expiry-date/spec.md` 準拠）
+- 契約の雇用期間は `contract_start_date`〜`employment_expiry_scheduled_date` を表示し、`employment_expiry_date` を記録・表示する（`specs/008-comprehensive-spec/spec.md` User Story 3準拠）
 - 個人情報最小化（住所・電話番号・銀行口座は**保持しない**）がテストで担保
 - 部門コードはBPS課、オンサイト課、CC課、PS課の4部署から選択（FR-001準拠）
 
@@ -164,19 +164,20 @@ crates/foo/planner.rsで、以下を定義：
 ```md
 # Plan3ベースWeb MVP（Next.js + Supabase 連携）
 
-このExecPlanは生きている文書です。`Progress`、`Surprises & Discoveries`、`Decision Log`、`Outcomes & Retrospective`を随時更新し、`specs/001-employee-db-requirements/spec.md` の FR-001〜FR-009 と `specs/002-contract-expiry-date/spec.md` の FR-001〜FR-009（契約の雇用満了予定日/雇用満了日の管理）に準拠した実装内容と `designs/plan3` のUI要件を同期させます。
+このExecPlanは生きている文書です。`Progress`、`Surprises & Discoveries`、`Decision Log`、`Outcomes & Retrospective`を随時更新し、`specs/008-comprehensive-spec/spec.md` の User Story / Success Criteria / UI要件と `designs/plan3` のUI要件を同期させます。
 
 ## 目的 / 全体像
-最新仕様（従業員登録/勤務条件/契約/CSV抽出のFR-001〜FR-009および契約雇用満了日管理仕様 `specs/002-contract-expiry-date/spec.md`）と Plan3 のUIモックに沿った Next.js App Router アプリ（`apps/nextjs`）を構築し、Supabase上の既存テーブル（`database/supabase_schema.sql`）からデータを取得できるMVPを提供します。サイドバー付きのダッシュボード、従業員一覧・詳細・登録、契約管理、レポート、システム設定画面を提供し、最低限のCRUD/閲覧が動作することを確認します。
+包括仕様 `specs/008-comprehensive-spec/spec.md`（User Story 1〜14, SC-001〜SC-014, UI-001〜UI-020）と `designs/plan3` のUIモックを同期させた Next.js App Router アプリ（`apps/nextjs`）を構築します。従業員登録/勤務条件/契約/契約書PDF/CSV抽出/ダッシュボード/同時編集制御/契約履歴/通知を一貫して提供し、Supabase（`database/supabase_schema.sql`）からリアルタイムにデータを取得できるMVPを段階的に完成させます。最新仕様は `specs/008` に集約されたため、従来参照していた `specs/001`〜`specs/007` の要件は `specs/008` に内包されます。（旧specにしかない注記が必要な場合のみ補足参照とし、設計判断は常に`specs/008`優先で行うこと。）
 
 ## Progress
 - [ ] (2025-11-16T11:09Z) PNPMワークスペース初期化・`apps/nextjs`作成・Lint/TS/Prettier/ Tailwind/daisyUI セットアップ
 - [ ] (2025-11-16T11:09Z) Supabaseクライアント層と環境変数（`DATABASE_URL`/`NEXT_PUBLIC_SUPABASE_URL`/`NEXT_PUBLIC_SUPABASE_ANON_KEY`）の整備、テスト用フェッチユーティリティ作成
 - [ ] (2025-11-16T11:09Z) Plan3準拠レイアウト/共通UI（サイドバー、トップバー、ステータスカード、タブ、テーブル、フォームコンポーネント）の実装
 - [ ] (2025-11-16T11:09Z) 従業員一覧/詳細/登録/契約/レポート/設定ページの構築とSupabase連携、MVP検証 (`pnpm --filter @acme/nextjs dev`)
+- [x] (2025-11-19T00:26Z) `specs/004-contract-update-indicator` 準拠の「要更新」判定/表示を実装。`contracts`クエリ・従業員一覧/詳細・契約管理画面で `employment_expiry_scheduled_date < CURRENT_DATE` を起点にバッジと満了予定日を表示し、Dashboardメトリクスも同じロジックに揃えた。
 
 ## Surprises & Discoveries
-- 着手前のため未記入。実装中に得られた知見（例: Supabase API制約、データ整形の注意点など）をここに追記する。
+- (2025-11-19) 既存実装は `termination_alert_flag` を参照していたが実データが同期されておらず、満了予定日ベースの算出が必要だった。Postgres側で `CURRENT_DATE` を使うとタイムゾーン差異を吸収できるため、各クエリでCASE/EXISTSに統一した。
 
 ## Decision Log
 - 決定: Next.js App Router + Server Actions/Route HandlersでSupabase(Postgres)を直接呼び出す。  
@@ -185,47 +186,60 @@ crates/foo/planner.rsで、以下を定義：
 - 決定: `database/supabase_schema.sql` 準拠のビュー系APIを `apps/nextjs/src/server/supabase` 配下に配置し、RLS対策としてサーバー側から行データ取得する。  
   根拠: 個人情報（MyNumber等）を扱うため、クライアント側からの直接Anonキー取得を避け、App Routerのサーバーコンポーネント/Route Handlerで集約。  
   日付/作成者: 2025-11-16 / Codex
+- 決定: 契約更新アラートは `employment_expiry_scheduled_date` を唯一のソースとし、`termination_alert_flag` は補助フラグに格下げする。  
+  根拠: `specs/004-contract-update-indicator` のFR-001〜FR-005は予定日が当日以前かどうかで判定することを要求しており、手動フラグのままではSC-001〜SC-005を保証できないため。  
+  日付/作成者: 2025-11-19 / Codex
 
 ## Outcomes & Retrospective
-- 着手前。ページ実装完了後に、満たしたFR/残課題、Plan3との差分、Supabase接続確認ログを記載する。
+- (2025-11-19) 契約管理・従業員一覧/詳細・ダッシュボードタスクで `specs/004` SC-001〜SC-005 に該当する「要更新」バッジを実装し、満了予定日（employment_expiry_scheduled_date）を同時表示することでUI-001/003も満たした。`pnpm lint` が通ることを確認済み。
+- 既知課題: 契約登録フローは依然として `contract_end_date` 入力のみのため、データ移行と入力UIの刷新が必要。暫定的には既存CSV/SQLで `employment_expiry_scheduled_date` を埋める運用が前提。
 
 ## コンテキストと方向性
 - 現状: ルートには`designs/plan3` のHTMLモックと Supabase スキーマSQLのみが存在し、Next.jsアプリやPNPM設定が未作成。
 - データソース: Supabase プロジェクト（`.env`の`DATABASE_URL`/`DIRECT_URL`）上に `employees` ほか8テーブルが既に作成済み。
-- 仕様: `specs/001-employee-db-requirements/spec.md` のFR-001〜FR-009と `specs/002-contract-expiry-date/spec.md` のFR-001〜FR-009（契約開始日/雇用満了予定日/雇用満了日、アラート再計算）を参照。非機能（最終更新日時表示、同時編集制御は将来Phase）を順守。
+- 仕様: `specs/008-comprehensive-spec/spec.md` を唯一のSingle Source of Truthとし、User Story 1〜14 / Success Criteria SC-001〜SC-014 / UI-001〜UI-020 / 対象外リストへ常に立ち返る。旧仕様 (`specs/001`〜`specs/007`) は補足的な背景として参照し、差分がある場合は `specs/008` を優先する。
 - UI要件: `designs/plan3/*.html`（ダッシュボード、従業員一覧/詳細/登録、契約管理、レポート、設定）。
 
 ## 作業計画
-1. **ワークスペース初期化**  
-   - ルート `package.json` と `pnpm-workspace.yaml` を作成し、共通スクリプト（`lint`,`format`,`typecheck`）を追加。  
-   - Next.js 16, React 19, TypeScript 5, Tailwind, daisyUI, shadcn ベースUI、Heroiconsを依存としてインストール。  
-   - ESLint/Prettier/Tailwind設定を `tooling/` がないため簡易版として `apps/nextjs` 直下に配置し、2スペース・import sort・Tailwindクラスオーダーを設定。
-2. **アプリスキャフォールド**  
-   - `apps/nextjs` に App Router 構成（`app/(dashboard)/...`）を作成し、Plan3に合わせた `layout.tsx`（サイドバー/トップバー/アクセントカード）と `globals.css`（Tailwind + カスタムCSS変数）を定義。  
-   - 共通UI: ステータスカード、表、タブ、タイムライン、フォームセクション、モーダルなどを `apps/nextjs/src/components/ui/` に配置。
-3. **Supabaseアクセス層**  
-   - `apps/nextjs/src/server/supabase/client.ts` にサーバー専用クライアントを作成し、`DATABASE_URL`でPostgresに接続する `postgres` ドライバ or `@supabase/postgrest-js`? Actually plan: use `pg` for server fetch? But restful? We'll decide soon (maybe `@supabase/supabase-js` server). maintain typed helper to fetch employees with includes.  
-   - Queryユーティリティ: `apps/nextjs/src/server/queries/employees.ts` など 3枚: employee一覧, employee詳細+関連, 契約, 集計カード, CSV stub.  
-   - APIルート: `app/api/employees/route.ts` (一覧/検索), `app/api/employees/[id]/route.ts` (詳細/更新), `app/api/contracts/route.ts`, `app/api/reports/payroll/route.ts` などMVP API stub.
-4. **ページ実装（Plan3反映）**  
-   - `app/(dashboard)/page.tsx`: カード/チャート/アラート/進行状況 (ダミーデータ→Supabase集計).  
-   - `app/(dashboard)/employees/page.tsx`: 検索フォーム+テーブル+ページネーション, Supabaseから `employees` join `contracts`.  
-   - `app/(dashboard)/employees/[id]/page.tsx`: タブUI (雇用情報/勤務情報/給与・手当/書類) + `WorkConditionTimeline`.
-     - 雇用情報タブに契約番号（contractsテーブルのid）を表示  
-   - `app/(dashboard)/employees/new/page.tsx`: multi-stepフォーム, inline validation (Zod).  
-   - `app/(dashboard)/contracts/page.tsx`: 契約一覧+PDF出力CTA(placeholder).  
-   - `app/(dashboard)/reports/page.tsx`: CSV・給与データ抽出フォーム.  
-   - `app/(dashboard)/settings/page.tsx`: システム設定・通知設定UI.  
-   - 主要フォームは spec のエラーメッセージ要件 (FR-025) に沿ってフィールド直下へ表示。
-5. **データ取得/保存ロジック**  
-   - 暫定: Supabase SQLビュー or `pg`クエリ (server actions) で employees, work_conditions,... 8テーブル join.  
-   - 従業員登録: サーバーアクション `createEmployeeAction` で employees + work_conditions + child tables + transactions (FR-002〜FR-005).  
-   - 契約保存: `contracts` insert + branch number increment stub (Phase6 detail).  
-   - 集計: Dashboard KPI (Active employees count, expiring contracts, pending alerts).  
-6. **検証/整備**  
-   - `pnpm install`, `pnpm lint`, `pnpm format --check`, `pnpm --filter @acme/nextjs test`（Vitest placeholder or skip with "No tests yet" comment).  
-   - `pnpm --filter @acme/nextjs dev` で起動し、主要ページ遷移・Supabaseデータ取得 log  screenshots?  
-   - README/ENV更新: `.env.example` へ `NEXT_PUBLIC_SUPABASE_URL` など追記。
+1. **基盤セットアップ（US全体の共通土台）**  
+   - `package.json`/`pnpm-workspace.yaml`/`apps/nextjs` scaffold を整備し、Node 22.16 + PNPM 10.19 環境で `pnpm lint`/`pnpm dev` を共通化。  
+   - ESLint/Prettier/Tailwind/daisyUI/heroicons等を導入し、Plan3 UIライブラリを `components/ui` に集約。  
+   - `.env.example` に `DATABASE_URL` / `AUTH_SECRET` / `NEXT_PUBLIC_SUPABASE_*` を明示、`apps/nextjs/src/env.ts` で型安全に読み取る。
+2. **従業員 & 勤務条件コア（User Story 1, Success Criteria SC-001, UI-001〜010）**  
+   - CRUD/API/サーバーアクションを `apps/nextjs/src/server/queries|actions` に集約。`work_conditions` JSONB カラムへ `working_hours`/`break_hours`/`work_locations`/`transportation_routes` を統合し、`employees` とトランザクションで保存。  
+   - 従業員詳細タブ（雇用情報/勤務情報/給与・手当/書類）に spec 008 の表示項目をすべて実装し、契約番号・残業時給・提出物の表示を保証。  
+   - CRUDフォームでは Enter 非保存・最終更新者/更新日時の記録を維持。
+3. **契約ライフサイクル & UI制御（User Story 3〜8, 14, UI-011〜019）**  
+   - 契約期間（`contract_start_date`/`employment_expiry_scheduled_date`/`employment_expiry_date`）の入力・フィルタリング・履歴連携を Phase 4 に統合。  
+   - 契約管理テーブルで「要更新」バッジ／3点ドロップダウン（プレビュー/更新/新規/削除）を実装し、従業員一覧/詳細との表示連動を確認。  
+   - 契約作成・更新時に employment_history へ自動追記し、従業員詳細の契約履歴タブで最新→過去順に表示。  
+   - 雇用期間開始日時が未来の契約は「予約」状態として表示のみ、開始日を過ぎたら自動で有効化。  
+   - 契約削除・更新時の承認番号や枝番は Phase 6 で扱う。
+4. **書類出力 & PDFテンプレート（User Story 2, SC-002, UI-015）**  
+   - `docs/format` にある「パート雇入通知書」「誓約書」HTMLテンプレートを元にPDF出力パイプラインを実装。`/reports/contracts/[id]/pdf` のような Route Handler で従業員/契約情報を注入し、赤字領域と可変フィールドを差し込み。  
+   - 契約と誓約書を同時生成するAPIと、書類ステータス更新（作成→承認→返却）を `documents` テーブルで管理。  
+   - PDF生成完了時に契約アラートの自動解除・承認番号の履歴保存を行う。
+5. **ダッシュボード / CSV / アラート（User Story 4, 9, 10, 11, SC-002〜010, UI-017〜020）**  
+   - `apps/nextjs/src/server/queries/dashboard.ts` で重要タスク優先度計算、統計カード（従業員数/今月契約処理/契約更新予定）とクリックハンドリングを実装。  
+   - 給与計算用CSV・指定日時点抽出APIを `app/api/reports/*` に配置し、100~500件規模での目標性能（30秒/10秒以内）を測定。  
+   - 契約更新アラートテーブルを作成し、30/14/7日前の通知・雇用終了時の自動解除・受信者ロール（統括人事/現場マネージャー）を行う。  
+   - 「要更新」タスクは赤色表示・優先度「高」とし、ダッシュボードの本日の重要タスクに組み込む。
+6. **検索・同時編集・監査体制（User Story 12, 13, 14, SC-006〜008, UI-002, UI-017）**  
+   - 従業員検索（氏名/ステータス/勤務場所）+一覧のステータス一括更新を `apps/nextjs/src/app/(dashboard)/employees/page.tsx` で実装し、ロールによる表示制限を Phase 10 に連携。  
+   - 編集ロック(`edit_locks`)で15分のロック/保存時即解放/退出時フォールバックを実装（Phase 3）。  
+   - 契約変更履歴の監査と書類提出状況を含む「契約履歴タブ」を拡充し、SC-007/SC-008を満たすトレーサビリティを担保。  
+   - Phase 9〜11で包括テスト・RBAC・パフォーマンス最適化を実施し、SC-011〜SC-014を検証。
+
+## `specs/008` User Story ↔ Phase 対応
+- **US1 従業員登録/勤務条件** → Phase 2（CRUD）  
+- **US2 契約書・誓約書PDF** → Phase 5（契約書PDF）  
+- **US3 契約期間管理**, **US4 要更新バッジ**, **US5 契約操作**, **US6 契約入力UI**, **US7 契約履歴自動追記**, **US11 契約更新アラート**, **US14 契約履歴表示** → Phase 4（契約・アラート）  
+- **US8 契約表示制御** → Phase 2（従業員詳細タブ） + Phase 4（契約リスト）  
+- **US9 ダッシュボード/統計カード** → Phase 8（ダッシュボード/ステータス）  
+- **US10 給与/CSV抽出** → Phase 6（CSV指定日時点）と Phase 7（給与支払データ）  
+- **US12 従業員検索** → Phase 2（一覧/検索）  
+- **US13 同時編集制御** → Phase 3（編集ロック）  
+- **SC-001〜SC-014 / UI-001〜UI-020** → 各PhaseのDoDに落とし込み済み（該当Phaseに記載）。優先度P1（US1〜10）はPhase 2〜8でMVPに含め、P2/P3（US11〜14）はPhase 3/4/6/8で段階的に実装する。
 
 ## 実行と検証
 - コマンド: `pnpm install`, `pnpm --filter @acme/nextjs dev`, `pnpm lint`, `pnpm format`,（後日`pnpm test`）。  
@@ -237,6 +251,83 @@ crates/foo/planner.rsで、以下を定義：
 - **時間不足**: MVPでは閲覧/簡易登録を優先し、PDF/CSV/ロック/RBACは既存Phaseで追認。  
 - **UIとの乖離**: Plan3 HTML のクラス/配色をTailwindテーマに落とし込み、Storybook的 `components/demo` page で検証。
 ```
+
+## Plan: 従業員編集画面（Next.js App Router）
+```md
+# 従業員編集フォームと更新APIを整備する
+
+このExecPlanは生きている文書です。`specs/008-comprehensive-spec/spec.md` の User Story 1 / FR-050 / SC-038 / UI-001 / UI-010 / UI-016 節と `designs/plan3/employee-detail.html` のモックを常に参照しながら進め、`Progress`、`Surprises & Discoveries`、`Decision Log`、`Outcomes & Retrospective` を最新に保ちます。
+
+## 目的 / 全体像
+統括人事管理者が従業員詳細ページから「編集モード」を開き、既存の基本情報・勤務条件・契約情報を`specs/008`に沿って修正できるようにします。編集後は `/employees` 一覧や詳細ページで即時に更新内容が確認でき、`pnpm --filter @acme/nextjs dev` で立ち上げたUI上でフォーム送信→成功トースト→詳細へ戻る動線を手動確認できる状態をゴールとします。
+
+## Progress
+- [x] (2025-11-19T13:24Z) `fetchEmployeeDetail` に `is_renewable` を追加し、`mapEmployeeDetailToFormValues` ユーティリティで `EmployeeFormValues` へ射影
+- [x] (2025-11-19T13:28Z) `apps/nextjs/src/server/actions/update-employee.ts` + `/api/employees/[id]` を追加し、従業員・勤務条件・契約の更新処理とトランザクションを実装
+- [x] (2025-11-19T13:34Z) `EmployeeForm` を編集モード対応にリファクタし、`apps/nextjs/src/app/employees/[id]/edit/page.tsx` から初期値とメタデータを受け渡す
+- [x] (2025-11-19T13:40Z) `pnpm --filter @acme/nextjs lint` を実行し、UI要件の手動検証手順を整理（ブラウザ確認は後続作業で実施）
+
+## 驚きと発見
+- 観察: `create-employee` は依然として `working_hours` 系の旧テーブルにINSERTしている一方、詳細画面は `work_conditions.*_jsonb` から値を読み出している。  
+  証拠: `apps/nextjs/src/server/actions/create-employee.ts` と `apps/nextjs/src/server/queries/employees.ts` の実装差異。今回の `updateEmployee` ではJSONBを直接更新し、将来的に登録処理も同じ構造へ寄せる必要がある。
+
+## 決定ログ
+- 決定: 更新リクエストは `PUT /api/employees/[employeeId]` に集約し、サーバーアクション `updateEmployee` を介してPostgresトランザクションを張る。  
+  根拠: 従業員・勤務条件・契約の3テーブルを同時に更新するため、1か所にまとめてロールバック可能にする必要がある。  
+  日付/作成者: 2025-11-19 / Codex
+- 決定: 編集フォームは既存 `EmployeeForm` を拡張し、`mode`（"create" | "edit"）と `initialValues` + `resourceIds` をpropsで受ける。  
+  根拠: 新規登録とのUI一貫性を維持し、UI-001/010で求められる配置/ラベルを単一コンポーネントから保証する。  
+  日付/作成者: 2025-11-19 / Codex
+
+## 結果と振り返り
+- 着手前のため未記入。完了時に実装内容・問題・次のアクションをまとめます。
+
+## コンテキストと方向性
+- `apps/nextjs/src/components/employees/EmployeeForm.tsx`: React Hook Form + Zod で新規登録専用のUIを提供中。編集モードは未対応。
+- `apps/nextjs/src/app/employees/[id]/page.tsx`: 詳細ページに「編集モード」リンクが存在するが、遷移先は未実装。
+- `apps/nextjs/src/server/actions/create-employee.ts`: INSERT専用のトランザクション。
+- `apps/nextjs/src/server/queries/employees.ts`: 詳細取得に `fetchEmployeeDetail` を提供。これを編集フォーム初期値へマップする。
+- `specs/008-comprehensive-spec/spec.md`: 従業員管理ページの表示項目、UI-001/010/016、FR-050/FR-067〜073、SC-038を本タスクの受入基準とする。
+
+## 作業計画
+1. `apps/nextjs/src/lib/schemas/employee.ts` に編集で必要なIDフィールド（employeeId, workConditionId, contractIdなど）を追加するか、別の型を導入してAPIリクエストボディに含められるようにする。`defaultEmployeeFormValues` は変わらないが、初期値を外部から差し込めるよう `EmployeeForm` の `useForm` 初期化を props 経由に変更する。
+2. `fetchEmployeeDetail` の戻り値をフォーム値へ変換する `mapEmployeeDetailToFormValues` ユーティリティを `apps/nextjs/src/lib/mappers/employee-form.ts`（新規）として作成。複数勤務条件のうち最新(0番目)を編集対象にし、`workConditions[0]` が無い場合は既定値を使用するロジックを記述。
+3. `apps/nextjs/src/server/actions/update-employee.ts` を追加し、従業員情報・勤務条件・契約テーブルを `db.begin` で更新。`workConditionId` が存在する場合は関連の `working_hours` 等を一旦DELETE→INSERTで差し替える。存在しない場合は `createEmployee` と同じように新規作成。`contracts` も同様に `contractId` を更新し、未指定の場合は新規発行。
+4. API ルート `apps/nextjs/src/app/api/employees/[id]/route.ts` を作り、`PUT` で `updateEmployee` を呼び出す。エラー時は `400` + message、成功時は JSON `{ ok: true }`。
+5. `EmployeeForm` を `mode`, `initialValues`, `employeeId`, `workConditionId`, `contractId`, `onSuccessRedirect` などのpropsに対応させ、`fetch` 先を `mode` で切り替える。成功後は `onSuccessRedirect ?? "/employees"` へ `router.push`。失敗メッセージやボタンラベルを編集/登録で分岐。
+6. `apps/nextjs/src/app/employees/[id]/edit/page.tsx` を作成し、Server Componentで `fetchEmployeeDetail` を呼んで `EmployeeForm` に初期値・IDを渡す。ページヘッダーやパンくず、キャンセルボタンなどPlan3準拠のUIを追加。
+7. `apps/nextjs/src/app/employees/[id]/page.tsx` の「編集モード」リンクおよび下部ボタンが新ページに遷移することを確認し、必要なら `Link` 先を `/employees/${id}/edit` に統一する。
+
+## 具体的なステップ
+1. `pnpm --filter @acme/nextjs lint` — 既存状態がLintグリーンであることを確認。成功時は `Done in <time>` が表示される。
+2. 実装後に `pnpm --filter @acme/nextjs lint` を再実行して静的チェックを通す。
+3. 必要に応じて `pnpm --filter @acme/nextjs dev` を起動し、`http://localhost:3000/employees/<id>/edit` をブラウザで動作確認。
+
+## 検証と受け入れ
+- 手動: 既存の従業員を開き「編集モード」→フォームの各タブで値が初期表示され、雇用開始/終了日が隣接(UI-001)し、雇用区分が表示ラベル「常勤/パートタイム/契約社員」(UI-010)で選択できる。保存成功後は `/employees/<id>` に戻り、表示値が更新される。
+- コマンド: `pnpm --filter @acme/nextjs lint` が成功すること。
+
+## 冪等性と回復
+- `updateEmployee` は単一トランザクション内でDELETE→INSERTを行うため、途中失敗時はロールバックされ、再送信しても整合性が保たれる。`PUT` APIは冪等：同じペイロードを再実行すると同じレコード状態に収束する。
+
+## 成果物とメモ
+- 主要変更ファイル:  
+  - `apps/nextjs/src/app/employees/[id]/edit/page.tsx`（新規）  
+  - `apps/nextjs/src/components/employees/EmployeeForm.tsx`（編集対応）  
+  - `apps/nextjs/src/server/actions/update-employee.ts` / `apps/nextjs/src/app/api/employees/[id]/route.ts`（更新処理）  
+  - `apps/nextjs/src/lib/mappers/employee-form.ts`（詳細→フォームのマッピング）
+
+## インターフェースと依存関係
+- `updateEmployee({
+    employeeId,
+    workConditionId?,
+    contractId?,
+    values: EmployeeFormValues
+  }): Promise<{ employeeId: string; contractId: string; workConditionId: string }>` を `apps/nextjs/src/server/actions/update-employee.ts` に定義。
+- `mapEmployeeDetailToFormValues(detail: EmployeeDetail): { values: EmployeeFormValues; ids: { workConditionId?: string; contractId?: string } }` を `apps/nextjs/src/lib/mappers/employee-form.ts` に定義。
+- フロントは `EmployeeForm` コンポーネントで `mode` prop に応じて `POST /api/employees` か `PUT /api/employees/[id]` を呼び分ける。
+```
+
 ---
 
 ## Phase 0: 既存フォーム保存不具合の修正（前提）
@@ -301,97 +392,43 @@ crates/foo/planner.rsで、以下を定義：
 
 ---
 
-## Phase 2: CRUD（UC-01〜UC-06 の骨格）
-**目的**: 従業員登録・履歴・退復職・検索/一覧（認証機能なしで実装）  
-**技術実装**: tRPC + Prisma + TanStack Query (React Query)
-
-**スキーマ参照**: `table.md` の各テーブル定義を参照（フィールド詳細、制約、インデックス、Prismaスキーマ例を含む）
+## Phase 2: CRUD（User Story 1 & 12 の骨格）
+**目的**: 従業員登録〜勤務条件〜一覧検索までを `specs/008` User Story 1/8/12 と UI-001〜UI-015 に準拠して実装し、SC-001/SC-004/SC-013 の下地を作る  
+**仕様リンク**: `specs/008-comprehensive-spec/spec.md` の「User Story 1（従業員情報の登録と管理）」「User Story 8（契約情報の表示制御）」「User Story 12（従業員検索と一覧表示）」「従業員管理ページの表示データ項目」  
+**技術実装**: Next.js App Router + Server Actions (`apps/nextjs/src/server/actions/*.ts`) + `postgres` クライアント + Zod + React Hook Form
 
 **Steps**
-1. 従業員マスター CRUD（`packages/api/src/router/employee.ts`）
-   - `create`: Prisma の `create` で新規登録（`table.md` の employees テーブル定義に準拠）
-     - 部門コードはBPS課、オンサイト課、CC課、PS課の4部署から選択（FR-001準拠）
-     - 部門コードのバリデーション（Zod スキーマで4部署のいずれかを強制）
-   - `update`: Prisma の `update` + 楽観的ロック（`updatedAt` チェック）
-   - `delete`: 論理削除（`employmentStatus = 'RETIRED'`, `retiredAt` 設定）
-   - `findById`: Prisma の `findUnique` + `include` で関連データ取得
-   - `findByEmployeeNumber`: インデックス活用（`idx_employees_employee_number`）
-   - `search`: Prisma の `findMany` + フィルタリング
-     - 検索条件: employeeNumber, name, departmentCode, employmentType, employmentStatus
-     - ページネーション: 50件/ページ
-     - インデックス活用: `table.md` のアクセスパターンを参照
-   - `bulkUpdateStatus`: 一覧画面からのステータス一括変更（FR-026準拠）
-     - 複数選択した従業員の書類ステータスを一括更新
-     - チェックボックスと一括操作コントロールを使用
-2. 勤務条件 CRUD（`packages/api/src/router/workCondition.ts`）
-   - `create`: JSONBカラム（例: `working_hours`, `break_hours`, `locations`, `transportation_routes`）への統合保存（`specs/003-work-conditions-consolidation/spec.md`）
-     - 既存の `working_hours` 等4テーブルから移行した構造を1リクエストで登録
-   - `get`: `findUnique` でJSONBカラムを一括取得
-   - `update`: JSONBカラム内の特定セクションをマージ更新（差分更新対応: 時間帯の追加/削除をJSON mergeで実現）
-   - `delete`: work_conditionsレコードを削除（統合JSONBフィールドのみで管理）
-   - `findByEmployeeId`: JSONB構造から特定勤務日/時間を抽出するフィルタを追加（`specs/003` の検索・フィルタリング要件）
-   - `getCurrentWorkCondition`: 有効期間による絞り込み + JSONBデータをアプリ用のタイプへ整形
-   - 時刻帯/休憩/勤務地/交通費の配列に対する重複/境界バリデーション（Zod スキーマ）
-   - `specs/003` 移行手順: 既存 `working_hours`, `break_hours`, `work_locations`, `transportation_routes` のデータを JSONB へ移行するスクリプトを Phase 1 で実装し、子テーブルを削除
-3. 雇用契約 CRUD（`packages/api/src/router/contract.ts`）
-   - `create`: Prisma の `create`（`table.md` および `specs/002-contract-expiry-date/spec.md` の contracts テーブル定義に準拠）
-     - 必須: `contract_start_date`, `employment_expiry_scheduled_date`（雇用満了予定日）
-     - 任意: `employment_expiry_date`（実際の雇用満了日）。設定時は `employment_expiry_date >= contract_start_date` をバリデーション
-   - `update`: Prisma の `update` + 楽観的ロック
-     - 雇用満了予定日を更新したら契約更新アラートを再計算（specs/002 FR-008）
-     - `employment_expiry_scheduled_date` は `contract_start_date` より後の日付のみ許容（FR-005）
-   - `delete`: 論理削除またはステータス変更
-   - マイグレーション: 既存の `contract_end_date` を `employment_expiry_scheduled_date` に移行し、実フィールドを削除（specs/002 FR-009）。移行スクリプトで `UPDATE contracts SET employment_expiry_scheduled_date = contract_end_date WHERE employment_expiry_scheduled_date IS NULL`
-   - `update`: Prisma の `update` + 楽観的ロック
-   - `delete`: 論理削除またはステータス変更
-   - `findById`: `findUnique` + `include: { employee: true }`
-    - `findByEmployeeId`: インデックス活用（`idx_contracts_employee_id`）
-    - `findExpiringContracts`: `employment_expiry_scheduled_date` を使用した部分インデックス（例: `idx_contracts_expiry_schedule`）で 30/14/7 日前のレコードを取得
-   - 契約更新時は新規レコード作成（履歴として保持）
-4. 雇用履歴管理（`packages/api/src/router/employmentHistory.ts`）
-   - `create`: 履歴レコード作成（更新・削除不可）
-   - eventType: 8種類（`table.md` の employment_history テーブル定義を参照）
-   - 部門フィールド: BPS課、オンサイト課、CC課、PS課のいずれか（spec.md準拠）
-   - 注記: 役職（position）と等級（grade）はパート従業員には不要なため含まれない（spec.md準拠）
-   - `findByEmployeeId`: インデックス活用（`idx_employment_history_employee_id`）
-5. フロントエンド実装（`apps/nextjs/src/app/(dashboard)/employees/`）
-   - 従業員一覧画面: TanStack Query + Server Components
-     - チェックボックスと一括操作コントロールでステータス一括変更機能（UI-002, FR-026準拠）
-  - 従業員詳細画面: タブ UI（雇用情報/勤務情報/給与・手当/契約履歴/書類/備考）
-    - 雇用情報タブ: 社員番号、氏名、部門、契約番号（contracts.id）、入社日、雇用期間（`contract_start_date`〜`employment_expiry_scheduled_date`）、実際の雇用満了日（`employment_expiry_date`、未設定時は「未設定」）と退社日を表示（specs/002 FR-001〜FR-007準拠）
-    - 勤務情報タブ: 契約書有給、勤務時間、休憩時間、勤務日数/週、勤務場所、業務内容を表示
-    - 給与・手当タブ: 時給、残業時給（overtime_hourly_wage）、最寄り駅（work_conditions.transportation_routes_jsonbから取得）、交通費（片道/往復）（work_conditions.transportation_routes_jsonbから取得）、控除申告書（甲乙）（employee_admin_records.tax_withholding_category）、雇用保険（加入/未加入）（employee_admin_records.employment_insurance）、雇用保険書提出（employee_admin_records.employment_insurance_card_submitted）、社会保険（加入/未加入）（employee_admin_records.social_insurance）、社会保険関連書類の提出状況（年金手帳、健康保険証）（employee_admin_records.pension_book_submitted, employee_admin_records.health_insurance_card_submitted）を表示（spec.mdの「従業員管理ページの表示データ項目」セクションに準拠）
-    - 契約履歴タブ: 契約開始日、雇用満了予定日（employment_expiry_scheduled_date）、実際の雇用満了日（employment_expiry_date）、契約タイプ、業務内容を時系列で表示（specs/002 FR-007準拠）
-    - 書類タブ: 保険証授（employee_admin_records.health_insurance_card_submitted）、雇用契約書他管理へ提出（日付）（employee_admin_records.submitted_to_admin_on）、本人へ返却（employee_admin_records.returned_to_employee）、満了通知書発効（employee_admin_records.expiration_notice_issued）、退職届提出（employee_admin_records.resignation_letter_submitted）、返却（保険証: employee_admin_records.return_health_insurance_card、セキュリティカード: employee_admin_records.return_security_card）を表示（spec.mdの「従業員管理ページの表示データ項目」セクションに準拠）
-    - 備考タブ: 契約メモ（hourly_wage_note など）の抜粋と任意メモ欄を表示（Plan3 UIの要件。必要に応じて評価・スキル情報を追記）
-   - 従業員編集画面: TanStack Form + Zod バリデーション
-     - 雇用開始日と雇用終了日を近い場所に配置（UI-001準拠）
-     - 部門コード選択: BPS課、オンサイト課、CC課、PS課の4部署から選択（FR-001準拠）
-   - 勤務条件入力: 動的フォーム（時間帯追加/削除ボタン）
-   - 最終更新日時・更新者を全画面に表示（認証実装前は仮のユーザーIDを使用）
-6. バリデーション（`packages/validators/src/`）
-   - Zod スキーマでの厳密なバリデーション
-   - 部門コードのバリデーション: BPS課、オンサイト課、CC課、PS課の4部署のいずれかを強制（FR-001準拠）
-   - 時刻帯の重複チェック、必須項目チェック
-**DoD**
-- 従業員の新規登録・編集・削除が動作
-- 部門コードはBPS課、オンサイト課、CC課、PS課の4部署から選択可能（FR-001準拠）
-- 雇用開始日と雇用終了日が近い場所に配置されている（UI-001準拠）
-- 一覧画面から複数選択した従業員のステータスを一括変更できる（UI-002, FR-026準拠）
-- 従業員詳細画面のタブUI（雇用情報/勤務情報/給与・手当/契約履歴/書類/備考）が正しく表示され、各タブが指定データ項目を満たしている
-- 雇用情報タブに契約番号（contractsテーブルのid）と雇用満了予定日/雇用満了日が表示される（specs/002準拠）
-- 勤務条件の複数時間帯入力が動作（重複バリデーション含む）
-- 従業員検索が 2 秒以内に完了（目標）
-- ページネーションが動作（1ページ50件）
-- 最終更新日時・更新者が全画面に表示（認証実装前は仮のユーザーID）
-- 雇用履歴に役職・等級フィールドが含まれていない（spec.md準拠）
-- 単体テスト、統合テストが合格
-**Risk & Mitigation**
-- 検索 2 秒未達 → `EXPLAIN ANALYZE` でクエリ最適化、インデックス追加
-- N+1問題 → Prisma の `include` を使用、`dataloader` パターン検討
-- 大量データでのページネーション遅延 → カーソルベースページネーション検討
+1. 従業員マスター CRUD（`apps/nextjs/src/server/actions/create-employee.ts` / `apps/nextjs/src/server/queries/employees.ts`）  
+   - `create`/`update`/`delete` を Server Action + SQL クエリで実装し、部門コード（BPS課/オンサイト課/CC課/PS課）を Zod Enum で強制。  
+   - `bulkUpdateStatus` を従業員一覧のチェックボックス操作から呼び出し、UI-002（一覧からのステータス一括変更）を満たす。  
+   - `search` は氏名/社員番号/勤務場所/雇用区分/ステータスを filter し、最大50件/ページ、p95 2秒以内を計測。
+2. 勤務条件 CRUD + JSONB統合（`apps/nextjs/src/server/actions/upsert-work-condition.ts` / `apps/nextjs/src/server/queries/work-conditions.ts`）  
+   - `work_conditions` テーブルの JSONB カラム（`working_hours_jsonb` など）に複数の勤務時間・休憩・勤務地・交通費ルートをまとめて保存。  
+   - 入力フォームは複数行のAdd/Remove UI + Zodでバリデーション（重複時間や異常値を弾く）。  
+   - 既存子テーブルからの移行スクリプトを Phase 1 で準備済みとし、ここでは読み書きレイヤーを統合後の構造に合わせる。
+3. 従業員詳細タブ実装（`apps/nextjs/src/app/(dashboard)/employees/[id]/page.tsx`）  
+   - 雇用情報/勤務情報/給与・手当/書類タブの表示項目を spec 008 どおりに配置し、契約番号・雇用期間・交通費・書類状況などを `InfoRow` で表現。  
+   - 有効契約の判定は `contract_start_date <= today < employment_expiry_scheduled_date OR employment_expiry_scheduled_date IS NULL` を用い、未来開始の契約は「予約」扱いで別表示。  
+   - 最終更新日時と更新者（`employees.updated_at`/`updated_by`）をヘッダーに表示して SC-013 を満たす。
+4. 従業員一覧 + フィルター（`apps/nextjs/src/app/(dashboard)/employees/page.tsx`）  
+   - サーバーコンポーネントで `fetchEmployees` を呼び、検索フォーム（氏名/社員番号/部門/雇用区分/ステータス/勤務場所）を実装。  
+   - チェックボックス列 + 一括変更ドロップダウン + `bulkUpdateStatus` 呼び出しで UI-002 を達成。  
+   - ロール制御は Phase 10 実装予定だが、現段階で `EmploymentTypeLabel` などの表示ラベルを spec 008 UI-014に沿って実装。
+5. シード＆検証  
+   - `database/data/*.csv` を使ったシードで JSONB・契約データを投入し、`pnpm lint` / `pnpm --filter @acme/nextjs dev` で手動E2Eを確認。  
+   - `apps/nextjs/src/lib/schemas/employee.ts` のZod schemaに spec 008 の必須項目（勤務時間複数/交通費/提出物）を追加。
 
----
+**DoD**
+- `pnpm lint` / `pnpm --filter @acme/nextjs dev` が成功
+- 従業員登録フローで基本情報＋勤務条件を 1 人あたり 5 分以内に完了できる（SC-001 の手動検証手順を記載）
+- 従業員詳細タブで spec 008 の全項目が表示されるスクリーンショットを残す
+- 検索/フィルター/一括更新がUI-002の要件通りに動作し、p95<2秒（1000件のフェイクデータで計測）
+
+**Risk & Mitigation**
+- JSONB構造のデータ不整合 → Zodで型チェックを厳格化し、Server Action側でも`jsonb_build_object`のバリデーションを行う  
+- 検索性能低下 → `employees(name text_pattern_ops)` などのインデックスを追加し、`EXPLAIN ANALYZE`で監視  
+- UI複雑化 → Storybook的`/components/demo`で勤務条件フォームのパターンを先に固め、再利用
+
 
 ## Phase 3: 編集ロック（UC-12）
 **目的**: 最初のアクセス者以外の編集禁止（認証実装前は仮のユーザーIDを使用）  
@@ -465,18 +502,58 @@ crates/foo/planner.rsで、以下を定義：
 
 ---
 
-## Phase 4: 契約・アラート（UC-05）
-**目的**: 契約更新/破棄、期限/基準日、雇用終了アラート（契約書出力で自動解除）。`specs/002-contract-expiry-date/spec.md` で定義された「雇用満了予定日（employment_expiry_scheduled_date）」ベースでアラートを正確に運用し、実際の雇用満了日（employment_expiry_date）は履歴表示/監査用途に保持する。  
+## Phase 4: 契約・アラート（User Story 3〜8, 11, 14）
+**目的**: 契約期間管理・「要更新」バッジ・契約操作メニュー・契約入力UI・契約履歴自動追記・契約更新アラートを `specs/008` User Story 3/4/5/6/7/8/11/14 に沿って実装し、SC-002/SC-005/SC-007/SC-008 を満たす。雇用満了予定日（`employment_expiry_scheduled_date`）を唯一の源泉とし、PDF出力時にアラートを自動解除する。  
+**仕様リンク**: `specs/008-comprehensive-spec/spec.md` 「User Story 3〜8,11,14」「Key Entities: Contract/Contract Alert/Contract Change History」「成功基準 SC-002〜SC-008」「UI-011〜UI-019」  
+**技術実装**: Next.js Server Actions + `apps/nextjs/src/server/queries/contracts.ts` + React Table/Actions + Postgres スケジューラ（cron） + UIバッジ
 **Steps**
-- スケジューラで `employment_expiry_scheduled_date` を監視し、30/14/7 日前に通知（FR-004, FR-008）
-- `employment_expiry_scheduled_date` 更新時に通知テーブルの対象日を再計算
-- 実際の雇用満了日 `employment_expiry_date` を登録しても、予定日ベースのアラートロジックは変更しない
-- PDF出力 Success をフックにアラート解除（既存要件を維持）
-**DoD**
-- 境界ケース（日跨ぎ・月跨ぎ）で期待動作
-- `employment_expiry_scheduled_date` のみを参照してアラートが発火し、`employment_expiry_date` 入力後も予定日基準で継続（specs/002 FR-004）
+1. スケジューラで `employment_expiry_scheduled_date` を監視し、30/14/7 日前に通知（FR-004, FR-008）
+   - `employment_expiry_scheduled_date` 更新時に通知テーブルの対象日を再計算
+   - 実際の雇用満了日 `employment_expiry_date` を登録しても、予定日ベースのアラートロジックは変更しない
+   - PDF出力 Success をフックにアラート解除（既存要件を維持）
+2. 「要更新」判定ロジックの実装（`apps/nextjs/src/server/queries/contracts.ts`）
+   - ヘルパー関数 `isContractExpired(employmentExpiryScheduledDate: Date | null): boolean` を作成
+   - 判定基準: `employment_expiry_scheduled_date` が当日の日付（00:00:00）より前の日付である場合に `true` を返す
+   - 当日の日付は「要更新」の対象としない（FR-004準拠）
+   - NULL（未設定）の場合は `false` を返す（FR-005準拠）
+   - タイムゾーンはサーバーのタイムゾーン設定に基づいて判定（すべてサーバ TZ で正規化）
+3. 契約管理画面での「要更新」表示（`apps/nextjs/src/app/(dashboard)/contracts/page.tsx`）
+   - 契約一覧取得時に各契約の `employment_expiry_scheduled_date` をチェック
+   - `isContractExpired` が `true` の場合、契約行に「要更新」バッジを表示（UI-001準拠）
+   - 視覚的に目立つ形式（例：赤色のバッジ、警告アイコン、強調表示）で表示（FR-006準拠）
+   - 契約満了予定日も同時に表示（UI-003準拠）
+   - 「要更新」バッジをクリックすると契約詳細画面に遷移（UI-002, FR-007準拠）
+4. 従業員詳細ページでの「要更新」表示（`apps/nextjs/src/app/(dashboard)/employees/[id]/page.tsx`）
+   - 従業員詳細ページの契約履歴タブで、各契約の `employment_expiry_scheduled_date` をチェック
+   - `isContractExpired` が `true` の場合、該当契約に「要更新」バッジを表示（FR-002準拠）
+   - 複数の契約が存在する場合、満了予定日を過ぎている契約のみに「要更新」を表示
+   - 視覚的に目立つ形式で表示（FR-006準拠）
+   - 契約満了予定日も同時に表示（UI-003準拠）
+5. 従業員管理ページ（一覧）での「要更新」表示（`apps/nextjs/src/app/(dashboard)/employees/page.tsx`）
+   - 従業員一覧取得時に、各従業員の関連契約をチェック
+   - 少なくとも1つの契約の `employment_expiry_scheduled_date` が当日を過ぎている場合、従業員行に「要更新」バッジを表示（FR-003準拠）
+   - 視覚的に目立つ形式で表示（FR-006準拠）
+   - 「要更新」バッジをクリックすると従業員詳細ページに遷移（UI-002, FR-007準拠）
+6. クエリ/Server Actionの拡張（`apps/nextjs/src/server/queries/contracts.ts` / `apps/nextjs/src/server/actions/upsert-contract.ts`）
+   - `findAll` または `search` メソッドで、各契約に `needsUpdate: boolean` フィールドを追加
+   - `needsUpdate` は `isContractExpired` の結果を返す
+   - 従業員関連の契約取得時も同様に `needsUpdate` フィールドを追加
+7. パフォーマンス最適化
+   - 契約一覧取得時に、`employment_expiry_scheduled_date < CURRENT_DATE` の条件でフィルタリング可能にする
+   - インデックス `idx_contracts_expiry_scheduled_date` を活用（既存のインデックス）
+   - 大量データでの表示遅延を防ぐため、クライアント側での判定も検討（サーバー側判定を優先）
+- **DoD**
+- 境界ケース（日跨ぎ・月跨ぎ）で期待動作（spec 008 User Story 4, Acceptance 1〜4）
+- `employment_expiry_scheduled_date` のみを参照してアラートが発火し、`employment_expiry_date` 入力後も予定日基準で継続（spec 008 User Story 3/11）
+- 契約管理画面/従業員詳細/従業員一覧で、契約満了予定日が当日を過ぎている契約に対して100%の精度で「要更新」表示（SC-005, UI-017）
+- 契約満了予定日が当日または未来の日付、または未設定の契約に対して、「要更新」表示が出ない（SC-005, Acceptance Scenario 4）
+- 契約管理画面で更新すべき契約を3秒以内に特定できる（SC-006）
+- 契約更新アラートが統括人事管理者/現場マネージャーへ100%の精度で配信（SC-005, SC-014）
+- 契約更新/削除/再作成時に employment_history と書類履歴へ自動追記される（User Story 7, 14）
 **Risk**
 - タイムゾーン差異 → すべてサーバ TZ で正規化
+- 大量データでのパフォーマンス低下 → インデックス活用、クライアント側判定の検討
+- 視覚的識別性の不足 → ユーザビリティテストで検証し、必要に応じてUI改善
 
 ---
 
@@ -871,3 +948,9 @@ crates/foo/planner.rsで、以下を定義：
   - Phase 2: 給与・手当タブに残業時給（overtime_hourly_wage）の表示を追加
   - Phase 2: 書類タブの表示項目をspec.mdに完全準拠（保険証授、雇用契約書提出、本人へ返却、満了通知書発効、退職届提出、返却状況）
   - Phase 10: 残業時給（overtime_hourly_wage）は必要であることを確認（spec.md準拠、従業員管理情報.mdに記載）
+- 2025-11-18: 契約満了予定日超過時の「要更新」表示機能をPhase 4に追加
+  - Phase 4: `specs/004-contract-update-indicator/spec.md` で定義された「要更新」表示機能を実装計画に追加
+  - Phase 4: 契約管理画面、従業員詳細ページ、従業員管理ページ（一覧）での「要更新」表示機能を追加
+  - Phase 4: 判定ロジック（employment_expiry_scheduled_dateが当日より前）の実装手順を追加
+  - Phase 4: UI要件（視覚的に目立つ形式、バッジ、警告アイコン）の実装手順を追加
+  - Phase 4: 成功基準（SC-001〜SC-007）をDoDに追加

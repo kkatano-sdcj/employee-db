@@ -2,7 +2,6 @@ import Link from "next/link";
 import {
   PlusIcon,
   MagnifyingGlassIcon,
-  FunnelIcon,
   ArrowDownTrayIcon,
   ArrowUpTrayIcon,
   ChevronLeftIcon,
@@ -13,31 +12,65 @@ import {
 } from "@heroicons/react/24/outline";
 import { fetchEmployees } from "@/server/queries/employees";
 import { formatCurrency } from "@/lib/formatters";
+import { AdvancedFilterDialog } from "@/components/employees/AdvancedFilterDialog";
 
 const employmentTypeLabel = (value: string) => {
   switch (value) {
     case "FULL_TIME":
-      return "正社員";
+      return "常勤";
     case "CONTRACT":
       return "契約社員";
+    case "PART_TIME":
+      return "パートタイム";
     default:
-      return "パート";
+      return value;
+  }
+};
+
+const employmentStatusLabel = (value: string) => {
+  switch (value) {
+    case "ACTIVE":
+      return "在職中";
+    case "RETIRED":
+      return "退職済み";
+    case "ON_LEAVE":
+      return "休職中";
+    default:
+      return value;
   }
 };
 
 export default async function EmployeesPage({
   searchParams,
 }: {
-  searchParams?: Promise<{ q?: string; status?: string; type?: string }>;
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  const params = await searchParams;
-  const query = params?.q ?? "";
-  const status = params?.status ?? "ALL";
-  const employmentType = params?.type ?? "ALL";
+  const rawParams = await searchParams;
+  const getParam = (value?: string | string[]) =>
+    Array.isArray(value) ? value[value.length - 1] ?? "" : value ?? "";
+  const getBoolParam = (value?: string | string[]) => getParam(value) === "true";
+
+  const query = getParam(rawParams?.q);
+  const status = getParam(rawParams?.status) || "ALL";
+  const employmentType = getParam(rawParams?.type) || "ALL";
+  const department = getParam(rawParams?.department);
+  const contractFrom = getParam(rawParams?.contractFrom);
+  const contractTo = getParam(rawParams?.contractTo);
+  const minHourlyWage = getParam(rawParams?.minHourlyWage);
+  const maxHourlyWage = getParam(rawParams?.maxHourlyWage);
+  const hasDocuments = getBoolParam(rawParams?.hasDocuments);
+  const hasAlert = getBoolParam(rawParams?.hasAlert);
   const employees = await fetchEmployees({
     query,
     status,
     employmentType,
+    department,
+    contractFrom,
+    contractTo,
+    minHourlyWage: minHourlyWage ? Number(minHourlyWage) : undefined,
+    maxHourlyWage: maxHourlyWage ? Number(maxHourlyWage) : undefined,
+    hasDocuments,
+    hasAlert,
     limit: 50,
   });
 
@@ -82,9 +115,9 @@ export default async function EmployeesPage({
               className="px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-slate-400 transition-all"
             >
               <option value="ALL">全ての雇用区分</option>
-              <option value="FULL_TIME">正社員</option>
+              <option value="FULL_TIME">常勤</option>
               <option value="CONTRACT">契約社員</option>
-              <option value="PART_TIME">パート</option>
+              <option value="PART_TIME">パートタイム</option>
             </select>
 
             {/* ステータス */}
@@ -95,8 +128,8 @@ export default async function EmployeesPage({
             >
               <option value="ALL">全てのステータス</option>
               <option value="ACTIVE">在職中</option>
-              <option value="INACTIVE">退職済み</option>
-              <option value="SUSPENDED">休職中</option>
+              <option value="RETIRED">退職済み</option>
+              <option value="ON_LEAVE">休職中</option>
             </select>
 
             {/* 検索ボタン */}
@@ -108,13 +141,20 @@ export default async function EmployeesPage({
             </button>
 
             {/* 詳細フィルター */}
-            <button
-              type="button"
-              className="px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm hover:bg-slate-50 transition-all flex items-center gap-2"
-            >
-              <FunnelIcon className="w-4 h-4" />
-              詳細
-            </button>
+            <AdvancedFilterDialog
+              defaults={{
+                query,
+                status,
+                employmentType,
+                department,
+                contractFrom,
+                contractTo,
+                minHourlyWage,
+                maxHourlyWage,
+                hasDocuments: hasDocuments ? "true" : "",
+                hasAlert: hasAlert ? "true" : "",
+              }}
+            />
           </div>
 
           {/* アクションボタン */}
@@ -151,7 +191,7 @@ export default async function EmployeesPage({
               )}
               {status !== "ALL" && (
                 <span className="px-3 py-1 bg-slate-100 text-xs font-medium rounded-full flex items-center gap-2">
-                  {status === "ACTIVE" ? "在職中" : status === "INACTIVE" ? "退職済み" : "休職中"}
+                  {employmentStatusLabel(status)}
                   <Link
                     href={`/employees?${query ? `q=${query}&` : ""}type=${employmentType}`}
                     className="hover:text-slate-700"
@@ -162,11 +202,7 @@ export default async function EmployeesPage({
               )}
               {employmentType !== "ALL" && (
                 <span className="px-3 py-1 bg-slate-100 text-xs font-medium rounded-full flex items-center gap-2">
-                  {employmentType === "FULL_TIME"
-                    ? "正社員"
-                    : employmentType === "CONTRACT"
-                    ? "契約社員"
-                    : "パート"}
+                  {employmentTypeLabel(employmentType)}
                   <Link
                     href={`/employees?${query ? `q=${query}&` : ""}status=${status}`}
                     className="hover:text-slate-700"
@@ -212,6 +248,9 @@ export default async function EmployeesPage({
                 </th>
                 <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
                   ステータス
+                </th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                  アラート
                 </th>
                 <th className="px-6 py-4 text-center text-xs font-semibold text-slate-600 uppercase tracking-wider">
                   操作
@@ -269,7 +308,7 @@ export default async function EmployeesPage({
                       className={`px-2.5 py-1 text-xs font-medium rounded-full flex items-center gap-1 w-fit ${
                         employee.employmentStatus === "ACTIVE"
                           ? "bg-emerald-50 text-emerald-700"
-                          : employee.employmentStatus === "INACTIVE"
+                          : employee.employmentStatus === "RETIRED"
                           ? "bg-slate-100 text-slate-600"
                           : "bg-amber-50 text-amber-700"
                       }`}
@@ -278,17 +317,29 @@ export default async function EmployeesPage({
                         className={`w-1.5 h-1.5 rounded-full ${
                           employee.employmentStatus === "ACTIVE"
                             ? "bg-emerald-500"
-                            : employee.employmentStatus === "INACTIVE"
+                            : employee.employmentStatus === "RETIRED"
                             ? "bg-slate-400"
                             : "bg-amber-500"
                         }`}
                       />
-                      {employee.employmentStatus === "ACTIVE"
-                        ? "在職中"
-                        : employee.employmentStatus === "INACTIVE"
-                        ? "退職済み"
-                        : "休職中"}
+                      {employmentStatusLabel(employee.employmentStatus)}
                     </span>
+                  </td>
+                  <td className="px-6 py-4">
+                    {employee.needsContractUpdate ? (
+                      <div className="space-y-1">
+                        <span className="inline-flex items-center rounded-full bg-rose-50 px-2 py-1 text-xs font-semibold text-rose-600">
+                          要更新
+                        </span>
+                        {employee.employmentExpiryScheduledDate && (
+                          <span className="block text-xs text-rose-500">
+                            満了予定日: {employee.employmentExpiryScheduledDate}
+                          </span>
+                        )}
+                      </div>
+                    ) : (
+                      <span className="text-xs text-slate-400">-</span>
+                    )}
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex items-center justify-center gap-1">

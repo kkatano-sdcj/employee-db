@@ -90,16 +90,12 @@ export default async function EmployeeDetailPage({ params, searchParams }: Emplo
                 className={`px-3 py-1 rounded-full text-xs font-bold ${
                   employee.employmentStatus === "ACTIVE"
                     ? "bg-accent-emerald/10 text-accent-emerald"
-                    : employee.employmentStatus === "INACTIVE"
+                    : employee.employmentStatus === "RETIRED"
                       ? "bg-slate-100 text-slate-600"
                       : "bg-amber-50 text-amber-700"
                 }`}
               >
-                {employee.employmentStatus === "ACTIVE"
-                  ? "在職中"
-                  : employee.employmentStatus === "INACTIVE"
-                    ? "退職済み"
-                    : "休職中"}
+                {employmentStatusLabel(employee.employmentStatus)}
               </span>
             </div>
           </div>
@@ -285,7 +281,7 @@ const ProfileSection = ({
           <InfoRow label="入社日" value={employee.hiredAt ?? "-"} />
           <InfoRow
             label="雇用期間"
-            value={`${contract?.contractStartDate ?? "-"} ~ ${contract?.contractEndDate ?? "継続"}`}
+            value={`${contract?.contractStartDate ?? "-"} ~ ${contract?.employmentExpiryScheduledDate ?? "継続"}`}
           />
           <InfoRow label="退社日" value={employee.retiredAt ?? "-"} />
         </div>
@@ -455,15 +451,26 @@ const ContractsSection = ({ contracts }: { contracts: EmployeeDetailResponse["co
               <p className="text-xs text-slate-500 uppercase tracking-wider">契約番号</p>
               <p className="text-lg font-semibold text-slate-900">{contract.id}</p>
             </div>
-            <span className="px-3 py-1 text-xs rounded-full bg-slate-100 text-slate-700">
-              {contract.status}
-            </span>
+            <div className="flex items-center gap-2">
+              {contract.needsUpdate && (
+                <span className="px-3 py-1 text-xs rounded-full bg-rose-50 text-rose-600 font-semibold">
+                  要更新
+                </span>
+              )}
+              <span className="px-3 py-1 text-xs rounded-full bg-slate-100 text-slate-700">
+                {contract.status}
+              </span>
+            </div>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <InfoRow label="契約タイプ" value={contract.contractType === "FIXED_TERM" ? "有期" : "無期"} />
             <InfoRow
               label="契約期間"
-              value={`${contract.contractStartDate ?? "-"} ~ ${contract.contractEndDate ?? "継続"}`}
+              value={`${
+                contract.contractStartDate ?? "-"
+              } ~ ${contract.employmentExpiryScheduledDate ?? "継続"}${
+                contract.employmentExpiryDate ? `（実満了: ${contract.employmentExpiryDate}）` : ""
+              }`}
             />
             <InfoRow label="時給" value={`¥${contract.hourlyWage.toLocaleString()}`} />
             <InfoRow
@@ -557,6 +564,19 @@ const employmentTypeLabel = (value: string) => {
       return "契約社員";
     default:
       return "パート";
+  }
+};
+
+const employmentStatusLabel = (value: string) => {
+  switch (value) {
+    case "ACTIVE":
+      return "在職中";
+    case "RETIRED":
+      return "退職済み";
+    case "ON_LEAVE":
+      return "休職中";
+    default:
+      return value;
   }
 };
 

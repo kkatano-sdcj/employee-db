@@ -1,0 +1,12 @@
+id,employee_id,contract_type,contract_start_date,contract_end_date,employment_expiry_scheduled_date,employment_expiry_date,is_renewable,fixed_term_base_date,job_description,hourly_wage,hourly_wage_note,overtime_hourly_wage,paid_leave_clause,termination_alert_flag,status,updated_by
+contract-EMP001,EMP001,FIXED_TERM,2024-04-01,2025-03-31,2025-03-31,,true,2024-04-01,パートタイム業務全般,1200.00,時給1200円,1800.00,有給休暇は勤続6ヶ月以上で付与,false,SUBMITTED,system
+contract-EMP002,EMP002,INDEFINITE,2023-06-01,,,false,,正社員業務全般,2500.00,月給制（時給換算2500円）,3750.00,有給休暇は勤続6ヶ月以上で付与,false,SUBMITTED,system
+contract-EMP003,EMP003,FIXED_TERM,2024-01-15,2024-12-31,2024-12-31,,true,2024-01-15,パートタイム業務全般,1150.00,時給1150円,1725.00,有給休暇は勤続6ヶ月以上で付与,false,SUBMITTED,system
+contract-EMP004,EMP004,INDEFINITE,2022-09-01,2024-10-31,2024-10-31,2024-10-31,false,,正社員業務全般,2400.00,月給制（時給換算2400円）,3600.00,有給休暇は勤続6ヶ月以上で付与,false,SUBMITTED,system
+contract-EMP005,EMP005,FIXED_TERM,2023-11-01,2024-10-31,2024-10-31,,true,2023-11-01,パートタイム業務全般,1180.00,時給1180円,1770.00,有給休暇は勤続6ヶ月以上で付与,true,SUBMITTED,system
+contract-EMP006,EMP006,INDEFINITE,2024-03-01,,,false,,正社員業務全般,2600.00,月給制（時給換算2600円）,3900.00,有給休暇は勤続6ヶ月以上で付与,false,SUBMITTED,system
+contract-EMP007,EMP007,FIXED_TERM,2023-07-15,2024-07-14,2024-07-14,,true,2023-07-15,パートタイム業務全般,1100.00,時給1100円,1650.00,有給休暇は勤続6ヶ月以上で付与,false,SUBMITTED,system
+contract-EMP008,EMP008,INDEFINITE,2022-12-01,,,false,,正社員業務全般,2450.00,月給制（時給換算2450円）,3675.00,有給休暇は勤続6ヶ月以上で付与,false,SUBMITTED,system
+contract-EMP009,EMP009,FIXED_TERM,2024-05-01,2025-04-30,2025-04-30,,true,2024-05-01,パートタイム業務全般,1220.00,時給1220円,1830.00,有給休暇は勤続6ヶ月以上で付与,false,SUBMITTED,system
+contract-EMP010,EMP010,INDEFINITE,2023-02-01,,,false,,正社員業務全般,2550.00,月給制（時給換算2550円）,3825.00,有給休暇は勤続6ヶ月以上で付与,false,SUBMITTED,system
+
