@@ -16,7 +16,8 @@ type EmployeeDetailPageProps = {
 };
 
 export default async function EmployeeDetailPage({ params, searchParams }: EmployeeDetailPageProps) {
-  const [{ id }, resolvedSearchParams] = await Promise.all([params, searchParams ?? {}]);
+  const id = (await params).id;
+  const resolvedSearchParams = searchParams ? await searchParams : {};
   const detail = await fetchEmployeeDetail(id);
 
   if (!detail.employee) {

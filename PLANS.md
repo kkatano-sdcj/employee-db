@@ -328,6 +328,70 @@ crates/foo/planner.rsで、以下を定義：
 - フロントは `EmployeeForm` コンポーネントで `mode` prop に応じて `POST /api/employees` か `PUT /api/employees/[id]` を呼び分ける。
 ```
 
+## Plan: 契約管理ページをspec 008に整合
+```md
+# 契約管理一覧の列 / アラート / 操作列を `specs/008` に合わせる
+
+このExecPlanは `specs/008-comprehensive-spec/spec.md` の User Story 3〜5、FR-043 / FR-057、UI-007 / UI-012 / UI-013 / UI-017 に従って進め、更新が必要な契約の可視化と操作導線を提供します。`designs/plan3/contract-management.html` のUIモックも参照しながら進捗・決定事項を記録します。
+
+## 目的 / 全体像
+契約一覧において「契約番号」「開始日」「終了予定日」「要更新アラート」「操作（3点メニュー）」を表示し、満了超過の契約を視覚的に強調します。利用者は契約プレビュー/更新/新規/削除メニューへ最短でアクセスでき、UI-012/013の配置要求（アラート列の右側に操作列）を満たした状態で `pnpm --filter @acme/nextjs dev` 上で確認できるようにします。
+
+## 進捗
+- [x] (2025-11-19T13:58Z) 現状の契約一覧と仕様との差分を洗い出し、必要な列/アクション/スタイルを特定
+- [x] (2025-11-19T14:05Z) `fetchContractSummaries` のレスポンスを列構成に合わせて拡張し、「要更新」ロジックを再確認
+- [x] (2025-11-19T14:12Z) 契約行・アラートバッジ・3点メニューのUIコンポーネントを実装し、`apps/nextjs/src/app/contracts/page.tsx` のテーブルを差し替え
+- [x] (2025-11-19T14:15Z) `pnpm --filter @acme/nextjs lint` を実行し、UI-007/UI-012/UI-013/UI-017の要件確認手順を整理（ブラウザ確認は後続対応）
+
+## 驚きと発見
+- 観察: 契約ID（例: `contract-EMP001`）がそのまま人間可読な契約番号として利用できるため、新たな採番をせずに `contractNumber` として再利用できた。  
+  証拠: `database/data/insert_sample_data.sql` の `INSERT INTO contracts` で `id` が `contract-<employee_number>` 形式になっている。
+
+## 決定ログ
+- 決定: 3点メニューはクライアントコンポーネント（ボタン+ポップメニュー）で実装し、既存ページ（従業員詳細/編集/CSV）への遷移リンクを暫定で割り当てる。  
+  根拠: Next.js App RouterのServer Component上でのインタラクション要件（UI-013）に対応するため。将来的なAPI/モーダル導入にも拡張しやすい。  
+  日付/作成者: 2025-11-19 / Codex
+
+## 結果と振り返り
+- 未記入（完了時に追加）。
+
+## コンテキストと方向性
+- 現在の `apps/nextjs/src/app/contracts/page.tsx` では列が「従業員 / 契約タイプ / 期間 / 時給 / 状態 / アラート」のみで、契約番号・操作列・チェックボックス等が不足している。
+- `fetchContractSummaries` (`apps/nextjs/src/server/queries/contracts.ts`) は `needsUpdate` を返すが、UI-007/012/013を満たす視覚設計と操作列が未対応。
+- 遷移先候補は `employees/[id]`（契約プレビュー）と `employees/[id]/edit`（更新/新規）しか存在しないため、メニューは既存画面への遷移リンクを暫定実装とする。
+
+## 作業計画
+1. 仕様再確認: spec 008 の FR-043, FR-057, UI-007/012/013/017 を読み、必要な列/スタイル/メニュー項目をリスト化。
+2. クエリ整備: `fetchContractSummaries` に表示用契約番号を追加し、`needsUpdate` 判定を仕様に沿って二重チェック。返却型を列で使いやすい形へ整備。
+3. UI実装:
+   - 契約行の型整備 (`type ContractSummary` へ contractNumber, alert info, statusラベル)。
+   - `ContractAlertBadge`（赤バッジ + 満了予定日）と `ContractActionMenu`（3点メニュー + 4項目）を `apps/nextjs/src/components/contracts/` 以下に追加。
+   - `contracts/page.tsx` のテーブルをPlan3準拠の列構成に置き換え（チェックボックス列、契約番号、従業員、契約タイプ、開始/終了日、ステータス、アラート、操作）。
+4. 検証: `pnpm --filter @acme/nextjs lint` を実行し、ローカルで `/contracts` を表示してアラート/操作列が仕様通りであることを確認。
+
+## 具体的なステップ
+1. `pnpm --filter @acme/nextjs lint`（事前健全性チェック）。
+2. 実装後、同コマンドでLintを再実行。
+3. optional: `pnpm --filter @acme/nextjs dev` でブラウザ検証。
+
+## 検証と受け入れ
+- UI確認: `/contracts` で満了超過契約に赤バッジ・満了日が表示され、アラート列の右隣に3点メニュー（4項目）が表示される。
+- `pnpm --filter @acme/nextjs lint` が成功。
+
+## 冪等性と回復
+- UIのみの変更でDBへ影響なし。再読み込みすれば同じ状態になる。
+
+## 成果物とメモ
+- 主要変更ファイル:  
+  - `apps/nextjs/src/app/contracts/page.tsx`  
+  - `apps/nextjs/src/server/queries/contracts.ts`  
+  - `apps/nextjs/src/components/contracts/*`（新規）
+
+## インターフェースと依存関係
+- `ContractSummary` 型に `contractNumber`, `needsUpdate`, `employmentExpiryScheduledDate`, `employmentExpiryDate`, `status` を保持し、UIへ直接渡す。
+- `ContractActionMenu` props: `{ contractId, employeeId, employeeName, employeeNumber }`。メニュー項目は `Link` か `button` を返し、後続実装でAPI接続可能にする。
+```
+
 ---
 
 ## Phase 0: 既存フォーム保存不具合の修正（前提）
