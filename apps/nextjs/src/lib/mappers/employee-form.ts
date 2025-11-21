@@ -18,6 +18,7 @@ const cloneDefaultValues = (): EmployeeFormValues => ({
   transportationRoutes: defaultEmployeeFormValues.transportationRoutes.map((route) => ({
     ...route,
   })),
+  documents: { ...defaultEmployeeFormValues.documents },
   contract: {
     ...defaultEmployeeFormValues.contract,
   },
@@ -39,6 +40,7 @@ export function mapEmployeeDetailToFormValues(detail: EmployeeDetail): EmployeeF
 
   const workCondition = detail.workConditions[0];
   const contract = detail.contracts[0];
+  const adminRecord = detail.adminRecord;
 
   const values: EmployeeFormValues = {
     ...base,
@@ -97,6 +99,14 @@ export function mapEmployeeDetailToFormValues(detail: EmployeeDetail): EmployeeF
             nearestStation: route.nearestStation ?? "",
           }))
         : base.transportationRoutes,
+    documents: {
+      submittedToAdminOn: adminRecord?.submittedToAdminOn ?? "",
+      returnedToEmployee: adminRecord?.returnedToEmployee ?? "",
+      expirationNoticeIssued: adminRecord?.expirationNoticeIssued ?? "",
+      resignationLetterSubmitted: adminRecord?.resignationLetterSubmitted ?? "",
+      returnHealthInsuranceCard: adminRecord?.returnHealthInsuranceCard ?? "",
+      returnSecurityCard: adminRecord?.returnSecurityCard ?? "",
+    },
     contract: {
       ...base.contract,
       contractType:

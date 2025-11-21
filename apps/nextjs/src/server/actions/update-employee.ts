@@ -190,6 +190,44 @@ export async function updateEmployee(input: UpdateEmployeeInput) {
         )
       `;
     }
+
+    const [existingAdminRecord] = await trx<[{ id: string }] | []>`
+      SELECT id FROM employee_admin_records WHERE employee_id = ${employeeId} LIMIT 1
+    `;
+    const adminRecordId = existingAdminRecord?.id ?? randomUUID();
+
+    await trx`
+      INSERT INTO employee_admin_records (
+        id,
+        employee_id,
+        submitted_to_admin_on,
+        returned_to_employee,
+        expiration_notice_issued,
+        resignation_letter_submitted,
+        return_health_insurance_card,
+        return_security_card,
+        updated_by
+      ) VALUES (
+        ${adminRecordId},
+        ${employeeId},
+        ${data.documents.submittedToAdminOn || null},
+        ${data.documents.returnedToEmployee || null},
+        ${data.documents.expirationNoticeIssued || null},
+        ${data.documents.resignationLetterSubmitted || null},
+        ${data.documents.returnHealthInsuranceCard || null},
+        ${data.documents.returnSecurityCard || null},
+        'system'
+      )
+      ON CONFLICT (employee_id) DO UPDATE SET
+        submitted_to_admin_on = EXCLUDED.submitted_to_admin_on,
+        returned_to_employee = EXCLUDED.returned_to_employee,
+        expiration_notice_issued = EXCLUDED.expiration_notice_issued,
+        resignation_letter_submitted = EXCLUDED.resignation_letter_submitted,
+        return_health_insurance_card = EXCLUDED.return_health_insurance_card,
+        return_security_card = EXCLUDED.return_security_card,
+        updated_by = EXCLUDED.updated_by,
+        updated_at = NOW()
+    `;
   });
 
   return {

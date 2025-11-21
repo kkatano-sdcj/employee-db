@@ -159,6 +159,7 @@ crates/foo/planner.rsで、以下を定義：
 - 契約の雇用期間は `contract_start_date`〜`employment_expiry_scheduled_date` を表示し、`employment_expiry_date` を記録・表示する（`specs/008-comprehensive-spec/spec.md` User Story 3準拠）
 - 個人情報最小化（住所・電話番号・銀行口座は**保持しない**）がテストで担保
 - 部門コードはBPS課、オンサイト課、CC課、PS課の4部署から選択（FR-001準拠）
+- 従業員編集・契約編集画面では契約番号入力欄を統合ウィジェット先頭に配置し、`specs/008` User Story 6/6-1, FR-085〜FR-087, UI-024/026 の権限制御（従業員管理経路=基本情報のみ編集、契約管理経路=勤務条件/契約/書類編集）を順守する
 
 ## Plan: 従業員DB v1（コア要件の段階実装）
 ```md
@@ -259,13 +260,15 @@ crates/foo/planner.rsで、以下を定義：
 このExecPlanは生きている文書です。`specs/008-comprehensive-spec/spec.md` の User Story 1 / FR-050 / SC-038 / UI-001 / UI-010 / UI-016 節と `designs/plan3/employee-detail.html` のモックを常に参照しながら進め、`Progress`、`Surprises & Discoveries`、`Decision Log`、`Outcomes & Retrospective` を最新に保ちます。
 
 ## 目的 / 全体像
-統括人事管理者が従業員詳細ページから「編集モード」を開き、既存の基本情報・勤務条件・契約情報を`specs/008`に沿って修正できるようにします。編集後は `/employees` 一覧や詳細ページで即時に更新内容が確認でき、`pnpm --filter @acme/nextjs dev` で立ち上げたUI上でフォーム送信→成功トースト→詳細へ戻る動線を手動確認できる状態をゴールとします。
+統括人事管理者が従業員詳細ページから「編集モード」を開いた場合は `specs/008` User Story 6-1 に従って「基本情報のみ編集可能」「勤務条件/契約/書類は表示のみ（契約番号を表示）」とし、契約管理ページから「契約更新」「新規契約作成」を選択した場合は User Story 6 に従って「勤務条件・契約・書類を統合ウィジェットとして編集」「基本情報は表示のみ」「先頭に契約番号欄を配置」できるようにします。どちらの遷移パターンでも `/employees/[id]/edit` でコンテキストを判別し、`pnpm --filter @acme/nextjs dev` 上で動作確認できる状態をゴールとします。
 
 ## Progress
 - [x] (2025-11-19T13:24Z) `fetchEmployeeDetail` に `is_renewable` を追加し、`mapEmployeeDetailToFormValues` ユーティリティで `EmployeeFormValues` へ射影
 - [x] (2025-11-19T13:28Z) `apps/nextjs/src/server/actions/update-employee.ts` + `/api/employees/[id]` を追加し、従業員・勤務条件・契約の更新処理とトランザクションを実装
 - [x] (2025-11-19T13:34Z) `EmployeeForm` を編集モード対応にリファクタし、`apps/nextjs/src/app/employees/[id]/edit/page.tsx` から初期値とメタデータを受け渡す
 - [x] (2025-11-19T13:40Z) `pnpm --filter @acme/nextjs lint` を実行し、UI要件の手動検証手順を整理（ブラウザ確認は後続作業で実施）
+- [x] (2025-11-19T14:30Z) 書類タブの入力セクションをフォームに追加し、`employee_admin_records` の更新処理（UPSERT）を組み込んだ
+- [x] (2025-11-20T00:10Z) `specs/008` の User Story 6/6-1・FR-085〜FR-087・UI-024/026 に合わせ、経路別の編集権限と契約番号入力欄をフォームに実装した
 
 ## 驚きと発見
 - 観察: `create-employee` は依然として `working_hours` 系の旧テーブルにINSERTしている一方、詳細画面は `work_conditions.*_jsonb` から値を読み出している。  
@@ -294,9 +297,10 @@ crates/foo/planner.rsで、以下を定義：
 2. `fetchEmployeeDetail` の戻り値をフォーム値へ変換する `mapEmployeeDetailToFormValues` ユーティリティを `apps/nextjs/src/lib/mappers/employee-form.ts`（新規）として作成。複数勤務条件のうち最新(0番目)を編集対象にし、`workConditions[0]` が無い場合は既定値を使用するロジックを記述。
 3. `apps/nextjs/src/server/actions/update-employee.ts` を追加し、従業員情報・勤務条件・契約テーブルを `db.begin` で更新。`workConditionId` が存在する場合は関連の `working_hours` 等を一旦DELETE→INSERTで差し替える。存在しない場合は `createEmployee` と同じように新規作成。`contracts` も同様に `contractId` を更新し、未指定の場合は新規発行。
 4. API ルート `apps/nextjs/src/app/api/employees/[id]/route.ts` を作り、`PUT` で `updateEmployee` を呼び出す。エラー時は `400` + message、成功時は JSON `{ ok: true }`。
-5. `EmployeeForm` を `mode`, `initialValues`, `employeeId`, `workConditionId`, `contractId`, `onSuccessRedirect` などのpropsに対応させ、`fetch` 先を `mode` で切り替える。成功後は `onSuccessRedirect ?? "/employees"` へ `router.push`。失敗メッセージやボタンラベルを編集/登録で分岐。
-6. `apps/nextjs/src/app/employees/[id]/edit/page.tsx` を作成し、Server Componentで `fetchEmployeeDetail` を呼んで `EmployeeForm` に初期値・IDを渡す。ページヘッダーやパンくず、キャンセルボタンなどPlan3準拠のUIを追加。
+5. `EmployeeForm` を `mode`, `context`, `initialValues`, `employeeId`, `workConditionId`, `contractId`, `onSuccessRedirect` などのpropsに対応させ、`fetch` 先を `mode` で切り替える。コンテキストに応じて各ウィジェットの編集可否を制御し、契約番号入力欄を合同ウィジェットに追加する。成功後は `onSuccessRedirect ?? "/employees"` へ `router.push`。失敗メッセージやボタンラベルを編集/登録で分岐。
+6. `apps/nextjs/src/app/employees/[id]/edit/page.tsx` を作成し、Server Componentで `fetchEmployeeDetail` を呼んで `EmployeeForm` に初期値・ID・コンテキストを渡す。`source=contract` クエリがある場合は契約管理モードとみなし、従業員管理からの場合は基本情報のみ編集できるようにする。ページヘッダーやパンくず、キャンセルボタンなどPlan3準拠のUIを追加。
 7. `apps/nextjs/src/app/employees/[id]/page.tsx` の「編集モード」リンクおよび下部ボタンが新ページに遷移することを確認し、必要なら `Link` 先を `/employees/${id}/edit` に統一する。
+8. 契約管理ページの「契約更新」「新規契約作成」アクションからは `?source=contract`（+必要に応じて`mode=new-contract`）を付与し、契約ウィジェットが編集モードで開くことを保証する。
 
 ## 具体的なステップ
 1. `pnpm --filter @acme/nextjs lint` — 既存状態がLintグリーンであることを確認。成功時は `Done in <time>` が表示される。
