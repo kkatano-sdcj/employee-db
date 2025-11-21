@@ -12,10 +12,9 @@ type EmployeeEditPageProps = {
 };
 
 export default async function EmployeeEditPage({ params, searchParams }: EmployeeEditPageProps) {
-  const [{ id }, resolvedSearchParams] = await Promise.all([
-    params,
-    searchParams ?? Promise.resolve({}),
-  ]);
+  const searchParamsPromise: Promise<{ source?: string }> =
+    searchParams ?? Promise.resolve<{ source?: string }>({});
+  const [{ id }, resolvedSearchParams] = await Promise.all([params, searchParamsPromise]);
   const detail = await fetchEmployeeDetail(id);
 
   if (!detail.employee) {
