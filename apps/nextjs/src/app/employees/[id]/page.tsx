@@ -17,7 +17,9 @@ type EmployeeDetailPageProps = {
 
 export default async function EmployeeDetailPage({ params, searchParams }: EmployeeDetailPageProps) {
   const id = (await params).id;
-  const resolvedSearchParams = searchParams ? await searchParams : {};
+  const resolvedSearchParams = (searchParams ? await searchParams : undefined) as
+    | { view?: string }
+    | undefined;
   const detail = await fetchEmployeeDetail(id);
 
   if (!detail.employee) {
