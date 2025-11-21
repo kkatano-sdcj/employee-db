@@ -3,27 +3,43 @@ import type { Sql } from "postgres";
 
 import type { EmployeeFormValues } from "@/lib/schemas/employee";
 
+type JsonValue = string | number | boolean | null | JsonValue[] | { [key: string]: JsonValue };
+
 export type EmploymentHistorySnapshots = {
-  workCondition: Record<string, unknown>;
-  contractTerms: Record<string, unknown>;
-  documents: Record<string, unknown>;
+  workCondition: JsonValue;
+  contractTerms: JsonValue;
+  documents: JsonValue;
 };
 
 export const buildEmploymentHistorySnapshots = (
   data: EmployeeFormValues,
 ): EmploymentHistorySnapshots => {
-  const workConditionSnapshot = {
+  const workConditionSnapshot: JsonValue = {
     workDaysType: data.workDaysType,
     workDaysCount: data.workDaysCount,
     workDaysCountNote: data.workDaysCountNote ?? null,
     paidLeaveBaseDate: data.paidLeaveBaseDate ?? null,
-    workingHours: data.workingHours,
-    breakHours: data.breakHours ?? [],
-    workLocations: data.workLocations,
-    transportationRoutes: data.transportationRoutes,
-  } satisfies Record<string, unknown>;
+    workingHours: data.workingHours.map((slot) => ({
+      start: slot.start,
+      end: slot.end,
+    })),
+    breakHours: (data.breakHours ?? []).map((slot) => ({
+      start: slot.start,
+      end: slot.end,
+    })),
+    workLocations: data.workLocations.map((location) => ({
+      location: location.location,
+    })),
+    transportationRoutes: data.transportationRoutes.map((route) => ({
+      route: route.route,
+      roundTripAmount: route.roundTripAmount,
+      monthlyPassAmount: route.monthlyPassAmount ?? null,
+      maxAmount: route.maxAmount ?? null,
+      nearestStation: route.nearestStation ?? null,
+    })),
+  };
 
-  const contractSnapshot = {
+  const contractSnapshot: JsonValue = {
     contractType: data.contract.contractType,
     contractStartDate: data.contract.contractStartDate,
     contractEndDate: data.contract.contractEndDate ?? null,
@@ -34,16 +50,16 @@ export const buildEmploymentHistorySnapshots = (
     jobDescription: data.contract.jobDescription ?? null,
     paidLeaveClause: data.contract.paidLeaveClause ?? null,
     approvalNumber: data.contract.approvalNumber ?? null,
-  } satisfies Record<string, unknown>;
+  };
 
-  const documentsSnapshot = {
+  const documentsSnapshot: JsonValue = {
     submittedToAdminOn: data.documents.submittedToAdminOn || null,
     returnedToEmployee: data.documents.returnedToEmployee || null,
     expirationNoticeIssued: data.documents.expirationNoticeIssued || null,
     resignationLetterSubmitted: data.documents.resignationLetterSubmitted || null,
     returnHealthInsuranceCard: data.documents.returnHealthInsuranceCard || null,
     returnSecurityCard: data.documents.returnSecurityCard || null,
-  } satisfies Record<string, unknown>;
+  };
 
   return {
     workCondition: workConditionSnapshot,
