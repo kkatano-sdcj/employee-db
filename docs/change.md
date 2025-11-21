@@ -80,3 +80,30 @@ CommonJS版 `fontkit/dist/main.cjs` を読み込んでいたため、App Router 
 ### 修正内容
 - `pdf-builder.ts` の import を `./vendor/fontkit/dist/module.mjs` に切り替え、ESM版の named export (`create`) を利用するよう変更。
 - これにより Next.js の ESM バンドル内でも fontkit の依存解決が正しく行われ、契約書/誓約書PDF生成時のビルドエラーが解消されました。
+
+## 2025-11-21: ベンダーフォント依存エラーとPDF出力の改善
+
+### 分析
+Next.js の App Router にベンダー化した fontkit を読み込む際、`@swc/helpers` の `_define_property` / `_ts_decorate` export が存在しないため `module evaluation` エラーが発生。さらに fontkit 配下の `base64-js` や `unicode-trie` といった依存を解決できず、PDF生成ルートが 500 を返していました。また、フォントパスが `process.cwd()` と一致しておらず `NotoSansJP-Regular.otf` が読めない問題、契約書・誓約書PDFのリンクが同じタブで開く問題も確認されました。最終的には fontkit のパス描画ロジックでも日本語文字が「□」になるため、フォントアウトラインの追跡を断念し、CIDフォントを利用する方針に切り替えました。
+
+### 修正内容
+- `apps/nextjs/src/server/pdf/vendor/fontkit/@swc/helpers/_/_define_property.js` と `_/_ts_decorate.js` に `_` エクスポートを追加し、CJSヘルパーを ESM から安全に import 可能にした。
+- `apps/nextjs/src/server/pdf/vendor` 配下に `@swc/helpers` をはじめ `base64-js` / `unicode-trie` / `tiny-inflate` / `tslib` などの依存を配置し、`apps/nextjs/src/server/pdf/node_modules` からシンボリックリンクして解決できるようにした。
+- フォントパスを `src/server/pdf/fonts` 基準に変更し、`NotoSansJP-Regular.otf` が正しく読み込まれるようにした。
+- 契約アクションメニューの PDF リンクには `target="_blank"` / `rel="noreferrer"` を付与して常に新しいタブで開くようにした。
+- 文字化け対策として、独自のグリフ描画を廃止し PDF 組込みの CID フォント `HeiseiKakuGo-W5` を `UniJIS-UCS2-H` で使用するテキストベース描画に刷新。`pdf-builder.ts` を全面的に書き換え、UTF-16BE でエンコードした文字列を `BT ... Tj` で描画、PDF内で日本語が確実に表示されるようにした。
+- PDFタイトルも UTF-16BE でエンコードし、メタデータが日本語でも文字化けしないようにした。
+
+これにより、契約書/誓約書 PDF が日本語で正しく表示され、リンクから新しいタブで開けるようになった。また `/api/pdf/contracts/...` のビルド・実行時エラーが解消され、安定した PDF 出力ができるようになりました。
+
+## 2025-11-21: 契約履歴スナップショットと契約管理画面の連携
+
+### 分析
+従業員編集ページの「勤務条件」「雇用契約」「書類・提出状況」で入力した内容を契約番号単位で `employment_history` に残す仕様が未実装でした。そのため契約管理ページで最新の入力内容を確認できず、employment_history も部署や時給しか持っていませんでした。
+
+### 修正内容
+- `employment_history` に `contract_id` と3つの `*_snapshot` JSONB カラムを追加し、契約に紐づく勤務条件・契約条件・書類情報を丸ごと保持できるようにした（スキーマ / マイグレーション / サンプルデータ更新）。
+- `insertEmploymentHistoryFromForm` ヘルパーを新設し、従業員作成/更新アクションから呼び出して契約番号単位の履歴レコードを自動で作成。更新時は `event_type = CONTRACT_UPDATE` として登録できるよう制約も拡張した。
+- 契約管理ページのクエリを employment_history と LATERAL JOIN し、最新スナップショットを取得。テーブルに「最新入力内容」列を追加して勤務日数/勤務地/交通/書類返却状況を表示するようにした。
+
+これにより、任意の契約番号に対する入力内容が employment_history に保存され、契約管理画面からも最新の登録状況を確認できるようになりました。

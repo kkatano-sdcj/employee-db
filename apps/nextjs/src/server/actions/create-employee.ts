@@ -4,6 +4,7 @@ import { randomUUID } from "node:crypto";
 
 import { employeeFormSchema, type EmployeeFormValues } from "@/lib/schemas/employee";
 import { db } from "@/server/db";
+import { insertEmploymentHistoryFromForm } from "@/server/employment-history";
 
 export async function createEmployee(payload: EmployeeFormValues) {
   const data = employeeFormSchema.parse(payload);
@@ -149,6 +150,16 @@ export async function createEmployee(payload: EmployeeFormValues) {
         'system'
       )
     `;
+
+    await insertEmploymentHistoryFromForm(trx, {
+      employeeId,
+      contractId,
+      departmentCode: data.departmentCode,
+      effectiveDate: data.contract.contractStartDate,
+      eventType: "HIRE",
+      remarks: "契約登録",
+      form: data,
+    });
 
     return { employeeId, contractId };
   });

@@ -4,6 +4,7 @@ import { randomUUID } from "node:crypto";
 
 import { employeeFormSchema, type EmployeeFormValues } from "@/lib/schemas/employee";
 import { db } from "@/server/db";
+import { insertEmploymentHistoryFromForm } from "@/server/employment-history";
 
 type UpdateEmployeeInput = {
   employeeId: string;
@@ -229,6 +230,16 @@ export async function updateEmployee(input: UpdateEmployeeInput) {
         updated_by = EXCLUDED.updated_by,
         updated_at = NOW()
     `;
+
+    await insertEmploymentHistoryFromForm(trx, {
+      employeeId,
+      contractId: contractKey,
+      departmentCode: data.departmentCode,
+      effectiveDate: data.contract.contractStartDate,
+      eventType: "CONTRACT_UPDATE",
+      remarks: "契約更新",
+      form: data,
+    });
   });
 
   return {
