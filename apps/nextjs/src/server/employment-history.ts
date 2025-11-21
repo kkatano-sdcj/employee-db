@@ -3,7 +3,8 @@ import type { Sql } from "postgres";
 
 import type { EmployeeFormValues } from "@/lib/schemas/employee";
 
-type JsonValue = string | number | boolean | null | JsonValue[] | { [key: string]: JsonValue };
+type JsonPrimitive = string | number | boolean | null;
+type JsonValue = JsonPrimitive | JsonValue[] | { [key: string]: JsonValue };
 
 export type EmploymentHistorySnapshots = {
   workCondition: JsonValue;
