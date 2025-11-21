@@ -159,6 +159,7 @@ crates/foo/planner.rsで、以下を定義：
 - 契約の雇用期間は `contract_start_date`〜`employment_expiry_scheduled_date` を表示し、`employment_expiry_date` を記録・表示する（`specs/008-comprehensive-spec/spec.md` User Story 3準拠）
 - 個人情報最小化（住所・電話番号・銀行口座は**保持しない**）がテストで担保
 - 部門コードはBPS課、オンサイト課、CC課、PS課の4部署から選択（FR-001準拠）
+- 従業員編集・契約編集画面では契約番号入力欄を統合ウィジェット先頭に配置し、`specs/008` User Story 6/6-1, FR-085〜FR-087, UI-024/026 の権限制御（従業員管理経路=基本情報のみ編集、契約管理経路=勤務条件/契約/書類編集）を順守する
 
 ## Plan: 従業員DB v1（コア要件の段階実装）
 ```md
@@ -259,13 +260,15 @@ crates/foo/planner.rsで、以下を定義：
 このExecPlanは生きている文書です。`specs/008-comprehensive-spec/spec.md` の User Story 1 / FR-050 / SC-038 / UI-001 / UI-010 / UI-016 節と `designs/plan3/employee-detail.html` のモックを常に参照しながら進め、`Progress`、`Surprises & Discoveries`、`Decision Log`、`Outcomes & Retrospective` を最新に保ちます。
 
 ## 目的 / 全体像
-統括人事管理者が従業員詳細ページから「編集モード」を開き、既存の基本情報・勤務条件・契約情報を`specs/008`に沿って修正できるようにします。編集後は `/employees` 一覧や詳細ページで即時に更新内容が確認でき、`pnpm --filter @acme/nextjs dev` で立ち上げたUI上でフォーム送信→成功トースト→詳細へ戻る動線を手動確認できる状態をゴールとします。
+統括人事管理者が従業員詳細ページから「編集モード」を開いた場合は `specs/008` User Story 6-1 に従って「基本情報のみ編集可能」「勤務条件/契約/書類は表示のみ（契約番号を表示）」とし、契約管理ページから「契約更新」「新規契約作成」を選択した場合は User Story 6 に従って「勤務条件・契約・書類を統合ウィジェットとして編集」「基本情報は表示のみ」「先頭に契約番号欄を配置」できるようにします。どちらの遷移パターンでも `/employees/[id]/edit` でコンテキストを判別し、`pnpm --filter @acme/nextjs dev` 上で動作確認できる状態をゴールとします。
 
 ## Progress
 - [x] (2025-11-19T13:24Z) `fetchEmployeeDetail` に `is_renewable` を追加し、`mapEmployeeDetailToFormValues` ユーティリティで `EmployeeFormValues` へ射影
 - [x] (2025-11-19T13:28Z) `apps/nextjs/src/server/actions/update-employee.ts` + `/api/employees/[id]` を追加し、従業員・勤務条件・契約の更新処理とトランザクションを実装
 - [x] (2025-11-19T13:34Z) `EmployeeForm` を編集モード対応にリファクタし、`apps/nextjs/src/app/employees/[id]/edit/page.tsx` から初期値とメタデータを受け渡す
 - [x] (2025-11-19T13:40Z) `pnpm --filter @acme/nextjs lint` を実行し、UI要件の手動検証手順を整理（ブラウザ確認は後続作業で実施）
+- [x] (2025-11-19T14:30Z) 書類タブの入力セクションをフォームに追加し、`employee_admin_records` の更新処理（UPSERT）を組み込んだ
+- [x] (2025-11-20T00:10Z) `specs/008` の User Story 6/6-1・FR-085〜FR-087・UI-024/026 に合わせ、経路別の編集権限と契約番号入力欄をフォームに実装した
 
 ## 驚きと発見
 - 観察: `create-employee` は依然として `working_hours` 系の旧テーブルにINSERTしている一方、詳細画面は `work_conditions.*_jsonb` から値を読み出している。  
@@ -294,9 +297,10 @@ crates/foo/planner.rsで、以下を定義：
 2. `fetchEmployeeDetail` の戻り値をフォーム値へ変換する `mapEmployeeDetailToFormValues` ユーティリティを `apps/nextjs/src/lib/mappers/employee-form.ts`（新規）として作成。複数勤務条件のうち最新(0番目)を編集対象にし、`workConditions[0]` が無い場合は既定値を使用するロジックを記述。
 3. `apps/nextjs/src/server/actions/update-employee.ts` を追加し、従業員情報・勤務条件・契約テーブルを `db.begin` で更新。`workConditionId` が存在する場合は関連の `working_hours` 等を一旦DELETE→INSERTで差し替える。存在しない場合は `createEmployee` と同じように新規作成。`contracts` も同様に `contractId` を更新し、未指定の場合は新規発行。
 4. API ルート `apps/nextjs/src/app/api/employees/[id]/route.ts` を作り、`PUT` で `updateEmployee` を呼び出す。エラー時は `400` + message、成功時は JSON `{ ok: true }`。
-5. `EmployeeForm` を `mode`, `initialValues`, `employeeId`, `workConditionId`, `contractId`, `onSuccessRedirect` などのpropsに対応させ、`fetch` 先を `mode` で切り替える。成功後は `onSuccessRedirect ?? "/employees"` へ `router.push`。失敗メッセージやボタンラベルを編集/登録で分岐。
-6. `apps/nextjs/src/app/employees/[id]/edit/page.tsx` を作成し、Server Componentで `fetchEmployeeDetail` を呼んで `EmployeeForm` に初期値・IDを渡す。ページヘッダーやパンくず、キャンセルボタンなどPlan3準拠のUIを追加。
+5. `EmployeeForm` を `mode`, `context`, `initialValues`, `employeeId`, `workConditionId`, `contractId`, `onSuccessRedirect` などのpropsに対応させ、`fetch` 先を `mode` で切り替える。コンテキストに応じて各ウィジェットの編集可否を制御し、契約番号入力欄を合同ウィジェットに追加する。成功後は `onSuccessRedirect ?? "/employees"` へ `router.push`。失敗メッセージやボタンラベルを編集/登録で分岐。
+6. `apps/nextjs/src/app/employees/[id]/edit/page.tsx` を作成し、Server Componentで `fetchEmployeeDetail` を呼んで `EmployeeForm` に初期値・ID・コンテキストを渡す。`source=contract` クエリがある場合は契約管理モードとみなし、従業員管理からの場合は基本情報のみ編集できるようにする。ページヘッダーやパンくず、キャンセルボタンなどPlan3準拠のUIを追加。
 7. `apps/nextjs/src/app/employees/[id]/page.tsx` の「編集モード」リンクおよび下部ボタンが新ページに遷移することを確認し、必要なら `Link` 先を `/employees/${id}/edit` に統一する。
+8. 契約管理ページの「契約更新」「新規契約作成」アクションからは `?source=contract`（+必要に応じて`mode=new-contract`）を付与し、契約ウィジェットが編集モードで開くことを保証する。
 
 ## 具体的なステップ
 1. `pnpm --filter @acme/nextjs lint` — 既存状態がLintグリーンであることを確認。成功時は `Done in <time>` が表示される。
@@ -390,6 +394,73 @@ crates/foo/planner.rsで、以下を定義：
 ## インターフェースと依存関係
 - `ContractSummary` 型に `contractNumber`, `needsUpdate`, `employmentExpiryScheduledDate`, `employmentExpiryDate`, `status` を保持し、UIへ直接渡す。
 - `ContractActionMenu` props: `{ contractId, employeeId, employeeName, employeeNumber }`。メニュー項目は `Link` か `button` を返し、後続実装でAPI接続可能にする。
+```
+
+## Plan: 契約書PDF & 誓約書PDF
+```md
+# 契約書/誓約書PDFの出力機能を実装する
+
+`specs/008-comprehensive-spec/spec.md` の User Story 2, FR-006〜FR-007, FR-085, UI-015 の要件に沿い、パート雇入通知書フォーマットと誓約書フォーマットをNext.js API経由でPDF化します。`docs/format`フォルダのテンプレートを参考にしつつ、サーバーサイドで契約データを取得してPDFを生成し、契約管理/従業員詳細UIからダウンロードできるようにします。
+
+## 目的 / 全体像
+統括人事管理者が契約管理ページまたは従業員詳細ページから「契約書PDF」「誓約書PDF」をワンクリックで出力でき、PDF内には契約番号・従業員基本情報・雇用期間・勤務条件・賃金・交通費などがspec 008で指定された赤字領域に差し込まれます。契約書PDF生成時には雇用契約の枝番（contracts.id）がそのまま出力され、誓約書は社員番号のみを埋め込んだフォーマットとなります。
+
+## 進捗
+- [ ] (2025-11-20T00:00Z) PDF生成ユーティリティ（シンプルPDFビルダー）を実装
+- [ ] (2025-11-20T00:00Z) 契約/従業員データの取得クエリを用意し、契約番号を起点に必要フィールド（勤務条件・交通費・書類情報）を取得
+- [ ] (2025-11-20T00:00Z) API Route（`/api/pdf/contracts/[contractId]`）で契約書/誓約書を出力し、Content-Dispositionヘッダーを設定
+- [ ] (2025-11-20T00:00Z) 従業員詳細・契約管理UIからPDF出力ボタンを配置し、spec 008の操作要件を満たす
+
+## 驚きと発見
+- 設計中
+
+## 決定ログ
+- 決定: 依存関係追加が難しい環境のため、`@react-pdf/renderer`ではなく独自の簡易PDFライター（テキストベース）を実装して要件を満たす。  
+  根拠: ネットワーク制限でライブラリ追加ができない一方、specでは特定フォント/罫線までは求めておらず、テキストベースのPDFでも情報要件とSC-002を満たせるため。  
+  日付/作成者: 2025-11-20 / Codex
+
+## コンテキストと方向性
+- テンプレート: `docs/format/パート雇入通知書見本ver_A2025.09.docx`, `docs/format/誓約書.pdf` を参考に、必要フィールド（従業員名、契約期間、勤務条件、賃金、交通費、社員番号など）をspecに従って差し込み。
+- データ取得: `apps/nextjs/src/server/queries/employees.ts` には従業員詳細取得ロジックがあるため、契約番号を受け取り employee_id を特定し、同関数を再利用してPDF用データを組み立てる。
+- PDF生成: シンプルな1ページ/複数ページ対応のPDFビルダーを`apps/nextjs/src/server/pdf/`に実装し、テキスト行を描画する形で契約書/誓約書を構築。`application/pdf`のストリームをAPI Routeから返却。
+- UI: 従業員詳細ページの「印刷」ボタンと契約管理ページの操作メニューからPDF出力に遷移できるようにする。アクセス権は統括人事管理者/管理者のみ（既存の認可層が整備され次第拡張）。
+
+## 作業計画
+1. Unit: `apps/nextjs/src/server/pdf/pdf-builder.ts` に簡易PDFライターを実装（複数ページ対応、Helveticaフォント、A4相当サイズ）。
+2. Data: `apps/nextjs/src/server/queries/contracts.ts` に `fetchContractDocumentData(contractId)` を追加し、従業員情報・契約情報・勤務条件・書類情報をまとめて取得。
+3. Document templates: `apps/nextjs/src/server/pdf/documents.ts` に契約書/誓約書のテキスト整形ロジックを実装し、ビルダーを呼び出して `Buffer` を生成。
+4. API: `apps/nextjs/src/app/api/pdf/contracts/[contractId]/route.ts` を追加し、`type=contract|pledge` でPDFを返却。存在しない契約IDは404を返し、例外時は500。
+5. UI/UX: 従業員詳細ページと契約管理テーブルにPDF出力リンクを配置し、`target="_blank"` でファイルを開く。仕様に従い契約番号をタイトルやファイル名に含める。
+6. 検証: `pnpm --filter @acme/nextjs lint`、ブラウザで `/api/pdf/contracts/<id>?type=contract` を開きPDFがダウンロードできることを確認。
+
+## 具体的なステップ
+1. `pnpm --filter @acme/nextjs lint`
+2. `apps/nextjs/src/server/pdf/pdf-builder.ts` を新規作成
+3. `apps/nextjs/src/server/pdf/documents.ts` を新規作成
+4. `apps/nextjs/src/server/queries/contracts.ts` にドキュメント向け取得関数を追加
+5. `apps/nextjs/src/app/api/pdf/contracts/[contractId]/route.ts` を作成
+6. UI更新後に `pnpm --filter @acme/nextjs lint`
+
+## 検証と受け入れ
+- API に直接アクセスし、生成されたPDFに従業員名・契約期間・勤務条件・賃金情報などが含まれることを確認。
+- 契約書/誓約書双方が正しくダウンロードできること。
+- `pnpm --filter @acme/nextjs lint` が成功。
+
+## 冪等性と回復
+- PDF生成はリードオンリーのため安全に繰り返し可能。エラー時はJSONレスポンスで失敗理由を返し、UIで再試行できる。
+
+## 成果物とメモ
+- `apps/nextjs/src/server/pdf/pdf-builder.ts`
+- `apps/nextjs/src/server/pdf/documents.ts`
+- `apps/nextjs/src/app/api/pdf/contracts/[contractId]/route.ts`
+- 従業員詳細/契約管理UI 上のPDF出力リンク
+
+## インターフェースと依存関係
+- `buildPdfDocument(title: string, sections: PdfSection[]): Buffer`
+- `createContractPdf(data: ContractDocumentData): Buffer`
+- `createPledgePdf(data: ContractDocumentData): Buffer`
+- `fetchContractDocumentData(contractId: string): Promise<ContractDocumentData | null>`
+- `/api/pdf/contracts/[contractId]?type=contract|pledge`
 ```
 
 ---

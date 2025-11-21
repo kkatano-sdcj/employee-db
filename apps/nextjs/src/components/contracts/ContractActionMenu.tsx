@@ -9,6 +9,8 @@ import {
   PencilSquareIcon,
   PlusIcon,
   TrashIcon,
+  PrinterIcon,
+  DocumentTextIcon,
 } from "@heroicons/react/24/outline";
 
 type ContractActionMenuProps = {
@@ -65,6 +67,20 @@ export function ContractActionMenu(props: ContractActionMenuProps) {
   const menuItems: MenuItem[] = [
     {
       type: "link",
+      label: "契約書プレビュー",
+      description: "新しいタブで契約書PDFを表示",
+      href: `/api/pdf/contracts/${contractId}?type=contract`,
+      icon: <PrinterIcon className="h-4 w-4 text-slate-400" />,
+    },
+    {
+      type: "link",
+      label: "誓約書プレビュー",
+      description: "新しいタブで誓約書PDFを表示",
+      href: `/api/pdf/contracts/${contractId}?type=pledge`,
+      icon: <DocumentTextIcon className="h-4 w-4 text-slate-400" />,
+    },
+    {
+      type: "link",
       label: "契約プレビュー",
       description: `${employeeName} の契約履歴を開く`,
       href: `/employees/${employeeId}?view=contracts`,
@@ -74,14 +90,14 @@ export function ContractActionMenu(props: ContractActionMenuProps) {
       type: "link",
       label: "契約更新",
       description: "従業員の編集ページで契約を修正",
-      href: `/employees/${employeeId}/edit`,
+      href: `/employees/${employeeId}/edit?source=contract`,
       icon: <PencilSquareIcon className="h-4 w-4 text-slate-400" />,
     },
     {
       type: "link",
       label: "新規契約作成",
       description: "既存情報をベースに新しい契約を作成",
-      href: `/employees/${employeeId}/edit?mode=new-contract`,
+      href: `/employees/${employeeId}/edit?source=contract&mode=new-contract`,
       icon: <PlusIcon className="h-4 w-4 text-slate-400" />,
     },
     {
@@ -122,6 +138,8 @@ export function ContractActionMenu(props: ContractActionMenuProps) {
                 <Link
                   key={item.label}
                   href={item.href}
+                  target={item.href.startsWith("/api/pdf/") ? "_blank" : undefined}
+                  rel={item.href.startsWith("/api/pdf/") ? "noreferrer" : undefined}
                   className="flex items-start gap-3 rounded-xl px-3 py-2 text-left transition-colors hover:bg-slate-50"
                   onClick={() => setOpen(false)}
                 >

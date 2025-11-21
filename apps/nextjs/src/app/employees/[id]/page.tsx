@@ -7,6 +7,7 @@ import {
   CameraIcon,
   MapPinIcon,
   CalendarIcon,
+  DocumentTextIcon,
 } from "@heroicons/react/24/outline";
 import { fetchEmployeeDetail } from "@/server/queries/employees";
 
@@ -27,6 +28,7 @@ export default async function EmployeeDetailPage({ params, searchParams }: Emplo
   }
 
   const employee = detail.employee;
+  const primaryContract = detail.contracts[0];
 
   const viewParam = resolvedSearchParams?.view;
   const activeTab =
@@ -60,11 +62,36 @@ export default async function EmployeeDetailPage({ params, searchParams }: Emplo
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-3">
-          <button className="px-4 py-2.5 bg-white border border-slate-200 text-slate-700 text-sm font-medium rounded-xl hover:bg-slate-50 transition-all shadow-sm hover-lift flex items-center gap-2">
-            <PrinterIcon className="w-4 h-4" />
-            印刷
-          </button>
+        <div className="flex flex-wrap items-center gap-3">
+          {primaryContract ? (
+            <>
+              <Link
+                href={`/api/pdf/contracts/${primaryContract.id}?type=contract`}
+                target="_blank"
+                rel="noreferrer"
+                className="px-4 py-2.5 bg-white border border-slate-200 text-slate-700 text-sm font-medium rounded-xl hover:bg-slate-50 transition-all shadow-sm hover-lift flex items-center gap-2"
+              >
+                <PrinterIcon className="w-4 h-4" />
+                契約書PDF
+              </Link>
+              <Link
+                href={`/api/pdf/contracts/${primaryContract.id}?type=pledge`}
+                target="_blank"
+                rel="noreferrer"
+                className="px-4 py-2.5 bg-white border border-slate-200 text-slate-700 text-sm font-medium rounded-xl hover:bg-slate-50 transition-all shadow-sm hover-lift flex items-center gap-2"
+              >
+                <DocumentTextIcon className="w-4 h-4" />
+                誓約書PDF
+              </Link>
+            </>
+          ) : (
+            <button
+              className="px-4 py-2.5 bg-white border border-slate-200 text-slate-400 text-sm font-medium rounded-xl"
+              disabled
+            >
+              PDF出力不可
+            </button>
+          )}
           <Link
             href={`/employees/${employee.id}/edit`}
             className="px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white text-sm font-medium rounded-xl transition-all shadow-soft hover-lift flex items-center gap-2"
@@ -481,6 +508,42 @@ const ContractsSection = ({ contracts }: { contracts: EmployeeDetailResponse["co
               value={contract.overtimeHourlyWage ? `¥${contract.overtimeHourlyWage.toLocaleString()}` : "-"}
             />
             <InfoRow label="業務内容" value={contract.jobDescription ?? "-"} />
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Link
+              href={`/api/pdf/contracts/${contract.id}?type=contract`}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-50"
+            >
+              <PrinterIcon className="h-4 w-4" /> 契約書PDF
+            </Link>
+            <Link
+              href={`/api/pdf/contracts/${contract.id}?type=pledge`}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-50"
+            >
+              <DocumentTextIcon className="h-4 w-4" /> 誓約書PDF
+            </Link>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Link
+              href={`/api/pdf/contracts/${contract.id}?type=contract`}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-50"
+            >
+              <PrinterIcon className="h-4 w-4" /> 契約書PDF
+            </Link>
+            <Link
+              href={`/api/pdf/contracts/${contract.id}?type=pledge`}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-50"
+            >
+              <DocumentTextIcon className="h-4 w-4" /> 誓約書PDF
+            </Link>
           </div>
         </div>
       ))

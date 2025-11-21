@@ -26,6 +26,7 @@ export const transportationRouteSchema = z.object({
 });
 
 export const employeeFormSchema = z.object({
+  contractNumber: z.string().min(1, "契約番号を入力してください"),
   employeeNumber: z.string().min(1, "従業員番号を入力してください"),
   name: z.string().min(1, "氏名を入力してください"),
   nameKana: z.string().min(1, "カナ氏名を入力してください"),
@@ -55,6 +56,14 @@ export const employeeFormSchema = z.object({
   transportationRoutes: z
     .array(transportationRouteSchema)
     .min(1, "交通費ルートを1件以上入力してください"),
+  documents: z.object({
+    submittedToAdminOn: z.string().optional(),
+    returnedToEmployee: z.string().optional(),
+    expirationNoticeIssued: z.string().optional(),
+    resignationLetterSubmitted: z.string().optional(),
+    returnHealthInsuranceCard: z.string().optional(),
+    returnSecurityCard: z.string().optional(),
+  }),
   contract: z.object({
     contractType: z.enum(["INDEFINITE", "FIXED_TERM"]),
     contractStartDate: z.string().min(1, "契約開始日を入力してください"),
@@ -79,6 +88,7 @@ export const employeeFormSchema = z.object({
 export type EmployeeFormValues = z.infer<typeof employeeFormSchema>;
 
 export const defaultEmployeeFormValues: EmployeeFormValues = {
+  contractNumber: "",
   employeeNumber: "",
   name: "",
   nameKana: "",
@@ -120,6 +130,14 @@ export const defaultEmployeeFormValues: EmployeeFormValues = {
       nearestStation: "東京",
     },
   ],
+  documents: {
+    submittedToAdminOn: "",
+    returnedToEmployee: "",
+    expirationNoticeIssued: "",
+    resignationLetterSubmitted: "",
+    returnHealthInsuranceCard: "",
+    returnSecurityCard: "",
+  },
   contract: {
     contractType: "FIXED_TERM",
     contractStartDate: "",

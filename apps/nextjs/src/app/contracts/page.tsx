@@ -5,13 +5,46 @@ import { ContractActionMenu } from "@/components/contracts/ContractActionMenu";
 import { ContractAlertBadge } from "@/components/contracts/ContractAlertBadge";
 import { ContractStatusBadge } from "@/components/contracts/ContractStatusBadge";
 import { formatCurrency } from "@/lib/formatters";
-import { fetchContractSummaries } from "@/server/queries/contracts";
+import { fetchContractSummaries, type ContractHistorySnapshot } from "@/server/queries/contracts";
 
 const formatDate = (value?: string | null) => (value ? value.replaceAll("-", "/") : "-");
 
 const formatContractType = (type: string) => (type === "INDEFINITE" ? "無期" : "有期");
 
 const getInitials = (name: string) => name.substring(0, 2);
+
+const HistoryCell = ({ history }: { history?: ContractHistorySnapshot }) => {
+  if (!history) {
+    return <span className="text-slate-400">履歴なし</span>;
+  }
+
+  const workCondition = (history.workCondition ?? {}) as {
+    workDaysCount?: number;
+    workDaysType?: string;
+    workLocations?: Array<{ location?: string }>;
+    transportationRoutes?: Array<{ route?: string }>;
+  };
+  const documents = (history.documents ?? {}) as Record<string, string | null | undefined>;
+
+  const firstLocation = Array.isArray(workCondition.workLocations)
+    ? workCondition.workLocations[0]?.location
+    : undefined;
+  const firstRoute = Array.isArray(workCondition.transportationRoutes)
+    ? workCondition.transportationRoutes[0]?.route
+    : undefined;
+
+  return (
+    <div className="space-y-1 text-xs text-slate-500">
+      <div>
+        勤務: {workCondition.workDaysCount ?? "-"}日/
+        {workCondition.workDaysType ?? "-"}
+      </div>
+      <div>勤務地: {firstLocation ?? "-"}</div>
+      <div>交通: {firstRoute ?? "-"}</div>
+      <div>書類返却: {documents.returnSecurityCard ?? "未入力"}</div>
+    </div>
+  );
+};
 
 export default async function ContractsPage() {
   const contracts = await fetchContractSummaries();
@@ -51,6 +84,7 @@ export default async function ContractsPage() {
               <th className="px-3 py-3">開始日</th>
               <th className="px-3 py-3">終了予定日</th>
               <th className="px-3 py-3">時給</th>
+              <th className="px-3 py-3">最新入力内容</th>
               <th className="px-3 py-3">状態</th>
               <th className="px-3 py-3">アラート</th>
               <th className="px-4 py-3 text-center">操作</th>
@@ -98,6 +132,9 @@ export default async function ContractsPage() {
                   )}
                 </td>
                 <td className="px-3 py-4 text-sm">{formatCurrency(contract.hourlyWage)}</td>
+                <td className="px-3 py-4 align-top">
+                  <HistoryCell history={contract.latestHistory} />
+                </td>
                 <td className="px-3 py-4">
                   <ContractStatusBadge status={contract.status} />
                 </td>

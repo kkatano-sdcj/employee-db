@@ -129,25 +129,32 @@ CREATE INDEX IF NOT EXISTS idx_contracts_status_end_date ON contracts(status, co
 CREATE TABLE IF NOT EXISTS employment_history (
   id TEXT PRIMARY KEY,
   employee_id TEXT NOT NULL,
+  contract_id TEXT,
   effective_date DATE NOT NULL,
   event_type TEXT NOT NULL,
   department_code TEXT,
   paid_leave_days INTEGER,
   hourly_wage DECIMAL(10, 2),
+  work_condition_snapshot JSONB NOT NULL DEFAULT '{}'::jsonb,
+  contract_terms_snapshot JSONB NOT NULL DEFAULT '{}'::jsonb,
+  documents_snapshot JSONB NOT NULL DEFAULT '{}'::jsonb,
   remarks TEXT,
   created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
   updated_by TEXT NOT NULL,
   
   CONSTRAINT fk_employee FOREIGN KEY (employee_id) REFERENCES employees(id) ON DELETE CASCADE,
+  CONSTRAINT fk_employment_history_contract FOREIGN KEY (contract_id) REFERENCES contracts(id) ON DELETE CASCADE,
   CONSTRAINT chk_event_type CHECK (event_type IN (
     'HIRE', 'TRANSFER', 'PROMOTION', 'SALARY_INCREASE', 
-    'SALARY_DECREASE', 'CONCURRENT_POST', 'RETIRE', 'REINSTATE'
+    'SALARY_DECREASE', 'CONCURRENT_POST', 'RETIRE', 'REINSTATE',
+    'CONTRACT_UPDATE'
   )),
   CONSTRAINT chk_employment_history_department_code CHECK (department_code IS NULL OR department_code IN ('BPS課', 'オンサイト課', 'CC課', 'PS課'))
 );
 
 CREATE INDEX IF NOT EXISTS idx_employment_history_employee_id ON employment_history(employee_id, effective_date DESC);
+CREATE INDEX IF NOT EXISTS idx_employment_history_contract_id ON employment_history(contract_id, effective_date DESC);
 
 -- ==========================================
 -- 5. employee_admin_records テーブル（従業員事務管理）
@@ -277,4 +284,3 @@ DO $$
 BEGIN
   RAISE NOTICE 'スキーマ作成が完了しました。全8テーブルが作成されました。';
 END $$;
-

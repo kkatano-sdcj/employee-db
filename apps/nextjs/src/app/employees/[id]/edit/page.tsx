@@ -8,16 +8,20 @@ import { fetchEmployeeDetail } from "@/server/queries/employees";
 
 type EmployeeEditPageProps = {
   params: Promise<{ id: string }>;
+  searchParams?: Promise<{ source?: string }>;
 };
 
-export default async function EmployeeEditPage({ params }: EmployeeEditPageProps) {
-  const { id } = await params;
+export default async function EmployeeEditPage({ params, searchParams }: EmployeeEditPageProps) {
+  const searchParamsPromise: Promise<{ source?: string }> =
+    searchParams ?? Promise.resolve<{ source?: string }>({});
+  const [{ id }, resolvedSearchParams] = await Promise.all([params, searchParamsPromise]);
   const detail = await fetchEmployeeDetail(id);
 
   if (!detail.employee) {
     notFound();
   }
 
+  const source = resolvedSearchParams?.source === "contract" ? "contract" : "employee";
   const { values, workConditionId, contractId } = mapEmployeeDetailToFormValues(detail);
 
   return (
@@ -42,6 +46,7 @@ export default async function EmployeeEditPage({ params }: EmployeeEditPageProps
       <div className="rounded-3xl border border-slate-100 bg-white p-6 shadow-soft">
         <EmployeeForm
           mode="edit"
+          context={source === "contract" ? "contract-management" : "employee-management"}
           employeeId={detail.employee.id}
           initialValues={values}
           workConditionId={workConditionId}
