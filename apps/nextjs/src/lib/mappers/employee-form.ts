@@ -44,6 +44,7 @@ export function mapEmployeeDetailToFormValues(detail: EmployeeDetail): EmployeeF
 
   const values: EmployeeFormValues = {
     ...base,
+    contractNumber: contract?.id ?? base.contractNumber,
     employeeNumber: employee.employeeNumber,
     name: employee.name,
     nameKana: employee.nameKana,

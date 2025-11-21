@@ -9,6 +9,8 @@ import {
   PencilSquareIcon,
   PlusIcon,
   TrashIcon,
+  PrinterIcon,
+  DocumentTextIcon,
 } from "@heroicons/react/24/outline";
 
 type ContractActionMenuProps = {
@@ -63,6 +65,20 @@ export function ContractActionMenu(props: ContractActionMenuProps) {
   }, []);
 
   const menuItems: MenuItem[] = [
+    {
+      type: "link",
+      label: "契約書プレビュー",
+      description: "新しいタブで契約書PDFを表示",
+      href: `/api/pdf/contracts/${contractId}?type=contract`,
+      icon: <PrinterIcon className="h-4 w-4 text-slate-400" />,
+    },
+    {
+      type: "link",
+      label: "誓約書プレビュー",
+      description: "新しいタブで誓約書PDFを表示",
+      href: `/api/pdf/contracts/${contractId}?type=pledge`,
+      icon: <DocumentTextIcon className="h-4 w-4 text-slate-400" />,
+    },
     {
       type: "link",
       label: "契約プレビュー",
@@ -122,6 +138,8 @@ export function ContractActionMenu(props: ContractActionMenuProps) {
                 <Link
                   key={item.label}
                   href={item.href}
+                  target={item.href.startsWith("/api/pdf/") ? "_blank" : undefined}
+                  rel={item.href.startsWith("/api/pdf/") ? "noreferrer" : undefined}
                   className="flex items-start gap-3 rounded-xl px-3 py-2 text-left transition-colors hover:bg-slate-50"
                   onClick={() => setOpen(false)}
                 >

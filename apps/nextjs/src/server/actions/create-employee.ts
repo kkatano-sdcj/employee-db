@@ -115,7 +115,7 @@ export async function createEmployee(payload: EmployeeFormValues) {
       `;
     }
 
-    const contractId = randomUUID();
+    const contractId = data.contractNumber?.trim() || randomUUID();
     await trx`
       INSERT INTO contracts (
         id,

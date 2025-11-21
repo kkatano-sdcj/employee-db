@@ -56,6 +56,8 @@ export async function updateEmployee(input: UpdateEmployeeInput) {
   const data = employeeFormSchema.parse(input.values);
 
   const workConditionKey = input.workConditionId ?? randomUUID();
+  const desiredContractNumber = data.contractNumber?.trim();
+  const contractKey = desiredContractNumber || input.contractId || randomUUID();
   const workingHoursJson = buildWorkingHoursJson(data.workingHours, workConditionKey);
   const breakHoursJson = buildBreakHoursJson(data.breakHours ?? [], workConditionKey);
   const workLocationsJson = buildWorkLocationsJson(data.workLocations, workConditionKey);
@@ -63,8 +65,6 @@ export async function updateEmployee(input: UpdateEmployeeInput) {
     data.transportationRoutes,
     workConditionKey,
   );
-  const contractKey = input.contractId ?? randomUUID();
-
   await db.begin(async (trx) => {
     await trx`
       UPDATE employees
@@ -139,6 +139,7 @@ export async function updateEmployee(input: UpdateEmployeeInput) {
       await trx`
         UPDATE contracts
         SET
+          id = ${contractKey},
           contract_type = ${data.contract.contractType},
           contract_start_date = ${data.contract.contractStartDate},
           contract_end_date = ${data.contract.contractEndDate || null},

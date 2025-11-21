@@ -34,6 +34,17 @@ export const EmployeeForm = ({
 }: EmployeeFormProps) => {
   const router = useRouter();
   const [status, setStatus] = useState<{ type: "success" | "error"; message: string }>();
+  const generateContractNumber = () => {
+    const timestamp = new Date()
+      .toISOString()
+      .replaceAll("-", "")
+      .replaceAll(":", "")
+      .replaceAll(".", "")
+      .replaceAll("T", "")
+      .replaceAll("Z", "")
+      .slice(0, 14);
+    return `CNT-${timestamp}`;
+  };
   const memoizedDefaultValues = useMemo(
     () => initialValues ?? defaultEmployeeFormValues,
     [initialValues],
@@ -50,6 +61,15 @@ export const EmployeeForm = ({
       previousInitialValues.current = initialValues;
     }
   }, [initialValues, form]);
+
+  useEffect(() => {
+    if (mode === "create" && !initialValues?.contractNumber) {
+      const current = form.getValues("contractNumber");
+      if (!current) {
+        form.setValue("contractNumber", generateContractNumber());
+      }
+    }
+  }, [form, initialValues, mode]);
 
   const workingHours = useFieldArray({ control: form.control, name: "workingHours" });
   const breakHours = useFieldArray({ control: form.control, name: "breakHours" });
@@ -400,6 +420,12 @@ export const EmployeeForm = ({
         title="雇用契約"
         readOnlyLabel={!sectionPermissions.contract ? "表示のみ" : undefined}
       >
+        <TextField
+          label="契約番号"
+          registration={form.register("contractNumber")}
+          error={form.formState.errors.contractNumber?.message}
+          readOnly={!sectionPermissions.contract}
+        />
         <div className="grid gap-4 md:grid-cols-3">
           <SelectField
             label="契約タイプ"

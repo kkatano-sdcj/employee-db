@@ -26,6 +26,7 @@ export const transportationRouteSchema = z.object({
 });
 
 export const employeeFormSchema = z.object({
+  contractNumber: z.string().min(1, "契約番号を入力してください"),
   employeeNumber: z.string().min(1, "従業員番号を入力してください"),
   name: z.string().min(1, "氏名を入力してください"),
   nameKana: z.string().min(1, "カナ氏名を入力してください"),
@@ -87,6 +88,7 @@ export const employeeFormSchema = z.object({
 export type EmployeeFormValues = z.infer<typeof employeeFormSchema>;
 
 export const defaultEmployeeFormValues: EmployeeFormValues = {
+  contractNumber: "",
   employeeNumber: "",
   name: "",
   nameKana: "",

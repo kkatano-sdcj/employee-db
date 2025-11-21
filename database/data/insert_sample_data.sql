@@ -188,9 +188,9 @@ VALUES
 ('eh-EMP005-002', (SELECT id FROM employees WHERE employee_number = 'EMP005'), '2024-06-01', 'SALARY_INCREASE', 'CC課', NULL, 1200.00, '昇給', NOW(), NOW(), 'system'),
 ('eh-EMP006-001', (SELECT id FROM employees WHERE employee_number = 'EMP006'), '2024-03-01', 'HIRE', 'BPS課', 10, 2600.00, '入社', NOW(), NOW(), 'system'),
 ('eh-EMP007-001', (SELECT id FROM employees WHERE employee_number = 'EMP007'), '2023-07-15', 'HIRE', 'CC課', 10, 1100.00, '入社', NOW(), NOW(), 'system'),
-('eh-EMP008-001', (SELECT id FROM employees WHERE employee_number = 'EMP008'), '2022-12-01', 'HIRE', 'オンサイト課', 10, 2450.00, '入社', NOW(), NOW(), 'system'),
-('eh-EMP008-002', (SELECT id FROM employees WHERE employee_number = 'EMP008'), '2023-10-01', 'PROMOTION', 'オンサイト課', NULL, 2450.00, '昇格', NOW(), NOW(), 'system'),
-('eh-EMP009-001', (SELECT id FROM employees WHERE employee_number = 'EMP009'), '2024-05-01', 'HIRE', 'BPS課', 10, 1220.00, '入社', NOW(), NOW(), 'system'),
+('eh-EMP008-001', (SELECT id FROM employees WHERE employee_number = 'EMP008'), '2022-12-01', 'HIRE', 'PS課', 10, 2450.00, '入社', NOW(), NOW(), 'system'),
+('eh-EMP008-002', (SELECT id FROM employees WHERE employee_number = 'EMP008'), '2023-10-01', 'PROMOTION', 'PS課', NULL, 2450.00, '昇格', NOW(), NOW(), 'system'),
+('eh-EMP009-001', (SELECT id FROM employees WHERE employee_number = 'EMP009'), '2024-05-01', 'HIRE', 'PS課', 10, 1220.00, '入社', NOW(), NOW(), 'system'),
 ('eh-EMP010-001', (SELECT id FROM employees WHERE employee_number = 'EMP010'), '2023-02-01', 'HIRE', 'CC課', 10, 2550.00, '入社', NOW(), NOW(), 'system'),
 ('eh-EMP010-002', (SELECT id FROM employees WHERE employee_number = 'EMP010'), '2024-01-01', 'SALARY_INCREASE', 'CC課', NULL, 2550.00, '昇給', NOW(), NOW(), 'system')
 ON CONFLICT (id) DO NOTHING;

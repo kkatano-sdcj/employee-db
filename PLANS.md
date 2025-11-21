@@ -396,6 +396,73 @@ crates/foo/planner.rsで、以下を定義：
 - `ContractActionMenu` props: `{ contractId, employeeId, employeeName, employeeNumber }`。メニュー項目は `Link` か `button` を返し、後続実装でAPI接続可能にする。
 ```
 
+## Plan: 契約書PDF & 誓約書PDF
+```md
+# 契約書/誓約書PDFの出力機能を実装する
+
+`specs/008-comprehensive-spec/spec.md` の User Story 2, FR-006〜FR-007, FR-085, UI-015 の要件に沿い、パート雇入通知書フォーマットと誓約書フォーマットをNext.js API経由でPDF化します。`docs/format`フォルダのテンプレートを参考にしつつ、サーバーサイドで契約データを取得してPDFを生成し、契約管理/従業員詳細UIからダウンロードできるようにします。
+
+## 目的 / 全体像
+統括人事管理者が契約管理ページまたは従業員詳細ページから「契約書PDF」「誓約書PDF」をワンクリックで出力でき、PDF内には契約番号・従業員基本情報・雇用期間・勤務条件・賃金・交通費などがspec 008で指定された赤字領域に差し込まれます。契約書PDF生成時には雇用契約の枝番（contracts.id）がそのまま出力され、誓約書は社員番号のみを埋め込んだフォーマットとなります。
+
+## 進捗
+- [ ] (2025-11-20T00:00Z) PDF生成ユーティリティ（シンプルPDFビルダー）を実装
+- [ ] (2025-11-20T00:00Z) 契約/従業員データの取得クエリを用意し、契約番号を起点に必要フィールド（勤務条件・交通費・書類情報）を取得
+- [ ] (2025-11-20T00:00Z) API Route（`/api/pdf/contracts/[contractId]`）で契約書/誓約書を出力し、Content-Dispositionヘッダーを設定
+- [ ] (2025-11-20T00:00Z) 従業員詳細・契約管理UIからPDF出力ボタンを配置し、spec 008の操作要件を満たす
+
+## 驚きと発見
+- 設計中
+
+## 決定ログ
+- 決定: 依存関係追加が難しい環境のため、`@react-pdf/renderer`ではなく独自の簡易PDFライター（テキストベース）を実装して要件を満たす。  
+  根拠: ネットワーク制限でライブラリ追加ができない一方、specでは特定フォント/罫線までは求めておらず、テキストベースのPDFでも情報要件とSC-002を満たせるため。  
+  日付/作成者: 2025-11-20 / Codex
+
+## コンテキストと方向性
+- テンプレート: `docs/format/パート雇入通知書見本ver_A2025.09.docx`, `docs/format/誓約書.pdf` を参考に、必要フィールド（従業員名、契約期間、勤務条件、賃金、交通費、社員番号など）をspecに従って差し込み。
+- データ取得: `apps/nextjs/src/server/queries/employees.ts` には従業員詳細取得ロジックがあるため、契約番号を受け取り employee_id を特定し、同関数を再利用してPDF用データを組み立てる。
+- PDF生成: シンプルな1ページ/複数ページ対応のPDFビルダーを`apps/nextjs/src/server/pdf/`に実装し、テキスト行を描画する形で契約書/誓約書を構築。`application/pdf`のストリームをAPI Routeから返却。
+- UI: 従業員詳細ページの「印刷」ボタンと契約管理ページの操作メニューからPDF出力に遷移できるようにする。アクセス権は統括人事管理者/管理者のみ（既存の認可層が整備され次第拡張）。
+
+## 作業計画
+1. Unit: `apps/nextjs/src/server/pdf/pdf-builder.ts` に簡易PDFライターを実装（複数ページ対応、Helveticaフォント、A4相当サイズ）。
+2. Data: `apps/nextjs/src/server/queries/contracts.ts` に `fetchContractDocumentData(contractId)` を追加し、従業員情報・契約情報・勤務条件・書類情報をまとめて取得。
+3. Document templates: `apps/nextjs/src/server/pdf/documents.ts` に契約書/誓約書のテキスト整形ロジックを実装し、ビルダーを呼び出して `Buffer` を生成。
+4. API: `apps/nextjs/src/app/api/pdf/contracts/[contractId]/route.ts` を追加し、`type=contract|pledge` でPDFを返却。存在しない契約IDは404を返し、例外時は500。
+5. UI/UX: 従業員詳細ページと契約管理テーブルにPDF出力リンクを配置し、`target="_blank"` でファイルを開く。仕様に従い契約番号をタイトルやファイル名に含める。
+6. 検証: `pnpm --filter @acme/nextjs lint`、ブラウザで `/api/pdf/contracts/<id>?type=contract` を開きPDFがダウンロードできることを確認。
+
+## 具体的なステップ
+1. `pnpm --filter @acme/nextjs lint`
+2. `apps/nextjs/src/server/pdf/pdf-builder.ts` を新規作成
+3. `apps/nextjs/src/server/pdf/documents.ts` を新規作成
+4. `apps/nextjs/src/server/queries/contracts.ts` にドキュメント向け取得関数を追加
+5. `apps/nextjs/src/app/api/pdf/contracts/[contractId]/route.ts` を作成
+6. UI更新後に `pnpm --filter @acme/nextjs lint`
+
+## 検証と受け入れ
+- API に直接アクセスし、生成されたPDFに従業員名・契約期間・勤務条件・賃金情報などが含まれることを確認。
+- 契約書/誓約書双方が正しくダウンロードできること。
+- `pnpm --filter @acme/nextjs lint` が成功。
+
+## 冪等性と回復
+- PDF生成はリードオンリーのため安全に繰り返し可能。エラー時はJSONレスポンスで失敗理由を返し、UIで再試行できる。
+
+## 成果物とメモ
+- `apps/nextjs/src/server/pdf/pdf-builder.ts`
+- `apps/nextjs/src/server/pdf/documents.ts`
+- `apps/nextjs/src/app/api/pdf/contracts/[contractId]/route.ts`
+- 従業員詳細/契約管理UI 上のPDF出力リンク
+
+## インターフェースと依存関係
+- `buildPdfDocument(title: string, sections: PdfSection[]): Buffer`
+- `createContractPdf(data: ContractDocumentData): Buffer`
+- `createPledgePdf(data: ContractDocumentData): Buffer`
+- `fetchContractDocumentData(contractId: string): Promise<ContractDocumentData | null>`
+- `/api/pdf/contracts/[contractId]?type=contract|pledge`
+```
+
 ---
 
 ## Phase 0: 既存フォーム保存不具合の修正（前提）

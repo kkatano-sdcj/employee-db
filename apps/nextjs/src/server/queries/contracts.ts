@@ -1,4 +1,5 @@
 import { db } from "@/server/db";
+import { fetchEmployeeDetail, type EmployeeDetail } from "@/server/queries/employees";
 
 export type ContractSummary = {
   id: string;
@@ -71,4 +72,42 @@ export async function fetchContractSummaries(): Promise<ContractSummary[]> {
       ? new Date(row.employmentExpiryDate).toISOString().slice(0, 10)
       : undefined,
   }));
+}
+
+export type ContractDocumentData = {
+  employee: NonNullable<EmployeeDetail["employee"]>;
+  contract: EmployeeDetail["contracts"][number];
+  primaryWorkCondition?: EmployeeDetail["workConditions"][number];
+  adminRecord: EmployeeDetail["adminRecord"];
+};
+
+export async function fetchContractDocumentData(contractId: string): Promise<ContractDocumentData | null> {
+  const rows = await db<Array<{ employeeId: string }>>`
+    SELECT employee_id as "employeeId"
+    FROM contracts
+    WHERE id = ${contractId}
+    LIMIT 1
+  `;
+
+  const record = rows[0];
+  if (!record) {
+    return null;
+  }
+
+  const detail = await fetchEmployeeDetail(record.employeeId);
+  if (!detail.employee) {
+    return null;
+  }
+
+  const targetContract = detail.contracts.find((contract) => contract.id === contractId) ?? detail.contracts[0];
+  if (!targetContract) {
+    return null;
+  }
+
+  return {
+    employee: detail.employee,
+    contract: targetContract,
+    primaryWorkCondition: detail.workConditions[0],
+    adminRecord: detail.adminRecord,
+  };
 }
