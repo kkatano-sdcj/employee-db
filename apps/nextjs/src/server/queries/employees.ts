@@ -475,6 +475,7 @@ export async function fetchEmployeeDetail(employeeId: string): Promise<EmployeeD
       contractType: contract.contractType,
       contractStartDate: toDateString(contract.contractStartDate as unknown as Date),
       contractEndDate: toDateString(contract.contractEndDate as unknown as Date),
+      isRenewable: Boolean(contract.isRenewable),
       employmentExpiryScheduledDate: toDateString(
         contract.employmentExpiryScheduledDate as unknown as Date,
       ),
