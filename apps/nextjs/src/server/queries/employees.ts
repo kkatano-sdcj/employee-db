@@ -391,6 +391,7 @@ export async function fetchEmployeeDetail(employeeId: string): Promise<EmployeeD
     contractType: string;
     contractStartDate: Date | string | null;
     contractEndDate: Date | string | null;
+    isRenewable: boolean;
     employmentExpiryScheduledDate: Date | string | null;
     employmentExpiryDate: Date | string | null;
     hourlyWage: number;
