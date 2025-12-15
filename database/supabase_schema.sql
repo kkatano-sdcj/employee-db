@@ -14,6 +14,7 @@ CREATE TABLE IF NOT EXISTS employees (
   branch_number INTEGER NOT NULL DEFAULT 0,
   name TEXT NOT NULL,
   name_kana TEXT NOT NULL,
+  sticker_item TEXT, -- フセン項目（入社時登録必須項目、spec 008準拠）
   gender TEXT NOT NULL,
   birth_date DATE NOT NULL,
   nationality TEXT,
@@ -138,6 +139,7 @@ CREATE TABLE IF NOT EXISTS employment_history (
   work_condition_snapshot JSONB NOT NULL DEFAULT '{}'::jsonb,
   contract_terms_snapshot JSONB NOT NULL DEFAULT '{}'::jsonb,
   documents_snapshot JSONB NOT NULL DEFAULT '{}'::jsonb,
+  approval_number TEXT, -- 承認番号（契約作成・更新時に入力、FR-094/FR-095準拠）
   remarks TEXT,
   created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
@@ -155,6 +157,10 @@ CREATE TABLE IF NOT EXISTS employment_history (
 
 CREATE INDEX IF NOT EXISTS idx_employment_history_employee_id ON employment_history(employee_id, effective_date DESC);
 CREATE INDEX IF NOT EXISTS idx_employment_history_contract_id ON employment_history(contract_id, effective_date DESC);
+-- 承認番号での検索を高速化（FR-094/FR-095準拠）
+CREATE INDEX IF NOT EXISTS idx_employment_history_approval_number 
+ON employment_history(approval_number) 
+WHERE approval_number IS NOT NULL;
 
 -- ==========================================
 -- 5. employee_admin_records テーブル（従業員事務管理）
@@ -168,6 +174,16 @@ CREATE TABLE IF NOT EXISTS employee_admin_records (
   social_insurance TEXT,
   pension_book_submitted TEXT,
   health_insurance_card_submitted TEXT,
+  -- spec 008準拠: 社会保険・給与関連フィールド（入社時登録必須項目含む）
+  health_insurance_category TEXT, -- 健康保険加入区分（入社時登録必須項目）
+  pension_category TEXT, -- 厚生年金加入区分（入社時登録必須項目）
+  basic_pension_number TEXT, -- 基礎年金番号（入社時登録必須項目）
+  pension_fund_category TEXT, -- 厚生年金基金加入区分（入社時登録必須項目）
+  employment_insurance_number TEXT, -- 雇用保険被保険者番号（入社時登録必須項目）
+  base_salary DECIMAL(10, 2), -- 基本給
+  commuting_expense_category TEXT, -- 通勤費区分（入社時登録必須項目）
+  commuting_expense_payment_method TEXT, -- 通勤費支払方法
+  daily_payment_amount DECIMAL(10, 2), -- 日払い支給額
   submitted_to_admin_on DATE,
   returned_to_employee TEXT,
   expiration_notice_issued TEXT,
