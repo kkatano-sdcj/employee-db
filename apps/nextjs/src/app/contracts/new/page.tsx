@@ -39,7 +39,6 @@ export default async function ContractNewPage({ searchParams }: ContractNewPageP
     birthDate: detail.employee.birthDate || "",
     nationality: detail.employee.nationality || "",
     hiredAt: detail.employee.hiredAt || "",
-    retiredAt: detail.employee.retiredAt || "",
     employmentType:
       (detail.employee.employmentType as EmployeeFormValues["employmentType"]) ??
       defaultEmployeeFormValues.employmentType,
