@@ -3,7 +3,10 @@ import { notFound, redirect } from "next/navigation";
 import { ArrowLeftIcon } from "@heroicons/react/24/outline";
 
 import { EmployeeForm } from "@/components/employees/EmployeeForm";
-import { defaultEmployeeFormValues } from "@/lib/schemas/employee";
+import {
+  defaultEmployeeFormValues,
+  type EmployeeFormValues,
+} from "@/lib/schemas/employee";
 import { fetchEmployeeDetail } from "@/server/queries/employees";
 
 type ContractNewPageProps = {
@@ -26,19 +29,23 @@ export default async function ContractNewPage({ searchParams }: ContractNewPageP
   }
 
   // 基本情報は既存の従業員データから取得し、契約情報は空で開始
-  const initialValues = {
+  const initialValues: EmployeeFormValues = {
     ...defaultEmployeeFormValues,
     // 従業員基本情報
     employeeNumber: detail.employee.employeeNumber,
     name: detail.employee.name,
     nameKana: detail.employee.nameKana || "",
-    gender: detail.employee.gender,
+    gender: (detail.employee.gender as EmployeeFormValues["gender"]) ?? defaultEmployeeFormValues.gender,
     birthDate: detail.employee.birthDate || "",
     nationality: detail.employee.nationality || "",
     hiredAt: detail.employee.hiredAt || "",
     retiredAt: detail.employee.retiredAt || "",
-    employmentType: detail.employee.employmentType,
-    employmentStatus: detail.employee.employmentStatus,
+    employmentType:
+      (detail.employee.employmentType as EmployeeFormValues["employmentType"]) ??
+      defaultEmployeeFormValues.employmentType,
+    employmentStatus:
+      (detail.employee.employmentStatus as EmployeeFormValues["employmentStatus"]) ??
+      defaultEmployeeFormValues.employmentStatus,
     departmentCode: detail.employee.departmentCode,
   };
 
