@@ -7,31 +7,8 @@
 ## 実装する機能
 
 ### 認証方式
-- **Email・Password認証**を実装する（1要素認証）
+- **Email・Password認証**を実装する
 - 将来的にOAuth認証（Google、GitHubなど）、Email 2FA（2要素認証）、Passkey（パスキー）認証への拡張を考慮する
-
-### 初期ユーザーの作成
-
-開発・テスト環境用として、すべてのロールについて初期ユーザーを作成する。
-
-#### 初期ユーザー一覧
-
-各ロールについて、以下の形式で仮ユーザーを作成する：
-
-| ロール | メールアドレス | パスワード | department_code |
-|--------|---------------|-----------|-----------------|
-| SYSTEM_ADMIN | system_admin@example.com | password | NULL |
-| ADMIN | admin@example.com | password | NULL |
-| HR_MANAGER | hr_manager@example.com | password | NULL |
-| FIELD_MANAGER | field_manager@example.com | password | BPS（またはONS/CC/PS） |
-| GENERAL_AFFAIRS | general_affairs@example.com | password | NULL |
-| AUDITOR | auditor@example.com | password | NULL |
-
-**注意事項**:
-- すべてのユーザーに共通パスワード `password` を設定する（開発・テスト環境のみ）
-- FIELD_MANAGERロールのユーザーは、部門コード（department_code）を設定する必要がある
-- 本番環境では、初期ユーザーを作成した後、各ユーザーにパスワード変更を強制する
-- 本番環境では、初期ユーザーのパスワードをランダムな強力なパスワードに変更する
 
 ### ユーザーロールと権限
 
@@ -140,89 +117,6 @@ ALTER TABLE users ADD CONSTRAINT chk_role
 -- （既存データへの影響を最小限にするため）
 ```
 
-### Better-Auth用データベーススキーマの作成
-
-Better-Authが使用するデータベーステーブルをSupabaseに作成する必要がある。
-
-#### Better-Authが作成するテーブル
-
-Better-Authは以下のテーブルを自動的に作成する：
-
-- `user` - ユーザー基本情報
-- `session` - セッション情報
-- `account` - アカウント情報（Email/Password、OAuthなど）
-- `verification` - メール認証、パスワードリセットなど
-
-#### マイグレーションファイルの作成
-
-1. **Better-Auth CLIを使用したスキーマ生成**
-   ```bash
-   # Better-Auth CLIでスキーマを生成
-   pnpm auth:generate
-   ```
-
-2. **手動でのスキーマ作成（オプション）**
-   Better-Auth CLIが使用できない場合は、`database/migrations/`ディレクトリに以下のマイグレーションファイルを作成する：
-   - `YYYYMMDDHHMMSS_create_better_auth_tables.sql`
-
-#### 初期ユーザー作成用のシードスクリプト
-
-`database/seed/`ディレクトリに初期ユーザー作成用のシードスクリプトを作成する：
-
-**ファイル名**: `database/seed/create_initial_users.sql`
-
-```sql
--- 初期ユーザー作成スクリプト
--- Better-Authのパスワードハッシュ化機能を使用してパスワードを設定する必要がある
--- 実際の実装では、Better-AuthのAPIまたはCLIを使用してユーザーを作成する
-
--- 注意: 以下のSQLは例示であり、実際の実装ではBetter-AuthのAPIを使用すること
--- Better-Authはパスワードをハッシュ化して保存するため、直接SQLでINSERTすることは推奨されない
-
--- 初期ユーザー作成は、以下のいずれかの方法で行う：
--- 1. Better-Authの管理APIを使用
--- 2. シードスクリプト（Node.js/TypeScript）を作成してBetter-AuthのAPIを呼び出す
--- 3. アプリケーションの初期セットアップ画面から作成
-
--- 推奨: database/seed/create_initial_users.ts を作成し、Better-AuthのAPIを使用してユーザーを作成する
-```
-
-**推奨実装方法**: `database/seed/create_initial_users.ts`を作成し、Better-AuthのAPIを使用してユーザーを作成する。
-
-#### マイグレーションファイルの配置
-
-以下のディレクトリ構造でマイグレーションファイルを管理する：
-
-```
-database/
-├── migrations/
-│   ├── YYYYMMDDHHMMSS_create_better_auth_tables.sql
-│   └── YYYYMMDDHHMMSS_update_users_table_roles.sql
-├── seed/
-│   ├── create_initial_users.ts
-│   └── create_initial_users.sql (参考用)
-└── supabase_schema.sql (全体スキーマの参照用)
-```
-
-#### マイグレーション実行手順
-
-1. **開発環境での実行**
-   ```bash
-   # Supabaseにマイグレーションを適用
-   pnpm db:migrate dev
-   ```
-
-2. **初期ユーザーの作成**
-   ```bash
-   # シードスクリプトを実行
-   pnpm db:seed:users
-   ```
-
-3. **本番環境での実行**
-   - マイグレーションファイルを本番環境のSupabaseに適用
-   - 初期ユーザーは手動で作成するか、管理画面から作成
-   - 各ユーザーのパスワードを強力なパスワードに変更
-
 ## 実装計画
 
 ### Phase 1: 基本認証機能の実装
@@ -231,22 +125,12 @@ database/
    - Better-Authのインストールと設定
    - Prisma Adapterの設定
 
-2. データベーススキーマの作成
-   - Better-Auth用テーブルの作成（マイグレーションファイル）
-   - `users`テーブルの`role`カラム制約の更新
-   - マイグレーションファイルの作成と適用
-
-3. 初期ユーザーの作成
-   - シードスクリプト（`database/seed/create_initial_users.ts`）の作成
-   - 各ロールの初期ユーザー作成
-   - パスワード設定（共通パスワード `password`）
-
-4. ログイン/ログアウト機能
+2. ログイン/ログアウト機能
    - ログインページの実装
    - セッション管理
    - ログアウト機能
 
-5. 保護されたルートの実装
+3. 保護されたルートの実装
    - Next.js Middlewareによる認証チェック
    - 未認証ユーザーのリダイレクト
 
@@ -282,44 +166,7 @@ database/
 # Better-Auth設定
 AUTH_SECRET=<ランダムな文字列（32文字以上推奨）>
 AUTH_URL=http://localhost:3000  # 本番環境では実際のURLに変更
-
-# データベース接続（既存）
-DATABASE_URL=<Supabase PostgreSQL接続文字列>
-DIRECT_URL=<Supabase PostgreSQL直接接続文字列（マイグレーション用）>
 ```
-
-## データベースマイグレーションとシード
-
-### マイグレーションファイルの作成
-
-1. **Better-Authテーブル作成用マイグレーション**
-   - ファイル名: `database/migrations/YYYYMMDDHHMMSS_create_better_auth_tables.sql`
-   - Better-Auth CLIで生成するか、手動で作成する
-
-2. **usersテーブル更新用マイグレーション**
-   - ファイル名: `database/migrations/YYYYMMDDHHMMSS_update_users_table_roles.sql`
-   - `role`カラムの制約を更新するSQLを含める
-
-### シードスクリプトの作成
-
-**ファイル名**: `database/seed/create_initial_users.ts`
-
-以下の機能を実装する：
-
-1. Better-AuthのAPIを使用してユーザーを作成
-2. 各ロールの初期ユーザーを作成
-3. パスワードを `password` に設定（Better-Authがハッシュ化）
-4. FIELD_MANAGERロールのユーザーには`department_code`を設定
-
-**実行方法**:
-```bash
-# シードスクリプトを実行
-pnpm db:seed:users
-```
-
-**注意事項**:
-- 本番環境では、初期ユーザー作成後に各ユーザーのパスワードを変更する
-- 本番環境では、強力なパスワードポリシーを適用する
 
 ## 注意事項
 

@@ -908,58 +908,132 @@ crates/foo/planner.rsで、以下を定義：
 
 ---
 
-## Phase 10: RBAC（列/行/機能）と監査ログ
-**目的**: 仕様の権限マトリクスと監査要件の実装（MVP完成後の認証機能実装）  
+## Phase 10: ユーザー認証機能とRBAC（列/行/機能）と監査ログ
+**目的**: `specs/009-user-authentication/spec.md` に準拠したBetter-Authを使用したユーザー認証機能の実装と、仕様の権限マトリクスと監査要件の実装（MVP完成後の認証機能実装）  
+**仕様リンク**: `specs/009-user-authentication/spec.md` の User Story 1〜4、FR-001〜FR-034、SC-001〜SC-010、UI-001〜UI-007  
 **技術実装**
 - 認証: better-auth (Prisma Adapter)
-- 権限管理: User モデルの role フィールド + tRPC middleware
+- 権限管理: User モデルの role フィールド + tRPC middleware + Next.js Middleware
+- セッション管理: better-auth のセッション管理機能（7日間の有効期限）
+
 **Steps**
-1. User モデルの拡張（`schema.prisma`）
-   - `role` enum (ADMIN/HR_MANAGER/FIELD_MANAGER/AUDITOR)
-   - `departmentCode` フィールド（現場マネージャー用）
-2. better-auth のセットアップ（`packages/auth/`）
-   - Prisma Adapter の設定
-   - ログイン・ログアウト・セッション管理の実装
-3. tRPC middleware の実装（`packages/api/src/middleware/`）
+1. Better-Authのデータベーススキーマ設定（`packages/db/prisma/schema.prisma`）
+   - Better-Authが使用するテーブル（user, session, account, verification）をPrismaスキーマに追加
+   - `user` テーブルに `role` enum を追加: SYSTEM_ADMIN, ADMIN, HR_MANAGER, FIELD_MANAGER, GENERAL_AFFAIRS, AUDITOR
+   - `user` テーブルに `departmentCode` フィールドを追加（FIELD_MANAGERロール用、必須）
+   - `departmentCode` はその他のロールでは任意（NULL可）
+   - Prisma マイグレーション生成・適用: `pnpm db:migrate dev`
+2. Better-Authのセットアップ（`packages/auth/`）
+   - Better-AuthライブラリとPrisma Adapterのインストール
+   - `packages/auth/src/config.ts` でBetter-Auth設定を実装
+     - Email・Password認証（1要素認証）を有効化
+     - Prisma Adapterの設定
+     - セッション有効期限を7日間に設定（FR-014, FR-015準拠）
+     - CSRF保護を有効化（FR-032準拠）
+     - セッションハイジャック対策を実装（FR-033準拠）
+   - `packages/auth/src/server.ts` でBetter-Authサーバーインスタンスを作成
+   - `packages/auth/src/client.ts` でクライアントインスタンスを作成
+3. 認証APIルートの実装（`apps/nextjs/src/app/api/auth/[...all]/route.ts`）
+   - Better-AuthのAPIルートハンドラーを実装
+   - ログイン・ログアウト・セッション管理のエンドポイントを提供
+4. ログインページの実装（`apps/nextjs/src/app/login/page.tsx`）
+   - メールアドレス入力欄とパスワード入力欄を表示（UI-001準拠）
+   - ログインボタンを表示（UI-002準拠）
+   - ログイン失敗時にエラーメッセージを表示（UI-003準拠）
+   - 認証済みユーザーがログインページにアクセスした場合、ダッシュボードにリダイレクト（FR-019準拠）
+5. 保護されたルートの実装（`apps/nextjs/src/middleware.ts`）
+   - Next.js Middlewareで認証チェックを実装
+   - 保護されたルート（/employees, /contracts, /dashboard, /reports, /users, /settings）への未認証アクセスをブロック（FR-017, FR-018準拠）
+   - 未認証ユーザーをログインページ（/login）にリダイレクト
+   - 認証済みユーザーは保護されたルートにアクセス可能
+6. ナビゲーションバーの実装（`apps/nextjs/src/components/layout/Navbar.tsx`）
+   - 現在ログインしているユーザーの情報（メールアドレス、ロール）を表示（UI-004準拠）
+   - ログアウトボタンを表示（UI-005準拠）
+   - ログアウト時にセッションを即座に無効化（FR-016準拠）
+7. 初期ユーザー作成スクリプト（`packages/db/prisma/seed.ts` または `packages/db/scripts/create-initial-users.ts`）
+   - すべてのロールについて初期ユーザーを作成（FR-020準拠）
+   - メールアドレス形式（FR-021準拠）:
+     - SYSTEM_ADMIN: system_admin@example.com
+     - ADMIN: admin@example.com
+     - HR_MANAGER: hr_manager@example.com
+     - FIELD_MANAGER: field_manager@example.com
+     - GENERAL_AFFAIRS: general_affairs@example.com
+     - AUDITOR: auditor@example.com
+   - パスワードを共通パスワード「password」に設定（開発・テスト環境のみ、FR-022準拠）
+   - FIELD_MANAGERロールの初期ユーザーにdepartment_codeを設定（FR-023準拠）
+   - Better-AuthのAPIを使用してユーザーを作成（パスワードはハッシュ化されて保存、FR-029, FR-030準拠）
+   - 既存のユーザーと重複するメールアドレスの場合はスキップ（エッジケース対応）
+8. tRPC middleware の実装（`packages/api/src/middleware/`）
    - `checkRole.ts`: ロールベースアクセス制御
    - `checkDepartment.ts`: 部門ベースアクセス制御（行レベル）
-   - `adminProcedure`, `hrManagerProcedure`, `fieldManagerProcedure` の定義
-4. 既存APIの権限チェック追加
+   - `systemAdminProcedure`, `adminProcedure`, `hrManagerProcedure`, `fieldManagerProcedure`, `generalAffairsProcedure`, `auditorProcedure` の定義
+   - 各ロールの権限マトリクスに基づいたアクセス制御（FR-003〜FR-013準拠）
+9. 既存APIの権限チェック追加
    - Phase 2〜Phase 8 で実装した全APIに権限チェックを追加
-   - CSV抽出: `hrManagerProcedure` or `adminProcedure`
-   - 契約書PDF出力: `hrManagerProcedure` or `adminProcedure`
-   - 給与抽出: `hrManagerProcedure` or `adminProcedure`
-5. 列レベル制御
-   - `myNumber` (個人番号), `hourlyWage` (給与情報) は統括/管理者のみ取得可能
-   - 注記: `overtimeHourlyWage`（残業時給）は必要である（spec.md準拠、従業員管理情報.mdに記載、給与・手当タブに表示）
-   - `employee_admin_records` の税務・保険・書類管理項目は HR/ADMIN のみ編集可（閲覧は役割に応じて制限）
-   - tRPC resolver で条件付き `select` を使用
-6. 行レベル制御
-   - 現場マネージャーは `departmentCode` でフィルタリング
-   - Prismaクエリに `where: { departmentCode: user.departmentCode }` を追加
-7. 編集ロックの認証統合
-   - Phase 3 で実装した編集ロック機能を認証システムと統合
-   - 仮のユーザーIDから実際のユーザーIDに移行
-   - ログアウト時のロック解放機能を有効化
-8. 監査ログ実装（`packages/api/src/router/auditLog.ts`）
-   - 全CRUD操作をインターセプト
-   - `AuditLog` モデルに記録（action, resourceType, resourceId, oldValues, newValues, userId, ipAddress）
-   - Prisma middleware で自動記録
-9. フロントエンド実装（`apps/nextjs/src/`）
-   - ログイン・ログアウト画面
-   - 権限に応じたUI表示制御
-   - 認証状態の管理（TanStack Query）
+   - CSV抽出: `hrManagerProcedure` or `adminProcedure` or `systemAdminProcedure`
+   - 契約書PDF出力: `hrManagerProcedure` or `adminProcedure` or `systemAdminProcedure` or `generalAffairsProcedure`
+   - 給与抽出: `hrManagerProcedure` or `adminProcedure` or `systemAdminProcedure` or `fieldManagerProcedure`
+   - ユーザー管理: `adminProcedure` or `systemAdminProcedure`
+   - システム設定: `systemAdminProcedure` のみ
+   - 監査ログ閲覧: 全ロール閲覧可能（AUDITORロールも含む）
+10. 列レベル制御
+    - `myNumber` (個人番号) へのアクセスをSYSTEM_ADMIN、ADMIN、HR_MANAGERロールのユーザーのみに制限（FR-012準拠）
+    - `hourlyWage` (給与情報) へのアクセスをSYSTEM_ADMIN、ADMIN、HR_MANAGER、FIELD_MANAGERロールのユーザーのみに制限（FR-013準拠）
+    - 注記: `overtimeHourlyWage`（残業時給）は必要である（spec.md準拠、従業員管理情報.mdに記載、給与・手当タブに表示）
+    - `employee_admin_records` の税務・保険・書類管理項目は HR_MANAGER/ADMIN/SYSTEM_ADMIN のみ編集可（閲覧は役割に応じて制限）
+    - tRPC resolver で条件付き `select` を使用
+11. 行レベル制御
+    - FIELD_MANAGERロールのユーザーは自分の部門（department_code）に属する従業員情報のみにアクセス可能（FR-007, FR-011準拠）
+    - Prismaクエリに `where: { departmentCode: user.departmentCode }` を追加
+    - FIELD_MANAGERロールのユーザーがdepartment_codeを持っていない場合、ログインを拒否（エッジケース対応）
+12. 編集ロックの認証統合
+    - Phase 3 で実装した編集ロック機能を認証システムと統合
+    - 仮のユーザーIDから実際のユーザーIDに移行
+    - ログアウト時にユーザーが保持しているすべてのロックを解放（`releaseLockByUser` を呼び出す）
+    - セッション有効期限切れ時に自動的にログアウトし、ロックを解放（FR-015準拠）
+13. 監査ログ実装（`packages/api/src/router/auditLog.ts`）
+    - 全CRUD操作をインターセプト
+    - `AuditLog` モデルに記録（action, resourceType, resourceId, oldValues, newValues, userId, ipAddress）
+    - Prisma middleware で自動記録
+    - 認証イベント（ログイン・ログアウト）も監査ログに記録
+14. フロントエンド実装（`apps/nextjs/src/`）
+    - ログイン・ログアウト画面（UI-001〜UI-003準拠）
+    - 権限に応じたUI表示制御（UI-004〜UI-007準拠）
+    - 認証状態の管理（TanStack Query）
+    - 権限のない機能へのアクセス時に適切なエラーメッセージを表示（UI-006準拠）
+    - FIELD_MANAGERロールのユーザーに対して、自分の部門のデータのみが表示されることを明確に示す（UI-007準拠）
+15. セキュリティ実装
+    - CSRF保護を有効化（FR-032準拠、Better-Authのデフォルト機能）
+    - セッションハイジャック対策を実装（FR-033準拠、Better-Authのデフォルト機能）
+    - パスワードをハッシュ化して保存（FR-029, FR-030準拠、Better-Authのデフォルト機能）
+    - ログイン試行回数の制限機能は将来の拡張として保留（FR-034準拠）
+
 **DoD**
+- ユーザーがログインページからログインを完了するまでの時間が5秒以内（SC-001準拠）
+- ログイン成功率が99%以上（正しい認証情報を入力した場合、SC-002準拠）
+- セッションの有効期限が7日間に設定され、セキュリティと利便性のバランスが取れている（SC-003準拠）
+- 未認証ユーザーが保護されたルートにアクセスしようとした場合、100%の精度でログインページにリダイレクトされる（SC-004準拠）
+- 各ロールのユーザーが、自分のロールで許可されたデータのみに100%の精度でアクセスできる（個人番号や給与情報への不正アクセスがないこと、SC-005準拠）
+- FIELD_MANAGERロールのユーザーが、自分の部門以外のデータにアクセスできないことを100%の精度で保証する（SC-006準拠）
+- 権限のない操作が適切にブロックされ、エラーメッセージが表示されること（100%の精度、SC-007準拠）
+- 初期ユーザー作成スクリプトが正常に実行され、すべてのロールのユーザーが作成されること（100%の成功率、SC-008準拠）
+- 初期ユーザーが正しいメールアドレスとパスワードでログインできること（100%の成功率、SC-009準拠）
+- パスワードがハッシュ化されて保存され、平文が保存されないこと（100%の精度、SC-010準拠）
 - ロール別 E2E テストが通る（禁止操作は 403 Forbidden）
 - 監査イベントが `audit_logs` テーブルに保存
 - JSON型フィールドで変更前後の値を記録
 - 編集ロックが認証システムと統合され、実際のユーザーIDで動作
 - ログアウト時にユーザーが保持しているすべてのロックが解放される
+- セッション有効期限切れ時に自動的にログアウトされ、ログインページにリダイレクトされる
 - 改ざん検知フィールド（将来拡張: ハッシュチェーン）
+
 **Risk & Mitigation**
+- Better-AuthとPrisma Adapterの互換性問題 → バージョンを確認し、必要に応じて更新
 - 監査量増による I/O 圧 → Prisma の `createMany` でバッチ書き込み
 - パフォーマンス影響 → 監査ログ記録を非同期化（バックグラウンドジョブ）
 - 既存APIへの権限チェック追加による影響 → 段階的に追加、テストで検証
+- セッション管理の複雑さ → Better-Authのデフォルト機能を活用し、カスタマイズを最小限に
+- 初期ユーザー作成時のパスワードセキュリティ → 開発・テスト環境のみ共通パスワードを使用し、本番環境では各ユーザーにパスワード変更を強制（FR-024準拠）
 
 ---
 
@@ -1163,3 +1237,19 @@ crates/foo/planner.rsで、以下を定義：
   - Phase 4: 操作メニューから契約更新または新規契約作成を開く場合、従業員管理ページに遷移しない（FR-098）
   - データベース: employment_historyテーブルに approval_number カラムを追加するマイグレーションを作成
   - 注意事項: 従業員番号・契約番号の自動生成ロジックは、既存データとの整合性を考慮して実装する。既存データの移行が必要な場合は、別途マイグレーションスクリプトを作成する。
+- 2025-01-28 (user-authentication): `specs/009-user-authentication/spec.md` の要件をPhase 10に完全反映
+  - Phase 10: Better-Authを使用したユーザー認証機能の実装計画を詳細化
+  - Phase 10: 6つのロール（SYSTEM_ADMIN, ADMIN, HR_MANAGER, FIELD_MANAGER, GENERAL_AFFAIRS, AUDITOR）の定義を追加
+  - Phase 10: Email・Password認証（1要素認証）の実装手順を追加
+  - Phase 10: 保護されたルートへのアクセス制御（Next.js Middleware）の実装手順を追加
+  - Phase 10: 初期ユーザー作成スクリプトの実装手順を追加（全6ロール、共通パスワード「password」）
+  - Phase 10: セッション管理（7日間の有効期限）の実装手順を追加
+  - Phase 10: Better-Authが使用するデータベーステーブル（user, session, account, verification）の作成手順を追加
+  - Phase 10: パスワード管理（ハッシュ化、平文保存禁止）の実装手順を追加
+  - Phase 10: セキュリティ実装（CSRF保護、セッションハイジャック対策）の実装手順を追加
+  - Phase 10: ロールベースアクセス制御の権限マトリクスを詳細化（FR-003〜FR-013準拠）
+  - Phase 10: 列レベル制御（個人番号、給与情報）の実装手順を追加（FR-012, FR-013準拠）
+  - Phase 10: 行レベル制御（FIELD_MANAGERの部門制限）の実装手順を追加（FR-007, FR-011準拠）
+  - Phase 10: UI要件（UI-001〜UI-007）の実装手順を追加
+  - Phase 10: 成功基準（SC-001〜SC-010）をDoDに追加
+  - Phase 10: 仕様リンク（`specs/009-user-authentication/spec.md`）を追加
