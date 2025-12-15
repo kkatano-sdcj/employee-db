@@ -12,6 +12,7 @@ import {
   PrinterIcon,
   DocumentTextIcon,
 } from "@heroicons/react/24/outline";
+import { DeleteContractModal } from "./DeleteContractModal";
 
 type ContractActionMenuProps = {
   contractId: string;
@@ -33,7 +34,8 @@ type MenuButtonItem = {
   label: string;
   description: string;
   icon: ReactNode;
-  disabled?: boolean;
+  onClick?: () => void;
+  variant?: "default" | "danger";
 };
 
 type MenuItem = MenuLinkItem | MenuButtonItem;
@@ -41,6 +43,7 @@ type MenuItem = MenuLinkItem | MenuButtonItem;
 export function ContractActionMenu(props: ContractActionMenuProps) {
   const { contractId, employeeId, employeeName, employeeNumber } = props;
   const [open, setOpen] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -103,77 +106,102 @@ export function ContractActionMenu(props: ContractActionMenuProps) {
     {
       type: "button",
       label: "契約削除",
-      description: "近日リリース予定（権限管理中）",
-      icon: <TrashIcon className="h-4 w-4 text-slate-400" />,
-      disabled: true,
+      description: "契約と関連データを削除",
+      icon: <TrashIcon className="h-4 w-4 text-red-400" />,
+      onClick: () => {
+        setOpen(false);
+        setShowDeleteModal(true);
+      },
+      variant: "danger",
     },
   ];
 
   const onToggle = () => setOpen((prev) => !prev);
 
   return (
-    <div className="relative inline-flex" ref={containerRef}>
-      <button
-        type="button"
-        onClick={(event) => {
-          event.stopPropagation();
-          onToggle();
-        }}
-        aria-expanded={open}
-        aria-label="契約操作メニューを開く"
-        className="rounded-full p-2 text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-400"
-      >
-        <EllipsisVerticalIcon className="h-5 w-5" />
-      </button>
+    <>
+      <div className="relative inline-flex" ref={containerRef}>
+        <button
+          type="button"
+          onClick={(event) => {
+            event.stopPropagation();
+            onToggle();
+          }}
+          aria-expanded={open}
+          aria-label="契約操作メニューを開く"
+          className="rounded-full p-2 text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-400"
+        >
+          <EllipsisVerticalIcon className="h-5 w-5" />
+        </button>
 
-      {open && (
-        <div className="absolute right-0 top-10 w-72 rounded-2xl border border-slate-100 bg-white p-3 text-sm text-slate-600 shadow-soft">
-          <div className="mb-2 border-b border-slate-100 pb-2 text-xs text-slate-400">
-            {employeeName}（{employeeNumber}）<br />
-            契約番号: <span className="font-mono text-slate-500">{contractId}</span>
-          </div>
-          <div className="space-y-1">
-            {menuItems.map((item) =>
-              item.type === "link" ? (
-                <Link
-                  key={item.label}
-                  href={item.href}
-                  target={item.href.startsWith("/api/pdf/") ? "_blank" : undefined}
-                  rel={item.href.startsWith("/api/pdf/") ? "noreferrer" : undefined}
-                  className="flex items-start gap-3 rounded-xl px-3 py-2 text-left transition-colors hover:bg-slate-50"
-                  onClick={() => setOpen(false)}
-                >
-                  <span>{item.icon}</span>
-                  <span>
-                    <span className="block text-sm font-semibold text-slate-900">
-                      {item.label}
+        {open && (
+          <div className="absolute right-0 top-10 w-72 rounded-2xl border border-slate-100 bg-white p-3 text-sm text-slate-600 shadow-soft z-50">
+            <div className="mb-2 border-b border-slate-100 pb-2 text-xs text-slate-400">
+              {employeeName}（{employeeNumber}）<br />
+              契約番号: <span className="font-mono text-slate-500">{contractId}</span>
+            </div>
+            <div className="space-y-1">
+              {menuItems.map((item) =>
+                item.type === "link" ? (
+                  <Link
+                    key={item.label}
+                    href={item.href}
+                    target={item.href.startsWith("/api/pdf/") ? "_blank" : undefined}
+                    rel={item.href.startsWith("/api/pdf/") ? "noreferrer" : undefined}
+                    className="flex items-start gap-3 rounded-xl px-3 py-2 text-left transition-colors hover:bg-slate-50"
+                    onClick={() => setOpen(false)}
+                  >
+                    <span>{item.icon}</span>
+                    <span>
+                      <span className="block text-sm font-semibold text-slate-900">
+                        {item.label}
+                      </span>
+                      <span className="text-xs text-slate-500">{item.description}</span>
                     </span>
-                    <span className="text-xs text-slate-500">{item.description}</span>
-                  </span>
-                </Link>
-              ) : (
-                <button
-                  key={item.label}
-                  type="button"
-                  disabled={item.disabled}
-                  onClick={() => {
-                    setOpen(false);
-                  }}
-                  className="flex w-full items-start gap-3 rounded-xl px-3 py-2 text-left text-slate-500 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
-                >
-                  <span>{item.icon}</span>
-                  <span>
-                    <span className="block text-sm font-semibold text-slate-900">
-                      {item.label}
+                  </Link>
+                ) : (
+                  <button
+                    key={item.label}
+                    type="button"
+                    onClick={item.onClick}
+                    className={`flex w-full items-start gap-3 rounded-xl px-3 py-2 text-left transition-colors ${
+                      item.variant === "danger"
+                        ? "hover:bg-red-50"
+                        : "hover:bg-slate-50"
+                    }`}
+                  >
+                    <span>{item.icon}</span>
+                    <span>
+                      <span
+                        className={`block text-sm font-semibold ${
+                          item.variant === "danger" ? "text-red-600" : "text-slate-900"
+                        }`}
+                      >
+                        {item.label}
+                      </span>
+                      <span
+                        className={`text-xs ${
+                          item.variant === "danger" ? "text-red-400" : "text-slate-500"
+                        }`}
+                      >
+                        {item.description}
+                      </span>
                     </span>
-                    <span className="text-xs text-slate-500">{item.description}</span>
-                  </span>
-                </button>
-              ),
-            )}
+                  </button>
+                ),
+              )}
+            </div>
           </div>
-        </div>
-      )}
-    </div>
+        )}
+      </div>
+
+      <DeleteContractModal
+        isOpen={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        contractId={contractId}
+        employeeName={employeeName}
+        employeeNumber={employeeNumber}
+      />
+    </>
   );
 }
