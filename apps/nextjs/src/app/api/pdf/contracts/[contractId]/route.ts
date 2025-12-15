@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 
-import { createContractPdf, createPledgePdf } from "@/server/pdf/documents";
+import {
+  createFormattedContractPdf,
+  createFormattedPledgePdf,
+} from "@/server/pdf/documents";
 import { fetchContractDocumentData } from "@/server/queries/contracts";
 
 export async function GET(request: Request, { params }: { params: Promise<{ contractId: string }> }) {
@@ -17,13 +20,17 @@ export async function GET(request: Request, { params }: { params: Promise<{ cont
       return NextResponse.json({ message: "契約が見つかりません" }, { status: 404 });
     }
 
-    const pdfBuffer = type === "pledge" ? createPledgePdf(data) : createContractPdf(data);
-    const filename = `${type === "pledge" ? "pledge" : "contract"}-${data.contract.id}.pdf`;
+    const pdfBuffer = type === "pledge"
+      ? createFormattedPledgePdf(data)
+      : createFormattedContractPdf(data);
+    const filename = type === "pledge"
+      ? `誓約書_${data.employee.employeeNumber}_${data.employee.name}.pdf`
+      : `雇用契約書_${data.employee.employeeNumber}_${data.employee.name}.pdf`;
 
-    return new NextResponse(pdfBuffer, {
+    return new NextResponse(new Uint8Array(pdfBuffer), {
       headers: {
         "Content-Type": "application/pdf",
-        "Content-Disposition": `inline; filename="${filename}"`,
+        "Content-Disposition": `inline; filename="${encodeURIComponent(filename)}"`,
       },
     });
   } catch (error) {

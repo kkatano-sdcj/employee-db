@@ -9,7 +9,9 @@ import {
   ChartBarIcon,
   Cog6ToothIcon,
   ArrowRightStartOnRectangleIcon,
+  ChevronLeftIcon,
 } from "@heroicons/react/24/outline";
+import { useSidebar } from "./sidebar-context";
 
 const navItems = [
   { name: "ダッシュボード", href: "/", icon: HomeIcon },
@@ -24,24 +26,47 @@ const adminItems = [
 
 export const Sidebar = () => {
   const pathname = usePathname();
+  const { isOpen, toggle } = useSidebar();
 
   return (
-    <aside className="fixed h-full z-40 w-72 bg-white/80 backdrop-blur-xl border-r border-slate-200/50 glass-morphism">
+    <aside
+      className={`
+        fixed h-full z-40 bg-white/80 backdrop-blur-xl border-r border-slate-200/50 glass-morphism
+        transition-all duration-300 ease-in-out
+        ${isOpen ? "w-72" : "w-20"}
+      `}
+    >
+      {/* トグルボタン */}
+      <button
+        onClick={toggle}
+        className="absolute -right-3 top-20 w-6 h-6 bg-white border border-slate-200 rounded-full shadow-sm flex items-center justify-center hover:bg-slate-50 transition-colors z-50"
+      >
+        <ChevronLeftIcon
+          className={`w-4 h-4 text-slate-600 transition-transform duration-300 ${
+            isOpen ? "" : "rotate-180"
+          }`}
+        />
+      </button>
+
       {/* ロゴセクション */}
-      <div className="p-8">
+      <div className={`p-8 ${isOpen ? "" : "px-4"}`}>
         <div className="flex items-center space-x-3">
-          <div className="w-10 h-10 bg-gradient-to-br from-slate-700 to-slate-900 rounded-xl flex items-center justify-center shadow-soft">
+          <div className="w-10 h-10 bg-gradient-to-br from-slate-700 to-slate-900 rounded-xl flex items-center justify-center shadow-soft flex-shrink-0">
             <span className="text-white font-bold text-lg">E</span>
           </div>
-          <div>
-            <h1 className="text-xl font-bold text-slate-900">Employee DB</h1>
-            <p className="text-xs text-slate-500 font-medium">統合管理システム v2.0</p>
+          <div
+            className={`transition-all duration-300 overflow-hidden ${
+              isOpen ? "opacity-100 w-auto" : "opacity-0 w-0"
+            }`}
+          >
+            <h1 className="text-xl font-bold text-slate-900 whitespace-nowrap">Employee DB</h1>
+            <p className="text-xs text-slate-500 font-medium whitespace-nowrap">統合管理システム v2.0</p>
           </div>
         </div>
       </div>
 
       {/* ナビゲーション */}
-      <nav className="px-6 pb-6">
+      <nav className={`pb-6 ${isOpen ? "px-6" : "px-3"}`}>
         <div className="space-y-1">
           {navItems.map((item) => {
             const Icon = item.icon;
@@ -51,8 +76,10 @@ export const Sidebar = () => {
               <Link
                 href={item.href}
                 key={item.name}
+                title={isOpen ? undefined : item.name}
                 className={`
-                  group flex items-center px-4 py-3 text-sm font-medium rounded-xl hover-lift transition-all
+                  group flex items-center text-sm font-medium rounded-xl hover-lift transition-all
+                  ${isOpen ? "px-4 py-3" : "px-3 py-3 justify-center"}
                   ${
                     isActive
                       ? "bg-slate-900 text-white shadow-soft"
@@ -61,11 +88,18 @@ export const Sidebar = () => {
                 `}
               >
                 <Icon className={`
-                  w-5 h-5 mr-3 transition-colors
+                  w-5 h-5 transition-colors flex-shrink-0
+                  ${isOpen ? "mr-3" : ""}
                   ${isActive ? "text-slate-300" : "text-slate-400 group-hover:text-slate-600"}
                 `} />
-                {item.name}
-                {isActive && item.href === "/" && (
+                <span
+                  className={`transition-all duration-300 overflow-hidden whitespace-nowrap ${
+                    isOpen ? "opacity-100 w-auto" : "opacity-0 w-0"
+                  }`}
+                >
+                  {item.name}
+                </span>
+                {isActive && item.href === "/" && isOpen && (
                   <span className="ml-auto w-2 h-2 bg-accent-emerald rounded-full animate-pulse-soft" />
                 )}
               </Link>
@@ -75,8 +109,12 @@ export const Sidebar = () => {
 
         {/* 管理セクション */}
         <div className="mt-8 pt-8 border-t border-slate-200">
-          <p className="px-4 text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">
-            管理
+          <p
+            className={`text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3 transition-all duration-300 overflow-hidden ${
+              isOpen ? "px-4 opacity-100" : "px-0 text-center opacity-100"
+            }`}
+          >
+            {isOpen ? "管理" : "..."}
           </p>
           {adminItems.map((item) => {
             const Icon = item.icon;
@@ -85,8 +123,10 @@ export const Sidebar = () => {
               <Link
                 href={item.href}
                 key={item.name}
+                title={isOpen ? undefined : item.name}
                 className={`
-                  group flex items-center px-4 py-3 text-sm font-medium rounded-xl hover-lift transition-all
+                  group flex items-center text-sm font-medium rounded-xl hover-lift transition-all
+                  ${isOpen ? "px-4 py-3" : "px-3 py-3 justify-center"}
                   ${
                     isActive
                       ? "bg-slate-900 text-white shadow-soft"
@@ -95,10 +135,17 @@ export const Sidebar = () => {
                 `}
               >
                 <Icon className={`
-                  w-5 h-5 mr-3 transition-colors
+                  w-5 h-5 transition-colors flex-shrink-0
+                  ${isOpen ? "mr-3" : ""}
                   ${isActive ? "text-slate-300" : "text-slate-400 group-hover:text-slate-600"}
                 `} />
-                {item.name}
+                <span
+                  className={`transition-all duration-300 overflow-hidden whitespace-nowrap ${
+                    isOpen ? "opacity-100 w-auto" : "opacity-0 w-0"
+                  }`}
+                >
+                  {item.name}
+                </span>
               </Link>
             );
           })}
@@ -106,18 +153,24 @@ export const Sidebar = () => {
       </nav>
 
       {/* ユーザープロファイル */}
-      <div className="absolute bottom-0 left-0 right-0 p-6 border-t border-slate-200 bg-white/50">
-        <div className="flex items-center">
-          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-slate-600 to-slate-800 flex items-center justify-center text-white font-semibold shadow-soft">
+      <div className={`absolute bottom-0 left-0 right-0 border-t border-slate-200 bg-white/50 ${isOpen ? "p-6" : "p-3"}`}>
+        <div className={`flex items-center ${isOpen ? "" : "justify-center"}`}>
+          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-slate-600 to-slate-800 flex items-center justify-center text-white font-semibold shadow-soft flex-shrink-0">
             管
           </div>
-          <div className="ml-3 flex-1">
-            <p className="text-sm font-semibold text-slate-900">管理者</p>
-            <p className="text-xs text-slate-500">admin@example.com</p>
+          <div
+            className={`ml-3 flex-1 transition-all duration-300 overflow-hidden ${
+              isOpen ? "opacity-100 w-auto" : "opacity-0 w-0"
+            }`}
+          >
+            <p className="text-sm font-semibold text-slate-900 whitespace-nowrap">管理者</p>
+            <p className="text-xs text-slate-500 whitespace-nowrap">admin@example.com</p>
           </div>
-          <button className="p-2 hover:bg-slate-100 rounded-lg transition-colors">
-            <ArrowRightStartOnRectangleIcon className="w-4 h-4 text-slate-400" />
-          </button>
+          {isOpen && (
+            <button className="p-2 hover:bg-slate-100 rounded-lg transition-colors flex-shrink-0">
+              <ArrowRightStartOnRectangleIcon className="w-4 h-4 text-slate-400" />
+            </button>
+          )}
         </div>
       </div>
     </aside>

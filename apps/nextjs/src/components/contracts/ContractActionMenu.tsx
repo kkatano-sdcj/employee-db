@@ -67,15 +67,15 @@ export function ContractActionMenu(props: ContractActionMenuProps) {
   const menuItems: MenuItem[] = [
     {
       type: "link",
-      label: "契約書プレビュー",
-      description: "新しいタブで契約書PDFを表示",
+      label: "雇用契約書PDF",
+      description: "正式フォーマットの契約書PDFを出力",
       href: `/api/pdf/contracts/${contractId}?type=contract`,
       icon: <PrinterIcon className="h-4 w-4 text-slate-400" />,
     },
     {
       type: "link",
-      label: "誓約書プレビュー",
-      description: "新しいタブで誓約書PDFを表示",
+      label: "誓約書PDF",
+      description: "正式フォーマットの誓約書PDFを出力",
       href: `/api/pdf/contracts/${contractId}?type=pledge`,
       icon: <DocumentTextIcon className="h-4 w-4 text-slate-400" />,
     },

@@ -66,16 +66,16 @@ export default async function EmployeeDetailPage({ params, searchParams }: Emplo
           {primaryContract ? (
             <>
               <Link
-                href={`/api/pdf/contracts/${primaryContract.id}?type=contract`}
+                href={`/api/pdf/contracts/${primaryContract.id}?type=contract&format=formatted`}
                 target="_blank"
                 rel="noreferrer"
                 className="px-4 py-2.5 bg-white border border-slate-200 text-slate-700 text-sm font-medium rounded-xl hover:bg-slate-50 transition-all shadow-sm hover-lift flex items-center gap-2"
               >
                 <PrinterIcon className="w-4 h-4" />
-                契約書PDF
+                雇用契約書PDF
               </Link>
               <Link
-                href={`/api/pdf/contracts/${primaryContract.id}?type=pledge`}
+                href={`/api/pdf/contracts/${primaryContract.id}?type=pledge&format=formatted`}
                 target="_blank"
                 rel="noreferrer"
                 className="px-4 py-2.5 bg-white border border-slate-200 text-slate-700 text-sm font-medium rounded-xl hover:bg-slate-50 transition-all shadow-sm hover-lift flex items-center gap-2"
@@ -499,15 +499,15 @@ const ContractsSection = ({
           </div>
           <div className="flex flex-wrap gap-2">
             <Link
-              href={`/api/pdf/contracts/${contract.id}?type=contract`}
+              href={`/api/pdf/contracts/${contract.id}?type=contract&format=formatted`}
               target="_blank"
               rel="noreferrer"
               className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-50"
             >
-              <PrinterIcon className="h-4 w-4" /> 契約書PDF
+              <PrinterIcon className="h-4 w-4" /> 雇用契約書PDF
             </Link>
             <Link
-              href={`/api/pdf/contracts/${contract.id}?type=pledge`}
+              href={`/api/pdf/contracts/${contract.id}?type=pledge&format=formatted`}
               target="_blank"
               rel="noreferrer"
               className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-50"

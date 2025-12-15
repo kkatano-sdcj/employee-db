@@ -1,107 +1,149 @@
-import { formatCurrency } from "@/lib/formatters";
-import { buildPdfDocument, type PdfSection } from "./pdf-builder";
+import {
+  buildContractPdf,
+  buildPledgePdf,
+  type ContractPdfData,
+  type PledgePdfData,
+} from "./contract-pdf-builder";
 import type { ContractDocumentData } from "@/server/queries/contracts";
 
-const formatDate = (value?: string | null) => value ?? "-";
-const formatList = (items?: string[]) => (items && items.length > 0 ? items.join(", ") : "-");
-const yesNo = (value?: string | null) => {
-  if (!value) return "-";
-  const normalized = value.toLowerCase();
-  if (["yes", "true", "1", "y"].includes(normalized)) return "加入";
-  if (["no", "false", "0", "n"].includes(normalized)) return "未加入";
-  return value;
+// 日付フォーマット関数
+const formatDateJp = (dateStr?: string | null): string => {
+  if (!dateStr) return "　　　　年　　月　　日";
+  const date = new Date(dateStr);
+  if (Number.isNaN(date.getTime())) return dateStr;
+  return `${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日`;
 };
 
-const buildContractSections = (data: ContractDocumentData): PdfSection[] => {
+// 現在日時をフォーマット
+const getCurrentDateTimeJp = (): string => {
+  const now = new Date();
+  return `${now.getFullYear()}年${now.getMonth() + 1}月${now.getDate()}日`;
+};
+
+// 契約書PDF生成
+export const createFormattedContractPdf = (data: ContractDocumentData) => {
   const { employee, contract, primaryWorkCondition, adminRecord } = data;
-  const workingHours = primaryWorkCondition?.workingHours.map(
-    (slot) => `${slot.start} ~ ${slot.end}`,
-  );
-  const breakHours = primaryWorkCondition?.breakHours.map(
-    (slot) => `${slot.start} ~ ${slot.end}`,
-  );
-  const transportation = primaryWorkCondition?.transportationRoutes.map((route) => {
-    const base = `${route.route} / 往復 ${formatCurrency(route.roundTripAmount)}`;
-    const extras = [
-      route.monthlyPassAmount ? `定期 ${formatCurrency(route.monthlyPassAmount)}` : undefined,
-      route.maxAmount ? `上限 ${formatCurrency(route.maxAmount)}` : undefined,
-      route.nearestStation ? `最寄り ${route.nearestStation}` : undefined,
-    ].filter(Boolean);
-    return [base, ...extras].join(" | ");
-  });
 
-  return [
-    {
-      heading: "契約概要",
-      lines: [
-        `契約書番号: ${contract.id}`,
-        `社員コード: ${employee.employeeNumber}`,
-        `氏名: ${employee.name} 殿`,
-        `雇用区分: ${employee.employmentType}`,
-        `部署: ${employee.departmentCode}`,
-        `契約期間: ${formatDate(contract.contractStartDate)} ~ ${
-          contract.employmentExpiryScheduledDate ?? "継続"
-        }`,
-        `実際の雇用終了日: ${formatDate(contract.employmentExpiryDate)}`,
-      ],
+  // 勤務時間の取得
+  const workingHours = primaryWorkCondition?.workingHours[0];
+  const breakHours = primaryWorkCondition?.breakHours[0];
+
+  // 社会保険リスト
+  const socialInsurance: string[] = ["労災保険"];
+  if (adminRecord?.employmentInsurance === "yes" || adminRecord?.employmentInsurance === "true") {
+    socialInsurance.push("雇用保険");
+  }
+  if (adminRecord?.socialInsurance === "yes" || adminRecord?.socialInsurance === "true") {
+    socialInsurance.push("健康保険、厚生年金、企業年金基金");
+  }
+
+  // 勤務場所
+  const workLocation = primaryWorkCondition?.workLocations[0]?.location ?? "システムズ・デザイン株式会社 東京本社";
+
+  // 勤務日
+  const workDaysText = primaryWorkCondition
+    ? `週${primaryWorkCondition.workDaysCount}日勤務（${primaryWorkCondition.workDaysType}）`
+    : "シフト表による";
+
+  const pdfData: ContractPdfData = {
+    version: "Ver2025.09.",
+    createdAt: getCurrentDateTimeJp(),
+    employeeName: employee.name,
+    companyInfo: {
+      address: "東京都新宿区西新宿二丁目１番１号",
+      building: "新宿三井ビルディング 32F",
+      companyName: "システムズ・デザイン株式会社 東京本社",
+      departmentHead: "事業部長",
     },
-    {
-      heading: "勤務条件",
-      lines: [
-        `勤務日数: ${primaryWorkCondition?.workDaysCount ?? "-"} (${primaryWorkCondition?.workDaysType ?? "-"})`,
-        `勤務時間: ${formatList(workingHours)}`,
-        `休憩時間: ${formatList(breakHours)}`,
-        `勤務場所: ${formatList(primaryWorkCondition?.workLocations.map((loc) => loc.location))}`,
-        `交通費: ${formatList(transportation)}`,
-        `業務内容: ${contract.jobDescription ?? "-"}`,
-      ],
+    employmentPeriod: {
+      startDate: formatDateJp(contract.contractStartDate),
+      endDate: formatDateJp(contract.employmentExpiryScheduledDate ?? contract.contractEndDate),
+      isRenewable: contract.isRenewable,
+      renewalCriteria: contract.isRenewable
+        ? [
+            "契約期間満了時の業務量",
+            "従事している業務の進捗状況",
+            "能力、業務成績、勤務態度",
+            "会社・組織の業績",
+          ]
+        : undefined,
+      maxEmploymentDate: contract.contractStartDate
+        ? (() => {
+            const startDate = new Date(contract.contractStartDate);
+            startDate.setFullYear(startDate.getFullYear() + 5);
+            return formatDateJp(startDate.toISOString().slice(0, 10));
+          })()
+        : undefined,
     },
-    {
-      heading: "賃金・手当",
-      lines: [
-        `時給単価: ${formatCurrency(contract.hourlyWage)}`,
-        `残業時給: ${contract.overtimeHourlyWage ? formatCurrency(contract.overtimeHourlyWage) : "-"}`,
-        `有給条項: ${contract.paidLeaveClause ?? "-"}`,
-        `給与メモ: ${contract.hourlyWageNote ?? "-"}`,
-      ],
+    workLocation: {
+      initial: workLocation,
+      address: "東京都新宿区西新宿二丁目１番１号 新宿三井ビルディング 32F",
+      phone: "03-6737-5000",
+      changeScope: "会社の定める事業所",
     },
-    {
-      heading: "書類・社会保険",
-      lines: [
-        `契約書提出日: ${formatDate(adminRecord?.submittedToAdminOn)}`,
-        `本人返却: ${adminRecord?.returnedToEmployee ?? "-"}`,
-        `満了通知書: ${adminRecord?.expirationNoticeIssued ?? "未発行"}`,
-        `退職届: ${adminRecord?.resignationLetterSubmitted ?? "未提出"}`,
-        `健康保険証返却: ${adminRecord?.returnHealthInsuranceCard ?? "未返却"}`,
-        `セキュリティカード返却: ${adminRecord?.returnSecurityCard ?? "未返却"}`,
-        `雇用保険: ${yesNo(adminRecord?.employmentInsurance)}`,
-        `社会保険: ${yesNo(adminRecord?.socialInsurance)}`,
-      ],
+    jobDescription: {
+      initial: contract.jobDescription ?? "業務内容については別途指示による",
+      changeScope: "会社の定める業務",
     },
-  ];
+    workingHours: {
+      startTime: workingHours?.start ?? "午前9時00分",
+      endTime: workingHours?.end ?? "午後5時00分",
+      breakTime: breakHours ? `${breakHours.start}より${breakHours.end}まで` : "正午より午後1時まで",
+    },
+    workDays: workDaysText,
+    socialInsurance,
+    holidays: {
+      regular: "原則として、毎週土曜日、日曜日、祝日",
+      nonRegular: undefined,
+    },
+    overtime: {
+      hasOvertime: false,
+      hasHolidayWork: false,
+    },
+    paidLeave: {
+      days: contract.paidLeaveClause ?? "6",
+      baseDate: primaryWorkCondition?.paidLeaveBaseDate
+        ? formatDateJp(primaryWorkCondition.paidLeaveBaseDate)
+        : "入社後6ヶ月経過日",
+    },
+    wages: {
+      hourlyRate: contract.hourlyWage,
+      hasBonus: true,
+      hasRaise: false,
+    },
+    allowances: {
+      commuting: "実費交通費（月額15,000円を限度とする）",
+      overtimeRate: "実働時間7.5時間超 25%",
+      holidayRate: "法定外休日 25% / 法定休日 35%",
+      nightRate: "25%",
+    },
+    paymentSchedule: "当月1日起算当月末日締、翌月15日支払(原則振込)",
+    resignation: [
+      "自己都合退職　退職する３０日以上前に届けること",
+      "解雇の事由及び手続　パートタイマー就業規則第53条による",
+      "雇用契約満了",
+    ],
+    other: {
+      contactPerson: "人事部 紺野 史紀",
+      contactPhone: "03-6737-5000",
+    },
+  };
+
+  return buildContractPdf(pdfData);
 };
 
-const buildPledgeSections = (data: ContractDocumentData): PdfSection[] => {
-  const { employee, contract } = data;
-  const today = new Date().toISOString().slice(0, 10);
-  return [
-    {
-      heading: "誓約書",
-      lines: [
-        `作成日: ${today}`,
-        `契約番号: ${contract.id}`,
-        `社員コード: ${employee.employeeNumber}`,
-        `氏名: ${employee.name}`,
-        "私は上記の契約内容を理解し、会社の就業規則ならびに安全衛生規程を遵守することを誓います。",
-        "職務上知り得た機密情報を漏洩せず、退職後も同様に取り扱うことを約します。",
-        "会社の資産および備品を適切に管理し、指示があれば速やかに返却します。",
-      ],
-    },
-  ];
+// 誓約書PDF生成
+export const createFormattedPledgePdf = (data: ContractDocumentData) => {
+  const { employee } = data;
+
+  const pdfData: PledgePdfData = {
+    version: "Ver2024.02.",
+    createdAt: getCurrentDateTimeJp(),
+    docNumber: "(SDPMS-M-07-R03-12)",
+    revisionDate: "2024.02.01",
+    employeeNumber: employee.employeeNumber,
+    employeeName: employee.name,
+  };
+
+  return buildPledgePdf(pdfData);
 };
-
-export const createContractPdf = (data: ContractDocumentData) =>
-  buildPdfDocument(`雇用契約書_${data.contract.id}`, buildContractSections(data));
-
-export const createPledgePdf = (data: ContractDocumentData) =>
-  buildPdfDocument(`誓約書_${data.contract.id}`, buildPledgeSections(data));
