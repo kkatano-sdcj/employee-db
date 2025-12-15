@@ -239,11 +239,13 @@ export type EmployeeDetail = {
   }>;
   employmentHistory: Array<{
     id: string;
+    contractId?: string | null;
     eventType: string;
     effectiveDate?: string;
     departmentCode?: string | null;
     grade?: string | null;
     hourlyWage?: number | null;
+    approvalNumber?: string | null;
     remarks?: string | null;
   }>;
   adminRecord: {
@@ -407,22 +409,26 @@ export async function fetchEmployeeDetail(employeeId: string): Promise<EmployeeD
   const employmentHistory = (await db`
     SELECT
       id,
+      contract_id as "contractId",
       event_type as "eventType",
       effective_date as "effectiveDate",
       department_code as "departmentCode",
       grade,
       hourly_wage as "hourlyWage",
+      approval_number as "approvalNumber",
       remarks
     FROM employment_history
     WHERE employee_id = ${employeeId}
     ORDER BY effective_date DESC
   `) as Array<{
     id: string;
+    contractId: string | null;
     eventType: string;
     effectiveDate: Date | string | null;
     departmentCode: string | null;
     grade: string | null;
     hourlyWage: number | null;
+    approvalNumber: string | null;
     remarks: string | null;
   }>;
 

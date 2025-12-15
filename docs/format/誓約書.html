@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>誓約書</title>
+  <style>
+    @page {
+      size: A4;
+      margin: 20mm 15mm 20mm 15mm;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: "Yu Mincho", "游明朝", "Hiragino Mincho ProN", "HG明朝E", "MS P明朝", serif;
+      font-size: 11pt;
+      line-height: 1.8;
+      color: #000;
+      background: #fff;
+    }
+
+    .page {
+      width: 210mm;
+      min-height: 297mm;
+      padding: 20mm 15mm 20mm 15mm;
+      margin: 0 auto;
+      background: #fff;
+      position: relative;
+    }
+
+    /* ヘッダー */
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 15mm;
+      font-size: 10pt;
+    }
+
+    .doc-number {
+      color: #333;
+    }
+
+    .revision-date {
+      color: #333;
+    }
+
+    /* タイトル */
+    .title {
+      text-align: center;
+      font-size: 20pt;
+      font-weight: normal;
+      letter-spacing: 1em;
+      margin-bottom: 12mm;
+    }
+
+    /* 宛先 */
+    .addressee {
+      margin-bottom: 10mm;
+    }
+
+    /* 導入文 */
+    .intro {
+      text-indent: 1em;
+      margin-bottom: 10mm;
+    }
+
+    /* 記 */
+    .ki {
+      text-align: center;
+      margin-bottom: 8mm;
+    }
+
+    /* 条項 */
+    .article {
+      margin-bottom: 6mm;
+      text-align: justify;
+    }
+
+    .article-number {
+      display: inline;
+    }
+
+    .article-content {
+      display: inline;
+    }
+
+    /* サブ項目 */
+    .sub-items {
+      margin-left: 2em;
+      margin-top: 2mm;
+    }
+
+    .sub-item {
+      margin-bottom: 1mm;
+    }
+
+    /* 注釈の上付き */
+    .note-ref {
+      font-size: 8pt;
+      vertical-align: super;
+    }
+
+    /* 日付欄 */
+    .date-section {
+      text-align: right;
+      margin-top: 12mm;
+      margin-bottom: 8mm;
+    }
+
+    .date-field {
+      display: inline-block;
+      min-width: 30mm;
+      border-bottom: 1px solid #000;
+      text-align: center;
+      margin: 0 2mm;
+    }
+
+    /* 署名欄 */
+    .signature-section {
+      margin-top: 8mm;
+      padding-left: 50%;
+    }
+
+    .signature-row {
+      display: flex;
+      align-items: center;
+      margin-bottom: 5mm;
+    }
+
+    .signature-label {
+      white-space: nowrap;
+    }
+
+    .signature-field {
+      flex: 1;
+      min-width: 50mm;
+      border-bottom: 1px solid #000;
+      margin-left: 3mm;
+      text-align: left;
+      padding-left: 5mm;
+    }
+
+    .signature-paren-open {
+      margin-left: 3mm;
+    }
+
+    .signature-paren-close {
+      margin-left: 3mm;
+    }
+
+    /* 以上 */
+    .end-mark {
+      text-align: right;
+      margin-top: 10mm;
+      margin-bottom: 15mm;
+    }
+
+    /* 注釈 */
+    .footnote {
+      font-size: 9pt;
+      margin-top: 15mm;
+      color: #333;
+    }
+
+    /* フッター */
+    .footer {
+      position: absolute;
+      bottom: 20mm;
+      right: 15mm;
+      font-size: 10pt;
+    }
+
+    /* 印刷時の設定 */
+    @media print {
+      body {
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+
+      .page {
+        width: 100%;
+        min-height: auto;
+        padding: 0;
+        margin: 0;
+      }
+    }
+
+    /* インデント調整 */
+    .indent-wrap {
+      padding-left: 1.5em;
+      text-indent: -1.5em;
+    }
+
+    .indent-wrap-sub {
+      padding-left: 2em;
+      text-indent: -2em;
+      margin-left: 1.5em;
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <div class="header">
+      <span class="doc-number">(SDPMS-M-07-R03-12)</span>
+      <span class="revision-date">最終改定日：2024.02.01</span>
+    </div>
+
+    <h1 class="title">誓　約　書</h1>
+
+    <p class="addressee">システムズ・デザイン株式会社　御中</p>
+
+    <p class="intro">私は、以下の事項を厳守することを誓約いたします。</p>
+
+    <p class="ki">記</p>
+
+    <div class="article">
+      <p class="indent-wrap">
+        <span class="article-number">１．</span><span class="article-content">業務上知り得た、技術および営業に関する機密情報（個人情報<span class="note-ref">注1</span>を含み、以下同じ。）に関して、以下のことを守ります。</span>
+      </p>
+      <div class="sub-items">
+        <p class="sub-item indent-wrap-sub">(1) 会社の許可なく所定の場所より持ち出さないこと。</p>
+        <p class="sub-item indent-wrap-sub">(2) 会社の許可なく複製しないこと。</p>
+        <p class="sub-item indent-wrap-sub">(3) 会社の許可なく目的外の利用をしないこと。</p>
+        <p class="sub-item indent-wrap-sub">(4) 会社の許可なく廃棄または残置しないこと。</p>
+      </div>
+    </div>
+
+    <div class="article">
+      <p class="indent-wrap">
+        <span class="article-number">２．</span><span class="article-content">在職中は法令等を遵守し、また、会社の定める情報セキュリティ関連の各種ルール（情報資産関係規程、「情報セキュリティガイドライン」、「ISMSセキュリティルールブック」等）、個人情報保護規程並びにその他細則に従い、個人情報を含む情報資産の取扱いには細心の注意を払い誠実に業務を遂行いたします。</span>
+      </p>
+    </div>
+
+    <div class="article">
+      <p class="indent-wrap">
+        <span class="article-number">３．</span><span class="article-content">私が会社を退職した後も、勤務中と同様に、業務上知り得た技術および営業に関する機密情報を会社の許可なく発表、公開、漏洩、利用いたしません。</span>
+      </p>
+      <p style="text-indent: 1.5em; margin-top: 2mm;">
+        万が一事件事故が発生した場合は、速やかに会社に報告し、会社の指示に従うとともに調査に全面的に協力いたします。
+      </p>
+    </div>
+
+    <div class="article">
+      <p class="indent-wrap">
+        <span class="article-number">４．</span><span class="article-content">故意又は過失により、私が原因で機密情報の紛失、漏洩などによる事故が発生し、会社及び第三者に損害を生じさせた場合は、就業規則等会社規則に従いその全部又は一部の賠償を求められたり処罰されても不服を申し立てません。</span>
+      </p>
+    </div>
+
+    <div class="date-section">
+      <span class="date-field">&nbsp;</span>年
+      <span class="date-field" style="min-width: 20mm;">&nbsp;</span>月
+      <span class="date-field" style="min-width: 20mm;">&nbsp;</span>日
+    </div>
+
+    <div class="signature-section">
+      <div class="signature-row">
+        <span class="signature-label">（社員番号）</span>
+        <span class="signature-paren-open">（</span>
+        <span class="signature-field">&nbsp;</span>
+        <span class="signature-paren-close">）</span>
+      </div>
+      <div class="signature-row">
+        <span class="signature-label">（氏　　名）</span>
+        <span class="signature-paren-open">（</span>
+        <span class="signature-field">&nbsp;</span>
+        <span class="signature-paren-close">）</span>
+      </div>
+    </div>
+
+    <p class="end-mark">以上</p>
+
+    <p class="footnote">注１：「個人情報の保護に関する法律」に定める個人情報をいう。</p>
+
+    <div class="footer">システムズ・デザイン株式会社</div>
+  </div>
+</body>
+</html>

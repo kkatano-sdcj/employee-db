@@ -1,50 +1,157 @@
-# [PROJECT_NAME] Constitution
-<!-- Example: Spec Constitution, TaskFlow Constitution, etc. -->
+# employee-database-rdb 開発プロジェクト憲法
 
-## Core Principles
+## 前文
 
-### [PRINCIPLE_1_NAME]
-<!-- Example: I. Library-First -->
-[PRINCIPLE_1_DESCRIPTION]
-<!-- Example: Every feature starts as a standalone library; Libraries must be self-contained, independently testable, documented; Clear purpose required - no organizational-only libraries -->
+本プロジェクトは、**パート従業員を中心とした従業員情報・契約・勤務条件管理システム**を、高品質で保守可能な形で構築することを目的とする。
 
-### [PRINCIPLE_2_NAME]
-<!-- Example: II. CLI Interface -->
-[PRINCIPLE_2_DESCRIPTION]
-<!-- Example: Every library exposes functionality via CLI; Text in/out protocol: stdin/args → stdout, errors → stderr; Support JSON + human-readable formats -->
+本憲法は、チームの開発指針、技術的な制約、運用上の基本ルールを明文化したものであり、すべての**仕様策定・実装・レビュー・運用フェーズ**において参照される。
 
-### [PRINCIPLE_3_NAME]
-<!-- Example: III. Test-First (NON-NEGOTIABLE) -->
-[PRINCIPLE_3_DESCRIPTION]
-<!-- Example: TDD mandatory: Tests written → User approved → Tests fail → Then implement; Red-Green-Refactor cycle strictly enforced -->
+---
 
-### [PRINCIPLE_4_NAME]
-<!-- Example: IV. Integration Testing -->
-[PRINCIPLE_4_DESCRIPTION]
-<!-- Example: Focus areas requiring integration tests: New library contract tests, Contract changes, Inter-service communication, Shared schemas -->
+## 第1章 原則
 
-### [PRINCIPLE_5_NAME]
-<!-- Example: V. Observability, VI. Versioning & Breaking Changes, VII. Simplicity -->
-[PRINCIPLE_5_DESCRIPTION]
-<!-- Example: Text I/O ensures debuggability; Structured logging required; Or: MAJOR.MINOR.BUILD format; Or: Start simple, YAGNI principles -->
+### 1.1 可読性・保守性
 
-## [SECTION_2_NAME]
-<!-- Example: Additional Constraints, Security Requirements, Performance Standards, etc. -->
+- すべてのコードは、**読みやすさを優先**し、将来的な保守を前提に設計されるものとする
+- 複雑なロジックは明確に**分割・モジュール化**し、コメント・ドキュメンテーションを怠らない
+- 個人情報を扱うシステムのため、**セキュリティとデータ整合性**を常に意識したコード設計を行う
 
-[SECTION_2_CONTENT]
-<!-- Example: Technology stack requirements, compliance standards, deployment policies, etc. -->
+### 1.2 テスト主導 (Test First)
 
-## [SECTION_3_NAME]
-<!-- Example: Development Workflow, Review Process, Quality Gates, etc. -->
+- 新機能・仕様変更は、実装前に**受入基準／テストケースが定義済み**であることを原則とする
+- **ユニットテスト（Vitest）・E2Eテスト（Playwright）・負荷テスト（k6）** を段階的に導入し、テストカバレッジを向上させる
+- テストインフラは `PLANS.md` Phase 9 に従って構築し、既存機能へのテスト追加を優先する
+- 新規機能開発時は**必ずテストを含める**ことを必須とする
 
-[SECTION_3_CONTENT]
-<!-- Example: Code review requirements, testing gates, deployment approval process, etc. -->
+### 1.3 コーディング規約
 
-## Governance
-<!-- Example: Constitution supersedes all other practices; Amendments require documentation, approval, migration plan -->
+- **ハードコーディングを禁止**し、設定値・文言・接続情報は環境変数または設定ファイルで一元管理する
 
-[GOVERNANCE_RULES]
-<!-- Example: All PRs/reviews must verify compliance; Complexity must be justified; Use [GUIDANCE_FILE] for runtime development guidance -->
+#### ファイル命名規則
 
-**Version**: [CONSTITUTION_VERSION] | **Ratified**: [RATIFICATION_DATE] | **Last Amended**: [LAST_AMENDED_DATE]
-<!-- Example: Version: 2.1.1 | Ratified: 2025-06-13 | Last Amended: 2025-07-16 -->
+| 種別 | 命名規則 | 例 |
+|------|----------|-----|
+| Reactコンポーネント | `PascalCase` | `AuthShowcase.tsx`, `EmployeeList.tsx` |
+| ユーティリティ・型定義 | `kebab-case` | `query-client.ts`, `auth-schema.ts` |
+| 設定ファイル | `kebab-case` または公式推奨 | `eslint.config.ts`, `next.config.js` |
+| データベーススキーマ（Prisma） | `snake_case` | PostgreSQL標準に従う |
+
+- 再利用可能な定数・設定は意味のある名称で整理し、共有モジュール（`packages/validators` 等）に集約する
+
+---
+
+## 第2章 ガバナンス & ルール
+
+### 2.1 コードレビュー
+
+- すべてのプルリクエストは**少なくとも1名の別メンバーによるレビュー**を経ること
+
+#### コードレビューでは以下の観点を必ず確認する
+
+- **設計意図**: 仕様書（`spec.md`）との整合性
+- **可読性**: コードの理解しやすさ、適切なコメント
+- **テストカバレッジ**: 新規機能のテスト有無、既存テストの維持
+- **パフォーマンス影響**: 特に検索・一覧操作での性能劣化がないか
+- **セキュリティ懸念**: 個人情報・給与情報へのアクセス制御、ログ出力の確認
+- **データ整合性**: Prismaトランザクションの適切な使用
+
+### 2.2 ブランチ運用・コミットメッセージ
+
+- ブランチ名称は `feature/xxx`, `bugfix/xxx`, `chore/xxx` の形式を遵守する（`AGENTS.md` 参照）
+- コミットメッセージは **Conventional Commits** 形式（`feat:`, `fix:`, `docs:`, `chore:` 等）を使用する
+- コミットメッセージには「**何を**」「**なぜ**」行ったかを明記し、日本語で記述する
+
+---
+
+## 第3章 非交渉的制約
+
+### 3.1 セキュリティ・データ保護
+
+#### 基本原則
+
+- 個人情報・機密データは**暗号化・アクセス制限を必須**とし、ログには平文で出力してはならない
+- 外部ライブラリ・サービス採用時には、最新のセキュリティパッチ対応状況を確認し、重大脆弱性が報告されているものは使用禁止とする
+
+#### アクセス制御
+
+- **列レベルアクセス制御**: 個人番号・給与情報は統括人事管理者・管理者のみ閲覧可能とする
+- **行レベルアクセス制御**: 現場マネージャーは自部門・自拠点のみアクセス可能とする
+
+#### 同時編集制御と監査ログ
+
+- **同時編集制御**: `edit_locks` テーブルによる楽観的ロックを必須とし、複数人同時編集を防止する（ロック有効期限: 30分）
+- **監査ログ**: すべての契約関連操作を `audit_logs` テーブルに記録し、変更前後の値をJSON形式で保存する
+
+### 3.2 性能・可用性の最低水準
+
+#### API応答時間の目標
+
+| 操作種別 | パフォーマンス目標 |
+|----------|-------------------|
+| 検索・一覧操作 | 95パーセンタイルで **2秒以内**（`spec.md` 第10章に準拠） |
+| 単純なCRUD操作 | 95パーセンタイルで **500ms以内** |
+
+#### データベース最適化
+
+- 適切な**インデックスの設定**による高速検索の実現
+- **N+1問題の回避**（Prisma の `include`/`select` を適切に使用）
+- **ページネーション対応**による大量データの効率的な取得
+
+#### 可用性とバックアップ
+
+- **可用性**: システムは一つの障害点（SPOF）を持たず、可用性 **99.9%** を目標とする
+- **バックアップ**: Supabaseの自動バックアップ機能を利用し、ポイントインタイムリカバリに対応する
+
+### 3.3 技術スタック・アーキテクチャ制約
+
+#### 必須技術スタック
+
+| コンポーネント | 技術 | 備考 |
+|---------------|------|------|
+| データベース | Supabase (PostgreSQL) | |
+| ORM | Prisma | 型安全なデータアクセス必須 |
+| トランザクション | Prisma `$transaction` | 複数テーブル同時更新時に必須 |
+| マイグレーション | Prisma Migrate | `pnpm db:migrate dev` |
+| スキーマ管理 | `packages/db/prisma/schema.prisma` | 変更後は `pnpm db:generate` 必須 |
+| 認証 | better-auth with Prisma Adapter | `pnpm auth:generate` で生成 |
+| API | tRPC v11 | エンドツーエンドの型安全性確保 |
+| 開発環境 | Node.js ^22.21.0, pnpm ^10.19.0 | `AGENTS.md` 参照 |
+
+---
+
+## 第4章 適用・変更・例外
+
+### 4.1 適用範囲
+
+- 本憲法は、プロジェクト開始時点から**すべての新規仕様・機能・修正に適用**される
+- 既存レガシーコードについては、「**段階的移行**」方式で本憲法への適合を図る
+- テストインフラは `PLANS.md` Phase 9 に従って段階的に構築し、既存機能へのテスト追加を優先的に実施する
+
+### 4.2 変更プロセス
+
+- 憲法の変更／追加は、**チームリーダー＋１名以上の承認**を経て、`constitution_update_checklist.md` に沿ってレビューを実施する
+- 変更後は、`/speckit.clarify`／`/speckit.analyze` を実行し、仕様・タスクとの整合性を確認する
+
+#### バージョニング規則
+
+| バージョン | 変更内容 |
+|-----------|---------|
+| **MAJOR** | 後方互換性のない原則削除・再定義、性能要件の大幅変更 |
+| **MINOR** | 新原則・新セクションの追加、ガイダンスの大幅拡張 |
+| **PATCH** | 明確化、文言修正、誤字修正、非意味的な改善 |
+
+### 4.3 例外申請
+
+- 本憲法に反する設計を採る必要が生じた場合、**例外申請書を作成**し、なぜ例外が必要か・影響範囲・代替案を明記して承認を得ること
+- 例外申請は `PLANS.md` に記録し、定期的にレビューして本則への適合可能性を検討する
+
+### 4.4 関連ドキュメント
+
+- `spec.md`: システム仕様書（要件定義、データモデル、非機能要求）
+- `plan.md`: 実装計画書（データモデル設計、実装タスク、技術的考慮事項）
+- `PLANS.md`: 段階的実行計画（Phase 1-10の詳細実装手順）
+- `AGENTS.md`: AI エージェント向けガイドライン（プロジェクト構成、コマンド、ポリシー）
+
+---
+
+**Version**: ver.2-0 | **Ratified**: 2025-11-04 | **Last Amended**: 2025-11-04

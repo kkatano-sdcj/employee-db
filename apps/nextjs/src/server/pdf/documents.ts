@@ -35,7 +35,7 @@ const buildContractSections = (data: ContractDocumentData): PdfSection[] => {
       heading: "契約概要",
       lines: [
         `契約書番号: ${contract.id}`,
-        `従業員番号: ${employee.employeeNumber}`,
+        `社員コード: ${employee.employeeNumber}`,
         `氏名: ${employee.name} 殿`,
         `雇用区分: ${employee.employmentType}`,
         `部署: ${employee.departmentCode}`,
@@ -59,7 +59,7 @@ const buildContractSections = (data: ContractDocumentData): PdfSection[] => {
     {
       heading: "賃金・手当",
       lines: [
-        `時給: ${formatCurrency(contract.hourlyWage)}`,
+        `時給単価: ${formatCurrency(contract.hourlyWage)}`,
         `残業時給: ${contract.overtimeHourlyWage ? formatCurrency(contract.overtimeHourlyWage) : "-"}`,
         `有給条項: ${contract.paidLeaveClause ?? "-"}`,
         `給与メモ: ${contract.hourlyWageNote ?? "-"}`,
@@ -90,7 +90,7 @@ const buildPledgeSections = (data: ContractDocumentData): PdfSection[] => {
       lines: [
         `作成日: ${today}`,
         `契約番号: ${contract.id}`,
-        `従業員番号: ${employee.employeeNumber}`,
+        `社員コード: ${employee.employeeNumber}`,
         `氏名: ${employee.name}`,
         "私は上記の契約内容を理解し、会社の就業規則ならびに安全衛生規程を遵守することを誓います。",
         "職務上知り得た機密情報を漏洩せず、退職後も同様に取り扱うことを約します。",

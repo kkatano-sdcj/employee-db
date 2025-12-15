@@ -89,15 +89,15 @@ export function ContractActionMenu(props: ContractActionMenuProps) {
     {
       type: "link",
       label: "契約更新",
-      description: "従業員の編集ページで契約を修正",
-      href: `/employees/${employeeId}/edit?source=contract`,
+      description: "契約情報を更新",
+      href: `/contracts/${contractId}/edit`,
       icon: <PencilSquareIcon className="h-4 w-4 text-slate-400" />,
     },
     {
       type: "link",
       label: "新規契約作成",
-      description: "既存情報をベースに新しい契約を作成",
-      href: `/employees/${employeeId}/edit?source=contract&mode=new-contract`,
+      description: "この従業員の新しい契約を作成",
+      href: `/contracts/new?employeeId=${employeeId}`,
       icon: <PlusIcon className="h-4 w-4 text-slate-400" />,
     },
     {

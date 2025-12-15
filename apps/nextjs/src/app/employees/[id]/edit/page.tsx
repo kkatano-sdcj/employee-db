@@ -31,7 +31,7 @@ export default async function EmployeeEditPage({ params, searchParams }: Employe
           <p className="text-xs uppercase tracking-widest text-slate-400">Edit</p>
           <h1 className="text-2xl font-semibold text-slate-900">従業員情報を編集</h1>
           <p className="text-sm text-slate-500">
-            {detail.employee.name}（従業員番号: {detail.employee.employeeNumber}）
+            {detail.employee.name}（社員コード: {detail.employee.employeeNumber}）
           </p>
         </div>
         <Link

@@ -83,7 +83,7 @@ export default async function ContractsPage() {
               <th className="px-3 py-3">契約タイプ</th>
               <th className="px-3 py-3">開始日</th>
               <th className="px-3 py-3">終了予定日</th>
-              <th className="px-3 py-3">時給</th>
+              <th className="px-3 py-3">時給単価</th>
               <th className="px-3 py-3">最新入力内容</th>
               <th className="px-3 py-3">状態</th>
               <th className="px-3 py-3">アラート</th>

@@ -58,7 +58,7 @@ export default async function EmployeeDetailPage({ params, searchParams }: Emplo
           <div>
             <h2 className="text-2xl font-bold text-slate-900">従業員詳細</h2>
             <p className="text-sm text-slate-500 mt-1">
-              従業員ID: {employee.employeeNumber}
+              社員コード: {employee.employeeNumber}
             </p>
           </div>
         </div>
@@ -224,7 +224,12 @@ export default async function EmployeeDetailPage({ params, searchParams }: Emplo
               workConditions={detail.workConditions}
             />
           )}
-          {activeTab === "contracts" && <ContractsSection contracts={detail.contracts} />}
+          {activeTab === "contracts" && (
+            <ContractsSection
+              contracts={detail.contracts}
+              employmentHistory={detail.employmentHistory}
+            />
+          )}
           {activeTab === "documents" && (
             <DocumentsSection adminRecord={detail.adminRecord} />
           )}
@@ -283,38 +288,22 @@ const ProfileSection = ({
   contract?: EmployeeDetailResponse["contracts"][number];
 }) => (
   <div className="space-y-8">
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-      <div className="space-y-6">
-        <h4 className="text-sm font-bold text-slate-900 uppercase tracking-wider mb-4 flex items-center">
-          <span className="w-1 h-4 bg-slate-900 rounded-full mr-3" />
-          個人情報
-        </h4>
-        <div className="bg-slate-50/50 rounded-xl p-6 space-y-4">
-          <InfoRow label="氏名" value={employee.name} />
-          <InfoRow label="フリガナ" value={employee.nameKana} />
-          <InfoRow label="生年月日" value={employee.birthDate || "-"} />
-          <InfoRow label="性別" value={genderLabel(employee.gender)} />
-          <InfoRow label="国籍" value={employee.nationality || "日本"} />
-          <InfoRow label="個人番号" value={employee.myNumber || "-"} />
-        </div>
-      </div>
-      <div className="space-y-6">
-        <h4 className="text-sm font-bold text-slate-900 uppercase tracking-wider mb-4 flex items-center">
-          <span className="w-1 h-4 bg-accent-blue rounded-full mr-3" />
-          雇用情報
-        </h4>
-        <div className="bg-blue-50/30 border border-blue-100 rounded-xl p-6 space-y-4">
-          <InfoRow label="社員番号" value={employee.employeeNumber} />
-          <InfoRow label="氏名" value={employee.name} />
-          <InfoRow label="部門" value={employee.departmentCode} />
-          <InfoRow label="契約番号" value={contract?.id ?? "-"} />
-          <InfoRow label="入社日" value={employee.hiredAt ?? "-"} />
-          <InfoRow
-            label="雇用期間"
-            value={`${contract?.contractStartDate ?? "-"} ~ ${contract?.employmentExpiryScheduledDate ?? "継続"}`}
-          />
-          <InfoRow label="退社日" value={employee.retiredAt ?? "-"} />
-        </div>
+    <div className="space-y-6">
+      <h4 className="text-sm font-bold text-slate-900 uppercase tracking-wider mb-4 flex items-center">
+        <span className="w-1 h-4 bg-accent-blue rounded-full mr-3" />
+        雇用情報
+      </h4>
+      <div className="bg-blue-50/30 border border-blue-100 rounded-xl p-6 space-y-4">
+        <InfoRow label="社員コード" value={employee.employeeNumber} />
+        <InfoRow label="氏名" value={employee.name} />
+        <InfoRow label="部門" value={employee.departmentCode} />
+        <InfoRow label="契約番号" value={contract?.id ?? "-"} />
+        <InfoRow label="入社日" value={employee.hiredAt ?? "-"} />
+        <InfoRow
+          label="雇用期間"
+          value={`${contract?.contractStartDate ?? "-"} ~ ${contract?.employmentExpiryScheduledDate ?? "継続"}`}
+        />
+        <InfoRow label="退社日" value={employee.retiredAt ?? "-"} />
       </div>
     </div>
   </div>
@@ -324,77 +313,70 @@ const WorkSection = ({
   detail,
 }: {
   detail: Awaited<ReturnType<typeof fetchEmployeeDetail>>;
-}) => (
-  <div className="space-y-8">
-    {detail.workConditions.length === 0 ? (
-      <p className="text-sm text-slate-500">勤務条件はまだ登録されていません。</p>
-    ) : (
-      detail.workConditions.map((condition, index) => (
-        <div key={condition.id} className="border border-slate-100 rounded-2xl p-6 space-y-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-xs text-slate-500 uppercase tracking-wider">勤務条件 #{index + 1}</p>
-              <p className="text-sm text-slate-600">
-                {condition.effectiveFrom} ~ {condition.effectiveTo ?? "継続"}
+}) => {
+  const primaryContract = detail.contracts[0];
+  const primaryWorkCondition = detail.workConditions[0];
+
+  if (!primaryWorkCondition) {
+    return <p className="text-sm text-slate-500">勤務条件はまだ登録されていません。</p>;
+  }
+
+  return (
+    <div className="space-y-8">
+      <div className="bg-white border border-slate-100 rounded-2xl p-6 space-y-4">
+        <InfoRow
+          label="契約書有給"
+          value={primaryContract?.paidLeaveClause ?? "-"}
+        />
+        <div>
+          <p className="text-xs text-slate-500 uppercase tracking-wider mb-2">勤務時間</p>
+          {primaryWorkCondition.workingHours.length === 0 ? (
+            <p className="text-sm text-slate-700">未設定</p>
+          ) : (
+            primaryWorkCondition.workingHours.map((slot, idx) => (
+              <p key={`wh-${idx}`} className="text-sm text-slate-700">
+                {slot.start} ~ {slot.end}
               </p>
-            </div>
-            <span className="px-3 py-1 text-xs rounded-full bg-slate-100 text-slate-600">
-              {condition.workDaysType} / {condition.workDaysCount}日
-            </span>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <p className="text-xs text-slate-500 uppercase tracking-wider mb-2">勤務時間</p>
-              {condition.workingHours.map((slot, idx) => (
-                <p key={`${condition.id}-wh-${idx}`} className="text-sm text-slate-700">
-                  {slot.start} ~ {slot.end}
-                </p>
-              ))}
-            </div>
-            <div>
-              <p className="text-xs text-slate-500 uppercase tracking-wider mb-2">休憩</p>
-              {condition.breakHours.length === 0 && <p className="text-sm text-slate-700">なし</p>}
-              {condition.breakHours.map((slot, idx) => (
-                <p key={`${condition.id}-br-${idx}`} className="text-sm text-slate-700">
-                  {slot.start} ~ {slot.end}
-                </p>
-              ))}
-            </div>
-            <div>
-              <p className="text-xs text-slate-500 uppercase tracking-wider mb-2">勤務場所</p>
-              {condition.workLocations.map((location, idx) => (
-                <p key={`${condition.id}-loc-${idx}`} className="text-sm text-slate-700">
-                  <MapPinIcon className="w-4 h-4 inline mr-1 text-slate-400" />
-                  {location.location}
-                </p>
-              ))}
-            </div>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <p className="text-xs text-slate-500 uppercase tracking-wider mb-2">交通費ルート</p>
-              {condition.transportationRoutes.length === 0 && (
-                <p className="text-sm text-slate-700">登録なし</p>
-              )}
-              {condition.transportationRoutes.map((route) => (
-                <div key={route.route} className="text-sm text-slate-700">
-                  {route.route} / 往復 ¥{route.roundTripAmount}
-                  {route.monthlyPassAmount && <span> ・定期 ¥{route.monthlyPassAmount}</span>}
-                </div>
-              ))}
-            </div>
-            <div>
-              <p className="text-xs text-slate-500 uppercase tracking-wider mb-2">有休基準日・メモ</p>
-              <p className="text-sm text-slate-700">
-                {condition.paidLeaveBaseDate ?? "未設定"} / {condition.workDaysCountNote ?? ""}
-              </p>
-            </div>
-          </div>
+            ))
+          )}
         </div>
-      ))
-    )}
-  </div>
-);
+        <div>
+          <p className="text-xs text-slate-500 uppercase tracking-wider mb-2">休憩時間</p>
+          {primaryWorkCondition.breakHours.length === 0 ? (
+            <p className="text-sm text-slate-700">なし</p>
+          ) : (
+            primaryWorkCondition.breakHours.map((slot, idx) => (
+              <p key={`br-${idx}`} className="text-sm text-slate-700">
+                {slot.start} ~ {slot.end}
+              </p>
+            ))
+          )}
+        </div>
+        <InfoRow
+          label="勤務日数/週"
+          value={`${primaryWorkCondition.workDaysType === "WEEKLY" ? "週" : primaryWorkCondition.workDaysType === "MONTHLY" ? "月" : "シフト"} ${primaryWorkCondition.workDaysCount}${primaryWorkCondition.workDaysCountNote ? `（${primaryWorkCondition.workDaysCountNote}）` : ""}`}
+        />
+        <div>
+          <p className="text-xs text-slate-500 uppercase tracking-wider mb-2">勤務場所</p>
+          {primaryWorkCondition.workLocations.length === 0 ? (
+            <p className="text-sm text-slate-700">未設定</p>
+          ) : (
+            primaryWorkCondition.workLocations.map((location, idx) => (
+              <p key={`loc-${idx}`} className="text-sm text-slate-700">
+                <MapPinIcon className="w-4 h-4 inline mr-1 text-slate-400" />
+                {location.location}
+              </p>
+            ))
+          )}
+        </div>
+        <InfoRow
+          label="業務内容"
+          value={primaryContract?.jobDescription ?? "-"}
+        />
+      </div>
+    </div>
+  );
+};
 
 const SalarySection = ({
   contract,
@@ -430,57 +412,63 @@ const SalarySection = ({
 
   return (
     <div className="space-y-8">
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <div className="space-y-4">
-          <h4 className="text-sm font-bold text-slate-900 uppercase tracking-wider mb-2">給与情報</h4>
-          <div className="bg-white border border-slate-100 rounded-2xl p-6 space-y-3">
-            <InfoRow label="時給" value={formatCurrency(contract?.hourlyWage)} />
-            <InfoRow label="残業時給" value={formatCurrency(contract?.overtimeHourlyWage ?? null)} />
-            <InfoRow label="最寄り駅" value={primaryRoute?.nearestStation ?? "-"} />
-            <InfoRow
-              label="交通費（往復）"
-              value={
-                primaryRoute
-                  ? `${formatCurrency(primaryRoute.roundTripAmount)} / 定期 ${formatCurrency(primaryRoute.monthlyPassAmount ?? null)}`
-                  : "-"
-              }
-            />
-          </div>
-        </div>
-        <div className="space-y-4">
-          <h4 className="text-sm font-bold text-slate-900 uppercase tracking-wider mb-2">申告・保険</h4>
-          <div className="bg-white border border-slate-100 rounded-2xl p-6 space-y-3">
-            <InfoRow label="控除申告書（甲乙）" value={adminRecord?.taxWithholdingCategory ?? "-"} />
-            <InfoRow label="雇用保険" value={formatFlag(adminRecord?.employmentInsurance)} />
-            <InfoRow
-              label="雇用保険証提出"
-              value={adminRecord?.employmentInsuranceCardSubmitted ?? "-"}
-            />
-            <InfoRow label="社会保険" value={formatFlag(adminRecord?.socialInsurance)} />
-            <InfoRow label="年金手帳提出" value={adminRecord?.pensionBookSubmitted ?? "-"} />
-            <InfoRow
-              label="健康保険証提出"
-              value={adminRecord?.healthInsuranceCardSubmitted ?? "-"}
-            />
-          </div>
-        </div>
+      <div className="bg-white border border-slate-100 rounded-2xl p-6 space-y-3">
+        <InfoRow label="時給単価" value={formatCurrency(contract?.hourlyWage)} />
+        <InfoRow label="残業時給" value={formatCurrency(contract?.overtimeHourlyWage ?? null)} />
+        <InfoRow label="最寄り駅" value={primaryRoute?.nearestStation ?? "-"} />
+        <InfoRow
+          label="交通費（片道/往復）"
+          value={
+            primaryRoute
+              ? `往復 ${formatCurrency(primaryRoute.roundTripAmount)}${primaryRoute.monthlyPassAmount ? ` / 定期 ${formatCurrency(primaryRoute.monthlyPassAmount)}` : ""}`
+              : "-"
+          }
+        />
+        <InfoRow label="控除申告書（甲乙）" value={adminRecord?.taxWithholdingCategory ?? "-"} />
+        <InfoRow label="雇用保険（加入/未加入）" value={formatFlag(adminRecord?.employmentInsurance)} />
+        <InfoRow
+          label="雇用保険書提出"
+          value={adminRecord?.employmentInsuranceCardSubmitted ?? "-"}
+        />
+        <InfoRow label="社会保険（加入/未加入）" value={formatFlag(adminRecord?.socialInsurance)} />
       </div>
     </div>
   );
 };
 
-const ContractsSection = ({ contracts }: { contracts: EmployeeDetailResponse["contracts"] }) => (
-  <div className="space-y-6">
-    {contracts.length === 0 ? (
-      <p className="text-sm text-slate-500">契約履歴がありません。</p>
-    ) : (
-      contracts.map((contract) => (
-        <div key={contract.id} className="border border-slate-100 rounded-2xl p-6 space-y-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-xs text-slate-500 uppercase tracking-wider">契約番号</p>
-              <p className="text-lg font-semibold text-slate-900">{contract.id}</p>
-            </div>
+const ContractsSection = ({
+  contracts,
+  employmentHistory,
+}: {
+  contracts: EmployeeDetailResponse["contracts"];
+  employmentHistory: EmployeeDetailResponse["employmentHistory"];
+}) => {
+  // 契約IDごとの最新の承認番号を取得
+  const getApprovalNumber = (contractId: string) => {
+    const history = employmentHistory.find((h) => h.contractId === contractId);
+    return history?.approvalNumber || null;
+  };
+
+  return (
+    <div className="space-y-6">
+      {contracts.length === 0 ? (
+        <p className="text-sm text-slate-500">契約履歴がありません。</p>
+      ) : (
+        contracts.map((contract) => {
+          const approvalNumber = getApprovalNumber(contract.id);
+          return (
+            <div key={contract.id} className="border border-slate-100 rounded-2xl p-6 space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs text-slate-500 uppercase tracking-wider">契約番号</p>
+                  <p className="text-lg font-semibold text-slate-900">{contract.id}</p>
+                  {approvalNumber && (
+                    <>
+                      <p className="text-xs text-slate-500 uppercase tracking-wider mt-2">承認番号</p>
+                      <p className="text-sm font-medium text-slate-700">{approvalNumber}</p>
+                    </>
+                  )}
+                </div>
             <div className="flex items-center gap-2">
               {contract.needsUpdate && (
                 <span className="px-3 py-1 text-xs rounded-full bg-rose-50 text-rose-600 font-semibold">
@@ -502,7 +490,7 @@ const ContractsSection = ({ contracts }: { contracts: EmployeeDetailResponse["co
                 contract.employmentExpiryDate ? `（実満了: ${contract.employmentExpiryDate}）` : ""
               }`}
             />
-            <InfoRow label="時給" value={`¥${contract.hourlyWage.toLocaleString()}`} />
+            <InfoRow label="時給単価" value={`¥${contract.hourlyWage.toLocaleString()}`} />
             <InfoRow
               label="残業時給"
               value={contract.overtimeHourlyWage ? `¥${contract.overtimeHourlyWage.toLocaleString()}` : "-"}
@@ -527,29 +515,13 @@ const ContractsSection = ({ contracts }: { contracts: EmployeeDetailResponse["co
               <DocumentTextIcon className="h-4 w-4" /> 誓約書PDF
             </Link>
           </div>
-          <div className="flex flex-wrap gap-2">
-            <Link
-              href={`/api/pdf/contracts/${contract.id}?type=contract`}
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-50"
-            >
-              <PrinterIcon className="h-4 w-4" /> 契約書PDF
-            </Link>
-            <Link
-              href={`/api/pdf/contracts/${contract.id}?type=pledge`}
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-50"
-            >
-              <DocumentTextIcon className="h-4 w-4" /> 誓約書PDF
-            </Link>
-          </div>
         </div>
-      ))
-    )}
-  </div>
-);
+          );
+        })
+      )}
+    </div>
+  );
+};
 
 const DocumentsSection = ({
   adminRecord,
@@ -557,34 +529,36 @@ const DocumentsSection = ({
   adminRecord: EmployeeDetailResponse["adminRecord"];
 }) => (
   <div className="space-y-6">
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-      <div className="bg-white border border-slate-100 rounded-2xl p-6 space-y-3">
-        <h4 className="text-sm font-bold text-slate-900 uppercase tracking-wider mb-2">
-          提出状況
-        </h4>
-        <InfoRow label="契約書提出日" value={adminRecord?.submittedToAdminOn ?? "-"} />
-        <InfoRow label="本人返却" value={adminRecord?.returnedToEmployee ?? "-"} />
-        <InfoRow
-          label="満了通知書"
-          value={adminRecord?.expirationNoticeIssued ?? "未発行"}
-        />
-        <InfoRow
-          label="退職届"
-          value={adminRecord?.resignationLetterSubmitted ?? "未提出"}
-        />
-      </div>
-      <div className="bg-white border border-slate-100 rounded-2xl p-6 space-y-3">
-        <h4 className="text-sm font-bold text-slate-900 uppercase tracking-wider mb-2">
-          返却物状況
-        </h4>
-        <InfoRow
-          label="健康保険証返却"
-          value={adminRecord?.returnHealthInsuranceCard ?? "未返却"}
-        />
-        <InfoRow
-          label="セキュリティカード返却"
-          value={adminRecord?.returnSecurityCard ?? "未返却"}
-        />
+    <div className="bg-white border border-slate-100 rounded-2xl p-6 space-y-3">
+      <InfoRow
+        label="保険証授"
+        value={adminRecord?.healthInsuranceCardSubmitted ?? "-"}
+      />
+      <InfoRow
+        label="雇用契約書他管理へ提出(日付)"
+        value={adminRecord?.submittedToAdminOn ?? "-"}
+      />
+      <InfoRow label="本人へ返却" value={adminRecord?.returnedToEmployee ?? "-"} />
+      <InfoRow
+        label="満了通知書発効"
+        value={adminRecord?.expirationNoticeIssued ?? "-"}
+      />
+      <InfoRow
+        label="退職届提出"
+        value={adminRecord?.resignationLetterSubmitted ?? "-"}
+      />
+      <div className="pt-2">
+        <p className="text-xs text-slate-500 uppercase tracking-wider mb-2">返却</p>
+        <div className="pl-4 space-y-2">
+          <InfoRow
+            label="保険証"
+            value={adminRecord?.returnHealthInsuranceCard ?? "-"}
+          />
+          <InfoRow
+            label="セキュリティカード"
+            value={adminRecord?.returnSecurityCard ?? "-"}
+          />
+        </div>
       </div>
     </div>
   </div>
@@ -625,11 +599,13 @@ const genderLabel = (value: string) => {
 const employmentTypeLabel = (value: string) => {
   switch (value) {
     case "FULL_TIME":
-      return "正社員";
+      return "常勤";
     case "CONTRACT":
       return "契約社員";
+    case "PART_TIME":
+      return "パートタイム";
     default:
-      return "パート";
+      return "パートタイム";
   }
 };
 

@@ -2,12 +2,13 @@
 
 import { randomUUID } from "node:crypto";
 
-import { employeeFormSchema, type EmployeeFormValues } from "@/lib/schemas/employee";
+import { createEmployeeFormSchema, type EmployeeFormValues } from "@/lib/schemas/employee";
 import { db } from "@/server/db";
 import { insertEmploymentHistoryFromForm } from "@/server/employment-history";
 
 export async function createEmployee(payload: EmployeeFormValues) {
-  const data = employeeFormSchema.parse(payload);
+  const schema = createEmployeeFormSchema("create");
+  const data = schema.parse(payload);
 
   return db.begin(async (trx) => {
     const employeeId = randomUUID();
@@ -18,6 +19,7 @@ export async function createEmployee(payload: EmployeeFormValues) {
         branch_number,
         name,
         name_kana,
+        sticker_item,
         gender,
         birth_date,
         nationality,
@@ -34,6 +36,7 @@ export async function createEmployee(payload: EmployeeFormValues) {
         0,
         ${data.name},
         ${data.nameKana},
+        ${data.stickerItem || null},
         ${data.gender},
         ${data.birthDate},
         ${data.nationality || null},
@@ -150,6 +153,51 @@ export async function createEmployee(payload: EmployeeFormValues) {
         'system'
       )
     `;
+
+    // employee_admin_records テーブルへの保存
+    if (data.adminRecords) {
+      await trx`
+        INSERT INTO employee_admin_records (
+          id,
+          employee_id,
+          health_insurance_category,
+          pension_category,
+          basic_pension_number,
+          pension_fund_category,
+          employment_insurance_number,
+          base_salary,
+          commuting_expense_category,
+          commuting_expense_payment_method,
+          daily_payment_amount,
+          updated_by
+        ) VALUES (
+          ${randomUUID()},
+          ${employeeId},
+          ${data.adminRecords.healthInsuranceCategory || null},
+          ${data.adminRecords.pensionCategory || null},
+          ${data.adminRecords.basicPensionNumber || null},
+          ${data.adminRecords.pensionFundCategory || null},
+          ${data.adminRecords.employmentInsurance || null},
+          ${data.adminRecords.baseSalary ?? null},
+          ${data.adminRecords.commutingExpenseCategory || null},
+          ${data.adminRecords.commutingExpensePaymentMethod || null},
+          ${data.adminRecords.dailyPaymentAmount ?? null},
+          'system'
+        )
+        ON CONFLICT (employee_id) DO UPDATE SET
+          health_insurance_category = EXCLUDED.health_insurance_category,
+          pension_category = EXCLUDED.pension_category,
+          basic_pension_number = EXCLUDED.basic_pension_number,
+          pension_fund_category = EXCLUDED.pension_fund_category,
+          employment_insurance_number = EXCLUDED.employment_insurance_number,
+          base_salary = EXCLUDED.base_salary,
+          commuting_expense_category = EXCLUDED.commuting_expense_category,
+          commuting_expense_payment_method = EXCLUDED.commuting_expense_payment_method,
+          daily_payment_amount = EXCLUDED.daily_payment_amount,
+          updated_by = 'system',
+          updated_at = NOW()
+      `;
+    }
 
     await insertEmploymentHistoryFromForm(trx, {
       employeeId,

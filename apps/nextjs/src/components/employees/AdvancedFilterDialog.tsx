@@ -125,7 +125,7 @@ export function AdvancedFilterDialog({ defaults }: AdvancedFilterDialogProps) {
 
                 <div className="grid grid-cols-2 gap-3">
                   <label className="flex flex-col gap-2 text-sm text-slate-600">
-                    時給（最小）
+                    時給単価（最小）
                     <input
                       type="number"
                       min="0"
@@ -136,7 +136,7 @@ export function AdvancedFilterDialog({ defaults }: AdvancedFilterDialogProps) {
                     />
                   </label>
                   <label className="flex flex-col gap-2 text-sm text-slate-600">
-                    時給（最大）
+                    時給単価（最大）
                     <input
                       type="number"
                       min="0"

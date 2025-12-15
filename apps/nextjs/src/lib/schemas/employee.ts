@@ -25,19 +25,46 @@ export const transportationRouteSchema = z.object({
   nearestStation: z.string().optional(),
 });
 
-export const employeeFormSchema = z.object({
-  contractNumber: z.string().min(1, "契約番号を入力してください"),
-  employeeNumber: z.string().min(1, "従業員番号を入力してください"),
-  name: z.string().min(1, "氏名を入力してください"),
-  nameKana: z.string().min(1, "カナ氏名を入力してください"),
-  gender: z.enum(["MALE", "FEMALE", "OTHER"]),
-  birthDate: z.string().min(1, "生年月日を入力してください"),
-  nationality: z.string().optional(),
-  hiredAt: z.string().min(1, "入社日を入力してください"),
-  employmentType: z.enum(["FULL_TIME", "PART_TIME", "CONTRACT"]),
-  employmentStatus: z.enum(["ACTIVE", "RETIRED", "ON_LEAVE"]),
-  departmentCode: z.string().min(1, "所属コードを入力してください"),
-  myNumber: z.string().optional(),
+// 新規登録時のみ必須にするためのスキーマファクトリー
+export const createEmployeeFormSchema = (mode: "create" | "edit" = "create") => {
+  const isCreate = mode === "create";
+  
+  return z.object({
+    contractNumber: z.string().min(1, "契約番号を入力してください"),
+    employeeNumber: z.string().min(1, "社員コードを入力してください"),
+    name: z.string().min(1, "氏名を入力してください"),
+    nameKana: z.string().min(1, "氏名フリガナを入力してください"),
+    stickerItem: z.string().min(1, "フセン項目を入力してください"),
+    gender: z.enum(["MALE", "FEMALE", "OTHER"]),
+    birthDate: z.string().min(1, "生年月日を入力してください"),
+    nationality: z.string().optional(),
+    hiredAt: z.string().min(1, "入社日を入力してください"),
+    employmentType: z.enum(["FULL_TIME", "PART_TIME", "CONTRACT"]),
+    employmentStatus: z.enum(["ACTIVE", "RETIRED", "ON_LEAVE"]),
+    departmentCode: z.string().min(1, "所属コードを入力してください"),
+    myNumber: z.string().optional(),
+    // 社会保険・給与関連（入社時登録必須項目）
+    adminRecords: z.object({
+      healthInsuranceCategory: z.string().min(1, "健康保険加入区分を入力してください"),
+      pensionCategory: z.string().min(1, "厚生年金加入区分を入力してください"),
+      basicPensionNumber: z.string().min(1, "基礎年金番号を入力してください"),
+      pensionFundCategory: z.string().min(1, "厚生年金基金加入区分を入力してください"),
+      employmentInsurance: z.string().min(1, "雇用保険区分を入力してください"),
+      commutingExpenseCategory: z.string().min(1, "通勤費区分を入力してください"),
+      baseSalary: z
+        .preprocess(
+          (value) => (value === "" || value === null || value === undefined ? undefined : value),
+          z.coerce.number().nonnegative().optional(),
+        )
+        .optional(),
+      commutingExpensePaymentMethod: z.string().optional(),
+      dailyPaymentAmount: z
+        .preprocess(
+          (value) => (value === "" || value === null || value === undefined ? undefined : value),
+          z.coerce.number().nonnegative().optional(),
+        )
+        .optional(),
+    }).optional(),
   workDaysType: z.enum(["WEEKLY", "MONTHLY", "SHIFT"]),
   workDaysCount: z.coerce
     .number({ invalid_type_error: "勤務日数を入力してください" })
@@ -69,9 +96,13 @@ export const employeeFormSchema = z.object({
     contractStartDate: z.string().min(1, "契約開始日を入力してください"),
     contractEndDate: z.string().optional(),
     isRenewable: z.boolean().default(true),
-    hourlyWage: z.coerce
-      .number({ invalid_type_error: "時給を入力してください" })
-      .positive("1以上で入力してください"),
+    hourlyWage: isCreate
+      ? z.coerce
+          .number({ invalid_type_error: "時給単価を入力してください" })
+          .positive("1以上で入力してください")
+      : z.coerce
+          .number({ invalid_type_error: "時給単価を入力してください" })
+          .positive("1以上で入力してください"),
     hourlyWageNote: z.string().optional(),
     overtimeHourlyWage: z
       .preprocess(
@@ -83,15 +114,20 @@ export const employeeFormSchema = z.object({
     paidLeaveClause: z.string().optional(),
     approvalNumber: z.string().optional(),
   }),
-});
+  });
+};
 
-export type EmployeeFormValues = z.infer<typeof employeeFormSchema>;
+// 後方互換性のため、デフォルトでcreateモードのスキーマをエクスポート
+export const employeeFormSchema = createEmployeeFormSchema("create");
+
+export type EmployeeFormValues = z.infer<ReturnType<typeof createEmployeeFormSchema>>;
 
 export const defaultEmployeeFormValues: EmployeeFormValues = {
   contractNumber: "",
   employeeNumber: "",
   name: "",
   nameKana: "",
+  stickerItem: "",
   gender: "OTHER",
   birthDate: "",
   nationality: "",
@@ -100,6 +136,17 @@ export const defaultEmployeeFormValues: EmployeeFormValues = {
   employmentStatus: "ACTIVE",
   departmentCode: "",
   myNumber: "",
+  adminRecords: {
+    healthInsuranceCategory: "",
+    pensionCategory: "",
+    basicPensionNumber: "",
+    pensionFundCategory: "",
+    employmentInsurance: "",
+    commutingExpenseCategory: "",
+    baseSalary: undefined,
+    commutingExpensePaymentMethod: "",
+    dailyPaymentAmount: undefined,
+  },
   workDaysType: "WEEKLY",
   workDaysCount: 5,
   workDaysCountNote: "",

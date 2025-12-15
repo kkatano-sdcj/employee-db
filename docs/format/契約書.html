@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>雇用契約書</title>
+  <style>
+    @page {
+      size: A4;
+      margin: 15mm 10mm 15mm 10mm;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: "Yu Mincho", "游明朝", "Hiragino Mincho ProN", "HG明朝E", "MS P明朝", serif;
+      font-size: 10pt;
+      line-height: 1.4;
+      color: #000;
+      background: #fff;
+    }
+
+    .page {
+      width: 210mm;
+      min-height: 297mm;
+      padding: 15mm 10mm 15mm 10mm;
+      margin: 0 auto;
+      background: #fff;
+      position: relative;
+    }
+
+    .page-break {
+      page-break-before: always;
+    }
+
+    /* バージョン番号 */
+    .version {
+      text-align: right;
+      font-size: 9pt;
+      margin-bottom: 5mm;
+    }
+
+    /* タイトル */
+    .title {
+      text-align: center;
+      font-size: 18pt;
+      font-weight: bold;
+      margin-bottom: 8mm;
+    }
+
+    /* 日付（右寄せ） */
+    .date-line {
+      text-align: right;
+      margin-bottom: 5mm;
+    }
+
+    .date-line .date-field {
+      display: inline-block;
+      min-width: 25mm;
+      border-bottom: 1px solid #000;
+      text-align: center;
+    }
+
+    /* 宛名 */
+    .addressee {
+      margin-bottom: 8mm;
+      padding-left: 10mm;
+    }
+
+    .addressee-name {
+      display: inline-block;
+      min-width: 50mm;
+      border-bottom: 1px solid #000;
+    }
+
+    /* 会社情報 */
+    .company-info {
+      text-align: right;
+      margin-bottom: 8mm;
+      line-height: 1.6;
+    }
+
+    .company-seal {
+      display: inline-block;
+      margin-left: 10mm;
+    }
+
+    .seal-area {
+      display: inline-block;
+      width: 15mm;
+      height: 15mm;
+      border: 1px solid #ccc;
+      text-align: center;
+      line-height: 15mm;
+      font-size: 8pt;
+      color: #999;
+      vertical-align: middle;
+    }
+
+    /* 導入文 */
+    .intro {
+      margin-bottom: 5mm;
+    }
+
+    /* メインテーブル */
+    .contract-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 5mm;
+      font-size: 9pt;
+    }
+
+    .contract-table th,
+    .contract-table td {
+      border: 1px solid #000;
+      padding: 2mm 3mm;
+      vertical-align: top;
+    }
+
+    .contract-table th {
+      background-color: #f5f5f5;
+      font-weight: normal;
+      width: 22%;
+      text-align: left;
+    }
+
+    .contract-table td {
+      width: 78%;
+    }
+
+    /* 赤文字の注意書き */
+    .note-red {
+      color: #c00;
+    }
+
+    /* 下線付きの入力欄 */
+    .input-field {
+      display: inline-block;
+      min-width: 15mm;
+      border-bottom: 1px solid #000;
+      text-align: center;
+      margin: 0 1mm;
+    }
+
+    .input-field-long {
+      display: inline-block;
+      min-width: 40mm;
+      border-bottom: 1px solid #000;
+      text-align: center;
+      margin: 0 1mm;
+    }
+
+    /* 小さいテキスト */
+    .small-text {
+      font-size: 8pt;
+    }
+
+    /* 署名欄 */
+    .signature-section {
+      margin-top: 10mm;
+    }
+
+    .signature-date {
+      text-align: right;
+      margin-bottom: 5mm;
+    }
+
+    .signature-text {
+      margin-bottom: 5mm;
+    }
+
+    .signature-label {
+      text-align: center;
+      margin-bottom: 3mm;
+    }
+
+    .signature-line {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 5mm;
+    }
+
+    .signature-name {
+      display: inline-block;
+      min-width: 60mm;
+      border-bottom: 1px solid #000;
+      text-align: center;
+    }
+
+    /* 就業規則リンク */
+    .rules-link {
+      margin-top: 8mm;
+      font-size: 8pt;
+      text-align: center;
+    }
+
+    .rules-link a {
+      color: #00f;
+      word-break: break-all;
+    }
+
+    /* 印刷時の設定 */
+    @media print {
+      body {
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+
+      .page {
+        width: 100%;
+        min-height: auto;
+        padding: 0;
+        margin: 0;
+      }
+
+      .page-break {
+        page-break-before: always;
+      }
+    }
+
+    /* 判断基準のリスト */
+    .criteria-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 2mm 10mm;
+      margin: 2mm 0;
+    }
+
+    .criteria-item {
+      flex: 0 0 45%;
+    }
+
+    /* 番号付きリスト */
+    .numbered-item {
+      margin-bottom: 1mm;
+    }
+
+    /* インデント */
+    .indent {
+      padding-left: 5mm;
+    }
+
+    .indent-2 {
+      padding-left: 10mm;
+    }
+  </style>
+</head>
+<body>
+  <!-- ページ1 -->
+  <div class="page">
+    <div class="version">Ver2025.09.</div>
+
+    <h1 class="title">雇用契約書</h1>
+
+    <div class="date-line">
+      <span class="date-field">&nbsp;&nbsp;&nbsp;&nbsp;</span>年
+      <span class="date-field">&nbsp;&nbsp;</span>月
+      <span class="date-field">&nbsp;&nbsp;</span>日
+    </div>
+
+    <div class="addressee">
+      <span class="addressee-name">&nbsp;</span>&nbsp;殿
+    </div>
+
+    <div class="company-info">
+      東京都新宿区西新宿二丁目１番１号<br>
+      新宿三井ビルディング 32F<br>
+      システムズ・デザイン株式会社 東京本社<br><br>
+      事業部長
+      <span class="seal-area">印</span>
+    </div>
+
+    <p class="intro">あなたを採用するに当たっての労働条件は、次のとおりです。</p>
+
+    <table class="contract-table">
+      <tr>
+        <th>雇用期間</th>
+        <td>
+          <div class="numbered-item">
+            期間の定め有り （<span class="input-field">&nbsp;&nbsp;&nbsp;&nbsp;</span>年<span class="input-field">&nbsp;&nbsp;</span>月<span class="input-field">&nbsp;&nbsp;</span>日から<span class="input-field">&nbsp;&nbsp;&nbsp;&nbsp;</span>年<span class="input-field">&nbsp;&nbsp;</span>月<span class="input-field">&nbsp;&nbsp;</span>日迄）
+          </div>
+          <div class="numbered-item">
+            契約更新の有無　有 ・ 無　<span class="note-red">（どちらかに○をしてください。）</span>
+          </div>
+          <div class="small-text note-red indent">
+            （上記期間以降の契約更新が、確実に無い場合のみ、無に○）<br>
+            （契約更新の可能性がある場合は、有に○）
+          </div>
+          <div class="small-text indent">
+            ↓契約更新 有に○をした場合は以下を入れる。<br>
+            （更新する場合が有り、更新時は再度雇用契約書を交わす）
+          </div>
+          <div class="small-text note-red indent">
+            更新の場合有りのみだと、短時間適用拡大要件の1年以上の雇用見込に当てはまる。1年以内に確実に契約終了する場合は、「最大○年○月○日迄とする」を入れる）
+          </div>
+          <div style="margin-top: 2mm;">
+            ※契約の更新の判断基準※
+            <div class="criteria-list">
+              <div class="criteria-item">・契約期間満了時の業務量</div>
+              <div class="criteria-item">・従事している業務の進捗状況</div>
+              <div class="criteria-item">・能力、業務成績、勤務態度</div>
+              <div class="criteria-item">・会社・組織の業績</div>
+            </div>
+            <span class="note-red">（更新有の場合は、上記判断基準を記載）</span>
+          </div>
+          <div style="margin-top: 2mm;">
+            ※有期契約の雇用は最長5年までとする（基準日：20●●年●月●日）<br>
+            <span class="note-red">（契約更新の有無に関わらず、基準日は記入すること。）</span>
+          </div>
+        </td>
+      </tr>
+      <tr>
+        <th>就業の場所</th>
+        <td>
+          <div><strong>（雇い入れ直後）</strong></div>
+          <div class="indent">
+            システムズ・デザイン株式会社 東京本社<br>
+            住所：東京都新宿区西新宿二丁目１番１号 新宿三井ビルディング 32F<br>
+            電話番号：03-6737-5000
+          </div>
+          <div style="margin-top: 2mm;"><strong>（変更の範囲）</strong></div>
+          <div class="indent note-red">会社の定める事業所</div>
+        </td>
+      </tr>
+      <tr>
+        <th>業務の内容</th>
+        <td>
+          <div><strong>（雇い入れ直後）</strong></div>
+          <div class="indent note-red">（想定される業務はすべて記載してください、記載のない仕事はできません）</div>
+          <div style="margin-top: 2mm;"><strong>（変更の範囲）</strong></div>
+          <div class="indent note-red">会社の定める業務</div>
+        </td>
+      </tr>
+      <tr>
+        <th>始業・就業の時刻及び休憩時間</th>
+        <td>
+          <div class="numbered-item">
+            １．始業・終業時間　（始業）午前9時00分～（終業）午後5時00分迄<br>
+            <span class="note-red indent-2">（必ず7時間以下にしてください）</span>
+          </div>
+          <div class="numbered-item">
+            ２．休憩時間　正午より午後1時まで　<span class="small-text">（ex.シフト表による）</span>
+          </div>
+        </td>
+      </tr>
+      <tr>
+        <th>勤務日</th>
+        <td>
+          <span class="note-red">週●日、●曜日勤務、あるいは月●日勤務、現場作成のシフト表による、など</span><br>
+          <span class="small-text note-red">注意：シフト表による場合は、必ずシフト表を本人に提示してください</span>
+        </td>
+      </tr>
+      <tr>
+        <th>社会保険加入</th>
+        <td>
+          <div class="numbered-item">１．労災保険</div>
+          <div class="numbered-item">２．雇用保険</div>
+          <div class="numbered-item">３．健康保険、厚生年金、企業年金基金</div>
+          <div class="small-text note-red">（加入する保険のみ記載とし加入しない保険は削除して下さい。※労災保険は全員加入です。）</div>
+        </td>
+      </tr>
+      <tr>
+        <th>休　日</th>
+        <td>
+          <div class="numbered-item">１．定例日　原則として、毎週土曜日、日曜日、祝日</div>
+          <div class="numbered-item">２．非定例日　週○日</div>
+          <div class="small-text note-red">決まっている場合は１、シフトなどによる場合は２を選択して記載</div>
+        </td>
+      </tr>
+      <tr>
+        <th>所定外労働等</th>
+        <td>
+          <div class="numbered-item">１．所定外労働をさせることが　（ 無 ／ 有 ）</div>
+          <div class="numbered-item">２．休日労働をさせることが　（ 無 ／ 有 ）</div>
+          <div class="numbered-item">３．３６協定を上限とする</div>
+          <div class="small-text note-red">残業ありなしを○で囲んでください</div>
+        </td>
+      </tr>
+      <tr>
+        <th>休　暇</th>
+        <td>
+          年次有給休暇　○日（6カ月/１年半を超え引続き勤務する者、所定労働日数の8割以上出勤した場合）<br>
+          基準日：○月○日（付与予定日）<br>
+          <span class="small-text">※詳細はパートタイマー就業規則第30条による</span>
+        </td>
+      </tr>
+    </table>
+  </div>
+
+  <!-- ページ2 -->
+  <div class="page page-break">
+    <div class="version">Ver2025.09.</div>
+
+    <table class="contract-table">
+      <tr>
+        <th>賃　金</th>
+        <td>
+          <div class="numbered-item">
+            １．時間給　1時間に付　￥○○○○<br>
+            <div class="indent small-text">
+              但し、日々は1分単位で計算し、月間合計就業時間が１時間に満たない部分に対する計算は下記とする。<br>
+              0～14分:0分　15分:15分　16～44分:30分　45分:45分　46～59分：1時間
+            </div>
+          </div>
+          <div class="numbered-item" style="margin-top: 2mm;">
+            ２．賞与　支給する。額については、個人の業務内容、業務の責任の範囲、会社・組織の業績などに基づき、個人ごとに個別に決定する。<br>
+            <div class="indent small-text">※詳細はパートタイマー就業規則第44条による</div>
+          </div>
+          <div class="numbered-item" style="margin-top: 2mm;">
+            ３．昇給　契約期間途中は原則なし<br>
+            <div class="indent small-text">※なお、勤務態度、技能能力、業務成績等を勘案し契約更新時に賃金の変更可能性あり</div>
+          </div>
+        </td>
+      </tr>
+      <tr>
+        <th>諸手当</th>
+        <td>
+          <div class="numbered-item">
+            １．通勤手当　（a）実費交通費（月額15,000円を限度とする・学生の通学経路は支給しない。バス利用は1.2kmから）
+          </div>
+          <div class="numbered-item" style="margin-top: 2mm;">
+            ２．残業手当　割増率（a）実働時間７．５時間を超えない時間外労働---------- ０%<br>
+            <div class="indent">（b）実働時間７．５時間を超える時間外労働------------- ２５%</div>
+          </div>
+          <div class="numbered-item" style="margin-top: 2mm;">
+            ３．休日手当　割増率（a）法定外休日(会社年間休日表の休日)-------------------- ２５%<br>
+            <div class="indent">（b）法定休日 ---------------------- ３５%</div>
+          </div>
+          <div class="numbered-item" style="margin-top: 2mm;">
+            ４．深夜手当　割増率 ------------------------------------------------------------------ ２５％
+          </div>
+          <div class="numbered-item" style="margin-top: 2mm;">
+            ５．６０時間超時間外勤務手当＝２５％×６０時間超時間外労働時間（法定休日除く）
+          </div>
+          <div class="numbered-item" style="margin-top: 2mm;">
+            ６．退職金　退職金は支給しない
+          </div>
+          <div class="small-text" style="margin-top: 2mm;">※上記は当社就業規則改正により、変更となる場合有り</div>
+        </td>
+      </tr>
+      <tr>
+        <th>賃金の支払</th>
+        <td>
+          当月1日起算当月末日締、翌月15日支払(原則振込、支給日が休日の場合その前日に支払う)
+        </td>
+      </tr>
+      <tr>
+        <th>退職に関する事項</th>
+        <td>
+          <div class="numbered-item">１．自己都合退職　退職する３０日以上前に届けること</div>
+          <div class="numbered-item">２．解雇の事由及び手続　パートタイマー就業規則第53条による。</div>
+          <div class="numbered-item">３．雇用契約満了</div>
+        </td>
+      </tr>
+      <tr>
+        <th>その他</th>
+        <td>
+          <div class="numbered-item">
+            １．雇用管理の改善等に関する事項にかかる相談窓口<br>
+            <div class="indent">人事部　紺野 史紀　連絡先：03-6737-5000</div>
+          </div>
+          <div class="numbered-item" style="margin-top: 2mm;">
+            ２．本契約に関する紛争については、東京地方裁判所を第一審の専属的管轄裁判所とする。
+          </div>
+          <div class="numbered-item" style="margin-top: 2mm;">
+            ３．本契約締結の証として、本書を書面又は電磁的記録として作成し、<br>
+            <div class="indent">
+              雇用者及び雇用契約者が合意の後、記名押印又は電子署名を施し、<br>
+              各自その書面又は電磁的記録を保管する。
+            </div>
+          </div>
+          <div class="small-text" style="margin-top: 3mm;">※その他、詳細はパートタイマー就業規則による</div>
+        </td>
+      </tr>
+    </table>
+
+    <div class="signature-section">
+      <div class="signature-date">
+        <span class="input-field">&nbsp;&nbsp;&nbsp;&nbsp;</span>年
+        <span class="input-field">&nbsp;&nbsp;</span>月
+        <span class="input-field">&nbsp;&nbsp;</span>日
+      </div>
+
+      <p class="signature-text">上記労働条件で契約致します。</p>
+
+      <div class="signature-label">労働者</div>
+
+      <div class="signature-line">
+        氏　名　<span class="signature-name">&nbsp;</span>
+        <span class="seal-area">印</span>
+      </div>
+    </div>
+
+    <div class="rules-link">
+      就業規則を確認できる場所（社内ポータル-社内情報- ＞ sdc規程集 ＞ 従業員就業規則）<br>
+      <a href="https://sdcjm365.sharepoint.com/sites/portal/corp/SitePages/SDC%E8%A6%8F%E7%A8%8B%E9%9B%86.aspx" target="_blank">
+        (https://sdcjm365.sharepoint.com/sites/portal/corp/SitePages/SDC%E8%A6%8F%E7%A8%8B%E9%9B%86.aspx)
+      </a>
+    </div>
+  </div>
+</body>
+</html>

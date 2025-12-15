@@ -17,9 +17,9 @@ export default function ReportsPage() {
           </p>
           <div className="mt-4 rounded-2xl border border-slate-100 bg-slate-50 p-4 text-sm text-slate-600">
             <ul className="list-disc space-y-2 pl-5">
-              <li>従業員番号・氏名・部門コード</li>
+              <li>社員コード・氏名・部門コード</li>
               <li>最新の勤務条件（勤務時間帯・勤務日数）</li>
-              <li>契約中の時給、残業時給、交通費ルート</li>
+              <li>契約中の時給単価、残業時給、交通費ルート</li>
             </ul>
           </div>
         </div>

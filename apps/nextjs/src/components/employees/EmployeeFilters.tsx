@@ -13,8 +13,8 @@ const statusOptions = [
 const employmentTypeOptions = [
   { value: "ALL", label: "すべて" },
   { value: "FULL_TIME", label: "常勤" },
-  { value: "PART_TIME", label: "パート" },
-  { value: "CONTRACT", label: "契約" },
+  { value: "PART_TIME", label: "パートタイム" },
+  { value: "CONTRACT", label: "契約社員" },
 ];
 
 export const EmployeeFilters = ({
@@ -59,7 +59,7 @@ export const EmployeeFilters = ({
             className="input-field"
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="従業員番号・氏名など"
+            placeholder="社員コード・氏名など"
           />
         </label>
         <label className="flex flex-col gap-1 text-sm">
