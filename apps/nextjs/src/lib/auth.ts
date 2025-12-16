@@ -7,9 +7,11 @@ import { env } from "@/env";
 function getTrustedOrigins(): string[] {
   const origins: string[] = [env.AUTH_URL];
 
-  // Vercel環境の場合、追加のオリジンを許可
+  // Vercel環境の場合、ワイルドカードでプレビューデプロイを許可
   if (env.VERCEL_URL) {
     origins.push(`https://${env.VERCEL_URL}`);
+    // プレビューデプロイ用のワイルドカードパターン
+    origins.push("https://*.vercel.app");
   }
 
   // Vercelの本番ドメインがある場合は追加
