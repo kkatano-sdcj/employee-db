@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { Inter, Noto_Sans_JP } from "next/font/google";
-import { AppShell } from "@/components/layout/app-shell";
 import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
@@ -26,7 +25,7 @@ export default function RootLayout({
       <body
         className={`${inter.variable} ${notoSans.variable} gradient-animation`}
       >
-        <AppShell>{children}</AppShell>
+        {children}
       </body>
     </html>
   );

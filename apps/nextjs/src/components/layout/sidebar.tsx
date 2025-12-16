@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   HomeIcon,
   UsersIcon,
@@ -12,6 +12,7 @@ import {
   ChevronLeftIcon,
 } from "@heroicons/react/24/outline";
 import { useSidebar } from "./sidebar-context";
+import { useSession, signOut } from "@/lib/auth-client";
 
 const navItems = [
   { name: "ダッシュボード", href: "/", icon: HomeIcon },
@@ -26,7 +27,19 @@ const adminItems = [
 
 export const Sidebar = () => {
   const pathname = usePathname();
+  const router = useRouter();
   const { isOpen, toggle } = useSidebar();
+  const { data: session, isPending } = useSession();
+
+  const handleLogout = async () => {
+    await signOut();
+    router.push("/login");
+    router.refresh();
+  };
+
+  const userInitial = session?.user?.name?.charAt(0) || "U";
+  const userName = session?.user?.name || "ユーザー";
+  const userEmail = session?.user?.email || "";
 
   return (
     <aside
@@ -154,24 +167,44 @@ export const Sidebar = () => {
 
       {/* ユーザープロファイル */}
       <div className={`absolute bottom-0 left-0 right-0 border-t border-slate-200 bg-white/50 ${isOpen ? "p-6" : "p-3"}`}>
-        <div className={`flex items-center ${isOpen ? "" : "justify-center"}`}>
-          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-slate-600 to-slate-800 flex items-center justify-center text-white font-semibold shadow-soft flex-shrink-0">
-            管
+        {isPending ? (
+          <div className={`flex items-center ${isOpen ? "" : "justify-center"}`}>
+            <div className="w-10 h-10 rounded-full bg-slate-200 animate-pulse flex-shrink-0" />
+            {isOpen && (
+              <div className="ml-3 flex-1">
+                <div className="h-4 bg-slate-200 rounded animate-pulse mb-1 w-20" />
+                <div className="h-3 bg-slate-200 rounded animate-pulse w-32" />
+              </div>
+            )}
           </div>
-          <div
-            className={`ml-3 flex-1 transition-all duration-300 overflow-hidden ${
-              isOpen ? "opacity-100 w-auto" : "opacity-0 w-0"
-            }`}
-          >
-            <p className="text-sm font-semibold text-slate-900 whitespace-nowrap">管理者</p>
-            <p className="text-xs text-slate-500 whitespace-nowrap">admin@example.com</p>
+        ) : (
+          <div className={`flex items-center ${isOpen ? "" : "justify-center"}`}>
+            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-slate-600 to-slate-800 flex items-center justify-center text-white font-semibold shadow-soft flex-shrink-0">
+              {userInitial}
+            </div>
+            <div
+              className={`ml-3 flex-1 transition-all duration-300 overflow-hidden ${
+                isOpen ? "opacity-100 w-auto" : "opacity-0 w-0"
+              }`}
+            >
+              <p className="text-sm font-semibold text-slate-900 whitespace-nowrap truncate max-w-[140px]">
+                {userName}
+              </p>
+              <p className="text-xs text-slate-500 whitespace-nowrap truncate max-w-[140px]">
+                {userEmail}
+              </p>
+            </div>
+            {isOpen && (
+              <button
+                onClick={handleLogout}
+                title="ログアウト"
+                className="p-2 hover:bg-slate-100 rounded-lg transition-colors flex-shrink-0"
+              >
+                <ArrowRightStartOnRectangleIcon className="w-4 h-4 text-slate-400" />
+              </button>
+            )}
           </div>
-          {isOpen && (
-            <button className="p-2 hover:bg-slate-100 rounded-lg transition-colors flex-shrink-0">
-              <ArrowRightStartOnRectangleIcon className="w-4 h-4 text-slate-400" />
-            </button>
-          )}
-        </div>
+        )}
       </div>
     </aside>
   );
