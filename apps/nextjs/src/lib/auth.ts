@@ -3,6 +3,23 @@ import { Pool } from "pg";
 import bcrypt from "bcryptjs";
 import { env } from "@/env";
 
+// trustedOriginsの構築
+function getTrustedOrigins(): string[] {
+  const origins: string[] = [env.AUTH_URL];
+
+  // Vercel環境の場合、追加のオリジンを許可
+  if (env.VERCEL_URL) {
+    origins.push(`https://${env.VERCEL_URL}`);
+  }
+
+  // Vercelの本番ドメインがある場合は追加
+  if (env.VERCEL_PROJECT_PRODUCTION_URL) {
+    origins.push(`https://${env.VERCEL_PROJECT_PRODUCTION_URL}`);
+  }
+
+  return origins;
+}
+
 export type UserRole =
   | "SYSTEM_ADMIN"
   | "ADMIN"
@@ -62,7 +79,7 @@ export const auth = betterAuth({
       maxAge: 5 * 60,
     },
   },
-  trustedOrigins: [env.AUTH_URL],
+  trustedOrigins: getTrustedOrigins(),
 });
 
 export type Session = typeof auth.$Infer.Session;
