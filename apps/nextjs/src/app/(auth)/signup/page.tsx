@@ -35,23 +35,33 @@ export default function SignupPage() {
 
     setIsLoading(true);
 
-    await signUp.email(
-      {
-        name,
-        email,
-        password,
-      },
-      {
-        onSuccess: () => {
-          router.push("/");
-          router.refresh();
+    try {
+      const result = await signUp.email(
+        {
+          name,
+          email,
+          password,
+          callbackURL: "/",
         },
-        onError: (ctx) => {
-          setError(ctx.error.message || "登録に失敗しました");
-          setIsLoading(false);
-        },
+        {
+          onError: (ctx) => {
+            setError(ctx.error.message || "登録に失敗しました");
+          },
+        }
+      );
+
+      if (result.error) {
+        setError(result.error.message || "登録に失敗しました");
+      } else if (result.data) {
+        // 登録成功時はリダイレクト
+        window.location.href = "/";
       }
-    );
+    } catch (err) {
+      console.error("Signup error:", err);
+      setError("登録に失敗しました。もう一度お試しください。");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (

@@ -18,22 +18,32 @@ export default function LoginPage() {
     setError(null);
     setIsLoading(true);
 
-    await signIn.email(
-      {
-        email,
-        password,
-      },
-      {
-        onSuccess: () => {
-          router.push("/");
-          router.refresh();
+    try {
+      const result = await signIn.email(
+        {
+          email,
+          password,
+          callbackURL: "/",
         },
-        onError: (ctx) => {
-          setError(ctx.error.message || "ログインに失敗しました");
-          setIsLoading(false);
-        },
+        {
+          onError: (ctx) => {
+            setError(ctx.error.message || "ログインに失敗しました");
+          },
+        }
+      );
+
+      if (result.error) {
+        setError(result.error.message || "ログインに失敗しました");
+      } else if (result.data) {
+        // ログイン成功時はリダイレクト
+        window.location.href = "/";
       }
-    );
+    } catch (err) {
+      console.error("Login error:", err);
+      setError("ログインに失敗しました。もう一度お試しください。");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
