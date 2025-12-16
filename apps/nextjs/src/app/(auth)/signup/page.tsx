@@ -35,25 +35,23 @@ export default function SignupPage() {
 
     setIsLoading(true);
 
-    try {
-      const result = await signUp.email({
+    await signUp.email(
+      {
         name,
         email,
         password,
-      });
-
-      if (result.error) {
-        setError(result.error.message || "登録に失敗しました");
-        return;
+      },
+      {
+        onSuccess: () => {
+          router.push("/");
+          router.refresh();
+        },
+        onError: (ctx) => {
+          setError(ctx.error.message || "登録に失敗しました");
+          setIsLoading(false);
+        },
       }
-
-      router.push("/");
-      router.refresh();
-    } catch (err) {
-      setError("登録に失敗しました。もう一度お試しください。");
-    } finally {
-      setIsLoading(false);
-    }
+    );
   };
 
   return (

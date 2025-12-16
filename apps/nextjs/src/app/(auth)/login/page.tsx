@@ -18,24 +18,22 @@ export default function LoginPage() {
     setError(null);
     setIsLoading(true);
 
-    try {
-      const result = await signIn.email({
+    await signIn.email(
+      {
         email,
         password,
-      });
-
-      if (result.error) {
-        setError(result.error.message || "ログインに失敗しました");
-        return;
+      },
+      {
+        onSuccess: () => {
+          router.push("/");
+          router.refresh();
+        },
+        onError: (ctx) => {
+          setError(ctx.error.message || "ログインに失敗しました");
+          setIsLoading(false);
+        },
       }
-
-      router.push("/");
-      router.refresh();
-    } catch (err) {
-      setError("ログインに失敗しました。もう一度お試しください。");
-    } finally {
-      setIsLoading(false);
-    }
+    );
   };
 
   return (
