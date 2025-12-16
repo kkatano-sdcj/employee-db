@@ -129,7 +129,8 @@ export const EmployeeForm = ({
 
   return (
     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-      <FormSection title="基本情報" readOnlyLabel={!sectionPermissions.basic ? "表示のみ" : undefined}>
+      {sectionPermissions.basic && (
+      <FormSection title="基本情報">
         <div className="grid gap-4 md:grid-cols-3">
           <TextField
             label="社員コード"
@@ -225,6 +226,7 @@ export const EmployeeForm = ({
           />
         </div>
       </FormSection>
+      )}
 
       {sectionPermissions.work && (
         <FormSection
