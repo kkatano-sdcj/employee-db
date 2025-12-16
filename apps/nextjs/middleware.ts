@@ -12,6 +12,15 @@ const isPublicRoute = (pathname: string) => {
   return publicRoutes.some((route) => pathname.startsWith(route));
 };
 
+// Better-AuthのセッションCookieを取得（HTTP/HTTPS両対応）
+const getSessionCookie = (request: NextRequest) => {
+  // HTTPS環境では__Secure-プレフィックスが付く
+  return (
+    request.cookies.get("__Secure-better-auth.session_token") ||
+    request.cookies.get("better-auth.session_token")
+  );
+};
+
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
@@ -24,7 +33,7 @@ export async function middleware(request: NextRequest) {
   }
 
   if (isPublicRoute(pathname)) {
-    const sessionCookie = request.cookies.get("better-auth.session_token");
+    const sessionCookie = getSessionCookie(request);
 
     if (sessionCookie && (pathname === "/login" || pathname === "/signup")) {
       return NextResponse.redirect(new URL("/", request.url));
@@ -33,7 +42,7 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  const sessionCookie = request.cookies.get("better-auth.session_token");
+  const sessionCookie = getSessionCookie(request);
 
   if (!sessionCookie) {
     const loginUrl = new URL("/login", request.url);
