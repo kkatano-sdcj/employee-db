@@ -19,31 +19,27 @@ export default function LoginPage() {
     setIsLoading(true);
 
     try {
-      const result = await signIn.email(
-        {
-          email,
-          password,
-          callbackURL: "/",
-        },
-        {
-          onError: (ctx) => {
-            setError(ctx.error.message || "ログインに失敗しました");
-          },
-        }
-      );
+      const result = await signIn.email({
+        email,
+        password,
+      });
+
+      console.log("Login result:", JSON.stringify(result, null, 2));
 
       if (result.error) {
+        console.error("Login error:", result.error);
         setError(result.error.message || "ログインに失敗しました");
-      } else if (result.data) {
+      } else {
         // ログイン成功時はリダイレクト
+        console.log("Login success, redirecting...");
         window.location.href = "/";
+        return; // 早期リターンでfinallyのsetIsLoading(false)をスキップ
       }
     } catch (err) {
-      console.error("Login error:", err);
+      console.error("Login exception:", err);
       setError("ログインに失敗しました。もう一度お試しください。");
-    } finally {
-      setIsLoading(false);
     }
+    setIsLoading(false);
   };
 
   return (
