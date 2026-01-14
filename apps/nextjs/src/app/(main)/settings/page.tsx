@@ -1,3 +1,5 @@
+import { headers } from "next/headers";
+import { auth } from "@/lib/auth";
 import { env } from "@/env";
 
 const mask = (value?: string) => {
@@ -6,7 +8,15 @@ const mask = (value?: string) => {
   return `${value.slice(0, 6)}•••${value.slice(-4)}`;
 };
 
-export default function SettingsPage() {
+export default async function SettingsPage() {
+  // セッションを取得してロールをチェック
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  });
+
+  const userRole = (session?.user as { role?: string } | undefined)?.role;
+  const isSystemAdmin = userRole === "SYSTEM_ADMIN";
+
   return (
     <div className="space-y-6">
       <div>
@@ -40,28 +50,30 @@ export default function SettingsPage() {
         </label>
       </section>
 
-      <section className="section-card space-y-4">
-        <div>
-          <h2 className="text-lg font-semibold text-slate-900">Supabase 接続情報</h2>
-          <p className="text-sm text-slate-500">
-            `.env` に設定した接続情報の概要を表示します。
-          </p>
-        </div>
-        <dl className="grid gap-4 text-sm text-slate-600 md:grid-cols-2">
+      {isSystemAdmin && (
+        <section className="section-card space-y-4">
           <div>
-            <dt className="text-xs text-slate-400">DATABASE_URL</dt>
-            <dd className="truncate rounded-xl border border-slate-100 bg-slate-50 px-3 py-2 text-xs">
-              {mask(env.DATABASE_URL)}
-            </dd>
+            <h2 className="text-lg font-semibold text-slate-900">Supabase 接続情報</h2>
+            <p className="text-sm text-slate-500">
+              `.env` に設定した接続情報の概要を表示します。
+            </p>
           </div>
-          <div>
-            <dt className="text-xs text-slate-400">NEXT_PUBLIC_SUPABASE_URL</dt>
-            <dd className="truncate rounded-xl border border-slate-100 bg-slate-50 px-3 py-2 text-xs">
-              {mask(env.NEXT_PUBLIC_SUPABASE_URL)}
-            </dd>
-          </div>
-        </dl>
-      </section>
+          <dl className="grid gap-4 text-sm text-slate-600 md:grid-cols-2">
+            <div>
+              <dt className="text-xs text-slate-400">DATABASE_URL</dt>
+              <dd className="truncate rounded-xl border border-slate-100 bg-slate-50 px-3 py-2 text-xs">
+                {mask(env.DATABASE_URL)}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-xs text-slate-400">NEXT_PUBLIC_SUPABASE_URL</dt>
+              <dd className="truncate rounded-xl border border-slate-100 bg-slate-50 px-3 py-2 text-xs">
+                {mask(env.NEXT_PUBLIC_SUPABASE_URL)}
+              </dd>
+            </div>
+          </dl>
+        </section>
+      )}
     </div>
   );
 }

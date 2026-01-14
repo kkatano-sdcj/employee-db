@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import {
   HomeIcon,
   UsersIcon,
+  UserGroupIcon,
   DocumentTextIcon,
   ChartBarIcon,
   Cog6ToothIcon,
@@ -14,12 +15,23 @@ import {
 import { useSidebar } from "./sidebar-context";
 import { useSession, signOut } from "@/lib/auth-client";
 
+type UserRole =
+  | "SYSTEM_ADMIN"
+  | "ADMIN"
+  | "HR_MANAGER"
+  | "FIELD_MANAGER"
+  | "GENERAL_AFFAIRS"
+  | "AUDITOR";
+
 const navItems = [
   { name: "ダッシュボード", href: "/", icon: HomeIcon },
   { name: "従業員管理", href: "/employees", icon: UsersIcon },
   { name: "契約管理", href: "/contracts", icon: DocumentTextIcon },
   { name: "レポート・分析", href: "/reports", icon: ChartBarIcon },
 ];
+
+// ADMIN と SYSTEM_ADMIN のみ表示される管理メニュー
+const userManagementItem = { name: "ユーザー管理", href: "/users", icon: UserGroupIcon };
 
 const adminItems = [
   { name: "システム設定", href: "/settings", icon: Cog6ToothIcon },
@@ -40,6 +52,10 @@ export const Sidebar = () => {
   const userInitial = session?.user?.name?.charAt(0) || "U";
   const userName = session?.user?.name || "ユーザー";
   const userEmail = session?.user?.email || "";
+  const userRole = (session?.user as { role?: UserRole })?.role;
+
+  // ADMIN と SYSTEM_ADMIN のみユーザー管理メニューを表示
+  const canAccessUserManagement = userRole === "ADMIN" || userRole === "SYSTEM_ADMIN";
 
   return (
     <aside
@@ -129,6 +145,37 @@ export const Sidebar = () => {
           >
             {isOpen ? "管理" : "..."}
           </p>
+
+          {/* ユーザー管理（ADMIN/SYSTEM_ADMINのみ） */}
+          {canAccessUserManagement && (
+            <Link
+              href={userManagementItem.href}
+              title={isOpen ? undefined : userManagementItem.name}
+              className={`
+                group flex items-center text-sm font-medium rounded-xl hover-lift transition-all
+                ${isOpen ? "px-4 py-3" : "px-3 py-3 justify-center"}
+                ${
+                  pathname === userManagementItem.href
+                    ? "bg-slate-900 text-white shadow-soft"
+                    : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+                }
+              `}
+            >
+              <userManagementItem.icon className={`
+                w-5 h-5 transition-colors flex-shrink-0
+                ${isOpen ? "mr-3" : ""}
+                ${pathname === userManagementItem.href ? "text-slate-300" : "text-slate-400 group-hover:text-slate-600"}
+              `} />
+              <span
+                className={`transition-all duration-300 overflow-hidden whitespace-nowrap ${
+                  isOpen ? "opacity-100 w-auto" : "opacity-0 w-0"
+                }`}
+              >
+                {userManagementItem.name}
+              </span>
+            </Link>
+          )}
+
           {adminItems.map((item) => {
             const Icon = item.icon;
             const isActive = pathname === item.href;
