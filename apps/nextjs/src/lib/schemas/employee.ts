@@ -39,10 +39,22 @@ export const createEmployeeFormSchema = (mode: "create" | "edit" = "create") => 
     birthDate: z.string().min(1, "生年月日を入力してください"),
     nationality: z.string().optional(),
     hiredAt: z.string().min(1, "入社日を入力してください"),
+    rehiredAt: z.string().optional(),
+    retiredAt: z.string().optional(),
     employmentType: z.enum(["FULL_TIME", "PART_TIME", "CONTRACT"]),
     employmentStatus: z.enum(["ACTIVE", "RETIRED", "ON_LEAVE"]),
     departmentCode: z.string().min(1, "所属コードを入力してください"),
     myNumber: z.string().optional(),
+    // 連絡先情報
+    contact: z.object({
+      postalCode: z.string().optional(),
+      address1: z.string().optional(),
+      address2: z.string().optional(),
+      address1Kana: z.string().optional(),
+      address2Kana: z.string().optional(),
+      phone1: z.string().optional(),
+      email1: z.string().optional(),
+    }).optional(),
     // 社会保険・給与関連（入社時登録必須項目）
     adminRecords: z.object({
       healthInsuranceCategory: z.string().min(1, "健康保険加入区分を入力してください"),
@@ -84,6 +96,7 @@ export const createEmployeeFormSchema = (mode: "create" | "edit" = "create") => 
     .array(transportationRouteSchema)
     .min(1, "交通費ルートを1件以上入力してください"),
   documents: z.object({
+    healthInsuranceCardSubmitted: z.string().optional(),
     submittedToAdminOn: z.string().optional(),
     returnedToEmployee: z.string().optional(),
     expirationNoticeIssued: z.string().optional(),
@@ -110,9 +123,17 @@ export const createEmployeeFormSchema = (mode: "create" | "edit" = "create") => 
         z.coerce.number().nonnegative().optional(),
       )
       .optional(),
+    subLeaderAllowanceAmount: z
+      .preprocess(
+        (value) => (value === "" || value === null || value === undefined ? undefined : value),
+        z.coerce.number().nonnegative().optional(),
+      )
+      .optional(),
+    perfectAttendanceAllowanceEligible: z.boolean().default(false),
     jobDescription: z.string().optional(),
     paidLeaveClause: z.string().optional(),
     approvalNumber: z.string().optional(),
+    specialNote: z.string().optional(),
   }),
   });
 };
@@ -132,10 +153,21 @@ export const defaultEmployeeFormValues: EmployeeFormValues = {
   birthDate: "",
   nationality: "",
   hiredAt: "",
+  rehiredAt: "",
+  retiredAt: "",
   employmentType: "PART_TIME",
   employmentStatus: "ACTIVE",
   departmentCode: "",
   myNumber: "",
+  contact: {
+    postalCode: "",
+    address1: "",
+    address2: "",
+    address1Kana: "",
+    address2Kana: "",
+    phone1: "",
+    email1: "",
+  },
   adminRecords: {
     healthInsuranceCategory: "",
     pensionCategory: "",
@@ -178,6 +210,7 @@ export const defaultEmployeeFormValues: EmployeeFormValues = {
     },
   ],
   documents: {
+    healthInsuranceCardSubmitted: "",
     submittedToAdminOn: "",
     returnedToEmployee: "",
     expirationNoticeIssued: "",
@@ -193,8 +226,11 @@ export const defaultEmployeeFormValues: EmployeeFormValues = {
     hourlyWage: 1200,
     hourlyWageNote: "",
     overtimeHourlyWage: undefined,
+    subLeaderAllowanceAmount: undefined,
+    perfectAttendanceAllowanceEligible: false,
     jobDescription: "",
     paidLeaveClause: "",
     approvalNumber: "",
+    specialNote: "",
   },
 };

@@ -190,10 +190,12 @@ export type EmployeeDetail = {
     branchNumber: number;
     name: string;
     nameKana: string;
+    stickerItem?: string;
     gender: string;
     birthDate?: string;
     nationality?: string;
     hiredAt?: string;
+    rehiredAt?: string;
     retiredAt?: string;
     employmentType: string;
     employmentStatus: string;
@@ -201,6 +203,29 @@ export type EmployeeDetail = {
     myNumber?: string;
     updatedAt?: string;
   } | null;
+  contact: {
+    postalCode?: string;
+    address1?: string;
+    address2?: string;
+    address1Kana?: string;
+    address2Kana?: string;
+    phone1?: string;
+    email1?: string;
+  } | null;
+  bankAccounts: Array<{
+    id: string;
+    paymentPriority: number;
+    handlingCategory?: string;
+    paymentCategory?: string;
+    bankCode?: string;
+    bankName?: string;
+    branchCode?: string;
+    branchName?: string;
+    depositType?: string;
+    accountNumber?: string;
+    accountHolderName?: string;
+    isActive: boolean;
+  }>;
   workConditions: Array<{
     id: string;
     effectiveFrom?: string;
@@ -250,17 +275,29 @@ export type EmployeeDetail = {
   }>;
   adminRecord: {
     taxWithholdingCategory?: string | null;
+    webSalaryBookEnabled?: boolean | null;
     employmentInsurance?: string | null;
     employmentInsuranceCardSubmitted?: string | null;
+    employmentInsuranceNumber?: string | null;
     socialInsurance?: string | null;
     pensionBookSubmitted?: string | null;
     healthInsuranceCardSubmitted?: string | null;
+    healthInsuranceCardType?: string | null;
+    healthInsuranceCategory?: string | null;
+    pensionCategory?: string | null;
+    basicPensionNumber?: string | null;
+    pensionFundCategory?: string | null;
+    baseSalary?: number | null;
+    commutingExpenseCategory?: string | null;
+    commutingExpensePaymentMethod?: string | null;
+    dailyPaymentAmount?: number | null;
     submittedToAdminOn?: string | null;
     returnedToEmployee?: string | null;
     expirationNoticeIssued?: string | null;
     resignationLetterSubmitted?: string | null;
     returnHealthInsuranceCard?: string | null;
     returnSecurityCard?: string | null;
+    notes?: string | null;
   } | null;
 };
 
@@ -287,10 +324,12 @@ export async function fetchEmployeeDetail(employeeId: string): Promise<EmployeeD
       branch_number as "branchNumber",
       name,
       name_kana as "nameKana",
+      sticker_item as "stickerItem",
       gender,
       birth_date as "birthDate",
       nationality,
       hired_at as "hiredAt",
+      rehired_at as "rehiredAt",
       retired_at as "retiredAt",
       employment_type as "employmentType",
       employment_status as "employmentStatus",
@@ -305,10 +344,12 @@ export async function fetchEmployeeDetail(employeeId: string): Promise<EmployeeD
     branchNumber: number;
     name: string;
     nameKana: string;
+    stickerItem: string | null;
     gender: string;
     birthDate: Date | string | null;
     nationality: string | null;
     hiredAt: Date | string | null;
+    rehiredAt: Date | string | null;
     retiredAt: Date | string | null;
     employmentType: string;
     employmentStatus: string;
@@ -316,6 +357,62 @@ export async function fetchEmployeeDetail(employeeId: string): Promise<EmployeeD
     myNumber: string | null;
     updatedAt: Date | string | null;
   } | undefined>;
+
+  // 住所・連絡先情報を取得
+  const [contact] = (await db`
+    SELECT
+      postal_code as "postalCode",
+      address1,
+      address2,
+      address1_kana as "address1Kana",
+      address2_kana as "address2Kana",
+      phone1,
+      email1
+    FROM employee_contacts
+    WHERE employee_id = ${employeeId}
+    LIMIT 1
+  `) as Array<{
+    postalCode: string | null;
+    address1: string | null;
+    address2: string | null;
+    address1Kana: string | null;
+    address2Kana: string | null;
+    phone1: string | null;
+    email1: string | null;
+  }>;
+
+  // 振込口座情報を取得
+  const bankAccounts = (await db`
+    SELECT
+      id,
+      payment_priority as "paymentPriority",
+      handling_category as "handlingCategory",
+      payment_category as "paymentCategory",
+      bank_code as "bankCode",
+      bank_name as "bankName",
+      branch_code as "branchCode",
+      branch_name as "branchName",
+      deposit_type as "depositType",
+      account_number as "accountNumber",
+      account_holder_name as "accountHolderName",
+      is_active as "isActive"
+    FROM employee_bank_accounts
+    WHERE employee_id = ${employeeId}
+    ORDER BY payment_priority ASC
+  `) as Array<{
+    id: string;
+    paymentPriority: number;
+    handlingCategory: string | null;
+    paymentCategory: string | null;
+    bankCode: string | null;
+    bankName: string | null;
+    branchCode: string | null;
+    branchName: string | null;
+    depositType: string | null;
+    accountNumber: string | null;
+    accountHolderName: string | null;
+    isActive: boolean;
+  }>;
 
   const workConditions = await db<WorkConditionRow[]>`
     SELECT * FROM work_conditions
@@ -435,47 +532,98 @@ export async function fetchEmployeeDetail(employeeId: string): Promise<EmployeeD
   const [adminRecord] = (await db`
     SELECT
       tax_withholding_category,
+      web_salary_book_enabled,
       employment_insurance,
       employment_insurance_card_submitted,
+      employment_insurance_number,
       social_insurance,
       pension_book_submitted,
       health_insurance_card_submitted,
+      health_insurance_card_type,
+      health_insurance_category,
+      pension_category,
+      basic_pension_number,
+      pension_fund_category,
+      base_salary,
+      commuting_expense_category,
+      commuting_expense_payment_method,
+      daily_payment_amount,
       submitted_to_admin_on,
       returned_to_employee,
       expiration_notice_issued,
       resignation_letter_submitted,
       return_health_insurance_card,
-      return_security_card
+      return_security_card,
+      notes
     FROM employee_admin_records
     WHERE employee_id = ${employeeId}
     LIMIT 1
   `) as Array<{
     tax_withholding_category: string | null;
+    web_salary_book_enabled: boolean | null;
     employment_insurance: string | null;
     employment_insurance_card_submitted: string | null;
+    employment_insurance_number: string | null;
     social_insurance: string | null;
     pension_book_submitted: string | null;
     health_insurance_card_submitted: string | null;
+    health_insurance_card_type: string | null;
+    health_insurance_category: string | null;
+    pension_category: string | null;
+    basic_pension_number: string | null;
+    pension_fund_category: string | null;
+    base_salary: number | null;
+    commuting_expense_category: string | null;
+    commuting_expense_payment_method: string | null;
+    daily_payment_amount: number | null;
     submitted_to_admin_on: Date | string | null;
     returned_to_employee: string | null;
     expiration_notice_issued: string | null;
     resignation_letter_submitted: string | null;
     return_health_insurance_card: string | null;
     return_security_card: string | null;
+    notes: string | null;
   }>;
 
   return {
     employee: employee
       ? {
           ...employee,
+          stickerItem: employee.stickerItem ?? undefined,
           birthDate: toDateString(employee.birthDate as unknown as Date),
           nationality: employee.nationality ?? undefined,
           hiredAt: toDateString(employee.hiredAt as unknown as Date),
+          rehiredAt: toDateString(employee.rehiredAt as unknown as Date),
           retiredAt: toDateString(employee.retiredAt as unknown as Date),
           myNumber: employee.myNumber ?? undefined,
           updatedAt: toDateTimeString(employee.updatedAt as unknown as Date),
         }
       : null,
+    contact: contact
+      ? {
+          postalCode: contact.postalCode ?? undefined,
+          address1: contact.address1 ?? undefined,
+          address2: contact.address2 ?? undefined,
+          address1Kana: contact.address1Kana ?? undefined,
+          address2Kana: contact.address2Kana ?? undefined,
+          phone1: contact.phone1 ?? undefined,
+          email1: contact.email1 ?? undefined,
+        }
+      : null,
+    bankAccounts: bankAccounts.map((account) => ({
+      id: account.id,
+      paymentPriority: account.paymentPriority,
+      handlingCategory: account.handlingCategory ?? undefined,
+      paymentCategory: account.paymentCategory ?? undefined,
+      bankCode: account.bankCode ?? undefined,
+      bankName: account.bankName ?? undefined,
+      branchCode: account.branchCode ?? undefined,
+      branchName: account.branchName ?? undefined,
+      depositType: account.depositType ?? undefined,
+      accountNumber: account.accountNumber ?? undefined,
+      accountHolderName: account.accountHolderName ?? undefined,
+      isActive: Boolean(account.isActive),
+    })),
     workConditions: workConditionDetails,
     contracts: contracts.map((contract) => ({
       id: contract.id,
@@ -500,27 +648,43 @@ export async function fetchEmployeeDetail(employeeId: string): Promise<EmployeeD
     })),
     employmentHistory: employmentHistory.map((history) => ({
       id: history.id,
+      contractId: history.contractId ?? undefined,
       eventType: history.eventType,
       effectiveDate: toDateString(history.effectiveDate as unknown as Date),
       departmentCode: history.departmentCode ?? undefined,
       grade: history.grade ?? undefined,
       hourlyWage: history.hourlyWage ? Number(history.hourlyWage) : null,
+      approvalNumber: history.approvalNumber ?? undefined,
       remarks: history.remarks ?? undefined,
     })),
     adminRecord: adminRecord
       ? {
           taxWithholdingCategory: adminRecord.tax_withholding_category,
+          webSalaryBookEnabled: adminRecord.web_salary_book_enabled,
           employmentInsurance: adminRecord.employment_insurance,
           employmentInsuranceCardSubmitted: adminRecord.employment_insurance_card_submitted,
+          employmentInsuranceNumber: adminRecord.employment_insurance_number,
           socialInsurance: adminRecord.social_insurance,
           pensionBookSubmitted: adminRecord.pension_book_submitted,
           healthInsuranceCardSubmitted: adminRecord.health_insurance_card_submitted,
+          healthInsuranceCardType: adminRecord.health_insurance_card_type,
+          healthInsuranceCategory: adminRecord.health_insurance_category,
+          pensionCategory: adminRecord.pension_category,
+          basicPensionNumber: adminRecord.basic_pension_number,
+          pensionFundCategory: adminRecord.pension_fund_category,
+          baseSalary: adminRecord.base_salary ? Number(adminRecord.base_salary) : null,
+          commutingExpenseCategory: adminRecord.commuting_expense_category,
+          commutingExpensePaymentMethod: adminRecord.commuting_expense_payment_method,
+          dailyPaymentAmount: adminRecord.daily_payment_amount
+            ? Number(adminRecord.daily_payment_amount)
+            : null,
           submittedToAdminOn: toDateString(adminRecord.submitted_to_admin_on as unknown as Date),
           returnedToEmployee: adminRecord.returned_to_employee,
           expirationNoticeIssued: adminRecord.expiration_notice_issued,
           resignationLetterSubmitted: adminRecord.resignation_letter_submitted,
           returnHealthInsuranceCard: adminRecord.return_health_insurance_card,
           returnSecurityCard: adminRecord.return_security_card,
+          notes: adminRecord.notes,
         }
       : null,
   };

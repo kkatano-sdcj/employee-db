@@ -41,6 +41,7 @@ export function mapEmployeeDetailToFormValues(detail: EmployeeDetail): EmployeeF
   const workCondition = detail.workConditions[0];
   const contract = detail.contracts[0];
   const adminRecord = detail.adminRecord;
+  const contact = detail.contact;
 
   const values: EmployeeFormValues = {
     ...base,
@@ -48,6 +49,7 @@ export function mapEmployeeDetailToFormValues(detail: EmployeeDetail): EmployeeF
     employeeNumber: employee.employeeNumber,
     name: employee.name,
     nameKana: employee.nameKana,
+    stickerItem: employee.stickerItem ?? "",
     gender: (employee.gender as EmployeeFormValues["gender"]) ?? base.gender,
     birthDate: employee.birthDate ?? "",
     nationality: employee.nationality ?? "",
@@ -60,6 +62,17 @@ export function mapEmployeeDetailToFormValues(detail: EmployeeDetail): EmployeeF
       base.employmentStatus,
     departmentCode: employee.departmentCode,
     myNumber: employee.myNumber ?? "",
+    adminRecords: {
+      healthInsuranceCategory: adminRecord?.healthInsuranceCategory ?? "",
+      pensionCategory: adminRecord?.pensionCategory ?? "",
+      basicPensionNumber: adminRecord?.basicPensionNumber ?? "",
+      pensionFundCategory: adminRecord?.pensionFundCategory ?? "",
+      employmentInsurance: adminRecord?.employmentInsurance ?? "",
+      commutingExpenseCategory: adminRecord?.commutingExpenseCategory ?? "",
+      baseSalary: adminRecord?.baseSalary ?? undefined,
+      commutingExpensePaymentMethod: adminRecord?.commutingExpensePaymentMethod ?? "",
+      dailyPaymentAmount: adminRecord?.dailyPaymentAmount ?? undefined,
+    },
     workDaysType:
       (workCondition?.workDaysType as EmployeeFormValues["workDaysType"]) ??
       base.workDaysType,
@@ -101,6 +114,7 @@ export function mapEmployeeDetailToFormValues(detail: EmployeeDetail): EmployeeF
           }))
         : base.transportationRoutes,
     documents: {
+      healthInsuranceCardSubmitted: adminRecord?.healthInsuranceCardSubmitted ?? "",
       submittedToAdminOn: adminRecord?.submittedToAdminOn ?? "",
       returnedToEmployee: adminRecord?.returnedToEmployee ?? "",
       expirationNoticeIssued: adminRecord?.expirationNoticeIssued ?? "",
@@ -121,9 +135,13 @@ export function mapEmployeeDetailToFormValues(detail: EmployeeDetail): EmployeeF
           : base.contract.isRenewable,
       hourlyWage: contract?.hourlyWage ?? base.contract.hourlyWage,
       overtimeHourlyWage: contract?.overtimeHourlyWage ?? undefined,
+      subLeaderAllowanceAmount: (contract as { subLeaderAllowanceAmount?: number })?.subLeaderAllowanceAmount ?? undefined,
+      perfectAttendanceAllowanceEligible:
+        (contract as { perfectAttendanceAllowanceEligible?: boolean })?.perfectAttendanceAllowanceEligible === true,
       jobDescription: contract?.jobDescription ?? "",
       paidLeaveClause: contract?.paidLeaveClause ?? "",
       hourlyWageNote: contract?.hourlyWageNote ?? "",
+      specialNote: (contract as { specialNote?: string })?.specialNote ?? "",
     },
   };
 

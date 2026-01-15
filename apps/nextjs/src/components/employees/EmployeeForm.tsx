@@ -68,7 +68,7 @@ export const EmployeeForm = ({
     }
     // 契約管理ページからのアクセス（契約更新・新規契約作成）
     if (context === "contract-management") {
-      return { basic: false, work: true, contract: true, documents: false };
+      return { basic: false, work: true, contract: true, documents: true };
     }
     // デフォルト（後方互換性のため）
     return { basic: true, work: true, contract: true, documents: true };
@@ -190,6 +190,20 @@ export const EmployeeForm = ({
             error={form.formState.errors.hiredAt?.message}
             required
           />
+          <TextField
+            type="date"
+            label="再入社日"
+            registration={form.register("rehiredAt")}
+            error={form.formState.errors.rehiredAt?.message}
+            readOnly={!sectionPermissions.basic}
+          />
+          <TextField
+            type="date"
+            label="退社日"
+            registration={form.register("retiredAt")}
+            error={form.formState.errors.retiredAt?.message}
+            readOnly={!sectionPermissions.basic}
+          />
           <SelectField
             label="雇用区分"
             registration={form.register("employmentType")}
@@ -226,6 +240,57 @@ export const EmployeeForm = ({
           />
         </div>
       </FormSection>
+      )}
+
+      {/* 連絡先情報セクション（従業員管理ページで表示） */}
+      {sectionPermissions.basic && (
+        <FormSection title="連絡先情報">
+          <div className="grid gap-4 md:grid-cols-3">
+            <TextField
+              label="郵便番号"
+              registration={form.register("contact.postalCode")}
+              error={form.formState.errors.contact?.postalCode?.message}
+              readOnly={!sectionPermissions.basic}
+            />
+            <TextField
+              label="住所1"
+              registration={form.register("contact.address1")}
+              error={form.formState.errors.contact?.address1?.message}
+              readOnly={!sectionPermissions.basic}
+            />
+            <TextField
+              label="住所2"
+              registration={form.register("contact.address2")}
+              error={form.formState.errors.contact?.address2?.message}
+              readOnly={!sectionPermissions.basic}
+            />
+            <TextField
+              label="住所1フリガナ"
+              registration={form.register("contact.address1Kana")}
+              error={form.formState.errors.contact?.address1Kana?.message}
+              readOnly={!sectionPermissions.basic}
+            />
+            <TextField
+              label="住所2フリガナ"
+              registration={form.register("contact.address2Kana")}
+              error={form.formState.errors.contact?.address2Kana?.message}
+              readOnly={!sectionPermissions.basic}
+            />
+            <TextField
+              label="電話番号"
+              registration={form.register("contact.phone1")}
+              error={form.formState.errors.contact?.phone1?.message}
+              readOnly={!sectionPermissions.basic}
+            />
+            <TextField
+              label="メールアドレス"
+              type="email"
+              registration={form.register("contact.email1")}
+              error={form.formState.errors.contact?.email1?.message}
+              readOnly={!sectionPermissions.basic}
+            />
+          </div>
+        </FormSection>
       )}
 
       {sectionPermissions.work && (
@@ -506,6 +571,12 @@ export const EmployeeForm = ({
           error={form.formState.errors.contract?.hourlyWageNote?.message}
           readOnly={!sectionPermissions.contract}
         />
+        <TextField
+          label="特記事項"
+          registration={form.register("contract.specialNote")}
+          error={form.formState.errors.contract?.specialNote?.message}
+          readOnly={!sectionPermissions.contract}
+        />
       </FormSection>
       )}
 
@@ -515,6 +586,12 @@ export const EmployeeForm = ({
         readOnlyLabel={!sectionPermissions.documents ? "表示のみ" : undefined}
       >
         <div className="grid gap-4 md:grid-cols-2">
+          <TextField
+            label="保険証授"
+            registration={form.register("documents.healthInsuranceCardSubmitted")}
+            error={form.formState.errors.documents?.healthInsuranceCardSubmitted?.message}
+            readOnly={!sectionPermissions.documents}
+          />
           <TextField
             type="date"
             label="契約書提出日"
@@ -612,7 +689,7 @@ export const EmployeeForm = ({
       {/* 給与情報セクション（契約管理ページで表示） */}
       {context === "contract-management" && (
         <FormSection
-          title="社会保険・給与情報"
+          title="給与情報"
           readOnlyLabel={!sectionPermissions.contract ? "表示のみ" : undefined}
         >
           <div className="grid gap-4 md:grid-cols-3">
@@ -624,6 +701,19 @@ export const EmployeeForm = ({
               readOnly={!sectionPermissions.contract}
             />
             <TextField
+              type="number"
+              label="日払い支給額"
+              registration={form.register("adminRecords.dailyPaymentAmount")}
+              error={form.formState.errors.adminRecords?.dailyPaymentAmount?.message}
+              readOnly={!sectionPermissions.contract}
+            />
+            <TextField
+              label="通勤費区分"
+              registration={form.register("adminRecords.commutingExpenseCategory")}
+              error={form.formState.errors.adminRecords?.commutingExpenseCategory?.message}
+              readOnly={!sectionPermissions.contract}
+            />
+            <TextField
               label="通勤費支払方法"
               registration={form.register("adminRecords.commutingExpensePaymentMethod")}
               error={form.formState.errors.adminRecords?.commutingExpensePaymentMethod?.message}
@@ -631,9 +721,62 @@ export const EmployeeForm = ({
             />
             <TextField
               type="number"
-              label="日払い支給額"
-              registration={form.register("adminRecords.dailyPaymentAmount")}
-              error={form.formState.errors.adminRecords?.dailyPaymentAmount?.message}
+              label="サブリーダー手当"
+              registration={form.register("contract.subLeaderAllowanceAmount")}
+              error={form.formState.errors.contract?.subLeaderAllowanceAmount?.message}
+              readOnly={!sectionPermissions.contract}
+            />
+            <div className="flex items-center gap-2 pt-6">
+              <input
+                id="perfectAttendanceAllowanceEligible"
+                type="checkbox"
+                className="h-4 w-4 rounded border-slate-300"
+                {...form.register("contract.perfectAttendanceAllowanceEligible")}
+                disabled={!sectionPermissions.contract && mode === "edit"}
+              />
+              <label htmlFor="perfectAttendanceAllowanceEligible" className="text-sm text-slate-600">
+                精勤手当対象
+              </label>
+            </div>
+          </div>
+        </FormSection>
+      )}
+
+      {/* 社会保険・雇用保険セクション（契約管理ページで表示） */}
+      {context === "contract-management" && (
+        <FormSection
+          title="社会保険・雇用保険"
+          readOnlyLabel={!sectionPermissions.contract ? "表示のみ" : undefined}
+        >
+          <div className="grid gap-4 md:grid-cols-3">
+            <TextField
+              label="健康保険加入区分"
+              registration={form.register("adminRecords.healthInsuranceCategory")}
+              error={form.formState.errors.adminRecords?.healthInsuranceCategory?.message}
+              readOnly={!sectionPermissions.contract}
+            />
+            <TextField
+              label="厚生年金加入区分"
+              registration={form.register("adminRecords.pensionCategory")}
+              error={form.formState.errors.adminRecords?.pensionCategory?.message}
+              readOnly={!sectionPermissions.contract}
+            />
+            <TextField
+              label="基礎年金番号"
+              registration={form.register("adminRecords.basicPensionNumber")}
+              error={form.formState.errors.adminRecords?.basicPensionNumber?.message}
+              readOnly={!sectionPermissions.contract}
+            />
+            <TextField
+              label="厚生年金基金加入区分"
+              registration={form.register("adminRecords.pensionFundCategory")}
+              error={form.formState.errors.adminRecords?.pensionFundCategory?.message}
+              readOnly={!sectionPermissions.contract}
+            />
+            <TextField
+              label="雇用保険区分"
+              registration={form.register("adminRecords.employmentInsurance")}
+              error={form.formState.errors.adminRecords?.employmentInsurance?.message}
               readOnly={!sectionPermissions.contract}
             />
           </div>

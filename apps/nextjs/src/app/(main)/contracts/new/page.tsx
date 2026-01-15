@@ -28,17 +28,20 @@ export default async function ContractNewPage({ searchParams }: ContractNewPageP
     notFound();
   }
 
-  // 基本情報は既存の従業員データから取得し、契約情報は空で開始
+  // 基本情報は既存の従業員データから取得し、契約関連の入力欄は全て空白で開始
   const initialValues: EmployeeFormValues = {
-    ...defaultEmployeeFormValues,
-    // 従業員基本情報
+    // 従業員基本情報（既存データから取得）
+    contractNumber: "",
     employeeNumber: detail.employee.employeeNumber,
     name: detail.employee.name,
     nameKana: detail.employee.nameKana || "",
+    stickerItem: detail.employee.stickerItem || "",
     gender: (detail.employee.gender as EmployeeFormValues["gender"]) ?? defaultEmployeeFormValues.gender,
     birthDate: detail.employee.birthDate || "",
     nationality: detail.employee.nationality || "",
     hiredAt: detail.employee.hiredAt || "",
+    rehiredAt: "",
+    retiredAt: "",
     employmentType:
       (detail.employee.employmentType as EmployeeFormValues["employmentType"]) ??
       defaultEmployeeFormValues.employmentType,
@@ -46,6 +49,64 @@ export default async function ContractNewPage({ searchParams }: ContractNewPageP
       (detail.employee.employmentStatus as EmployeeFormValues["employmentStatus"]) ??
       defaultEmployeeFormValues.employmentStatus,
     departmentCode: detail.employee.departmentCode,
+    myNumber: "",
+    // 連絡先情報（空白）
+    contact: {
+      postalCode: "",
+      address1: "",
+      address2: "",
+      address1Kana: "",
+      address2Kana: "",
+      phone1: "",
+      email1: "",
+    },
+    // 社会保険・給与関連（空白）
+    adminRecords: {
+      healthInsuranceCategory: "",
+      pensionCategory: "",
+      basicPensionNumber: "",
+      pensionFundCategory: "",
+      employmentInsurance: "",
+      commutingExpenseCategory: "",
+      baseSalary: undefined,
+      commutingExpensePaymentMethod: "",
+      dailyPaymentAmount: undefined,
+    },
+    // 勤務条件（空白）
+    workDaysType: "WEEKLY",
+    workDaysCount: 0,
+    workDaysCountNote: "",
+    paidLeaveBaseDate: "",
+    workingHours: [],
+    breakHours: [],
+    workLocations: [],
+    transportationRoutes: [],
+    // 書類・提出状況（空白）
+    documents: {
+      healthInsuranceCardSubmitted: "",
+      submittedToAdminOn: "",
+      returnedToEmployee: "",
+      expirationNoticeIssued: "",
+      resignationLetterSubmitted: "",
+      returnHealthInsuranceCard: "",
+      returnSecurityCard: "",
+    },
+    // 契約情報（空白）
+    contract: {
+      contractType: "FIXED_TERM",
+      contractStartDate: "",
+      contractEndDate: "",
+      isRenewable: false,
+      hourlyWage: 0,
+      hourlyWageNote: "",
+      overtimeHourlyWage: undefined,
+      subLeaderAllowanceAmount: undefined,
+      perfectAttendanceAllowanceEligible: false,
+      jobDescription: "",
+      paidLeaveClause: "",
+      approvalNumber: "",
+      specialNote: "",
+    },
   };
 
   return (

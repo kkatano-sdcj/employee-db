@@ -213,6 +213,7 @@ export default async function EmployeeDetailPage({ params, searchParams }: Emplo
           {activeTab === "profile" && (
             <ProfileSection
               employee={employee}
+              contact={detail.contact}
               contract={detail.contracts.length > 0 ? detail.contracts[0] : undefined}
             />
           )}
@@ -221,6 +222,7 @@ export default async function EmployeeDetailPage({ params, searchParams }: Emplo
             <SalarySection
               contract={detail.contracts.length > 0 ? detail.contracts[0] : undefined}
               adminRecord={detail.adminRecord}
+              bankAccounts={detail.bankAccounts}
               workConditions={detail.workConditions}
             />
           )}
@@ -243,7 +245,11 @@ export default async function EmployeeDetailPage({ params, searchParams }: Emplo
               戻る
             </Link>
             <Link
-              href={`/employees/${employee.id}/edit`}
+              href={
+                activeTab === "salary" || activeTab === "contracts" || activeTab === "notes"
+                  ? `/employees/${employee.id}/edit?source=contract`
+                  : `/employees/${employee.id}/edit`
+              }
               className="px-6 py-2.5 bg-slate-900 hover:bg-slate-800 text-white text-sm font-medium rounded-xl transition-all shadow-soft hover-lift"
             >
               編集する
@@ -282,12 +288,15 @@ type EmployeeDetailResponse = Awaited<ReturnType<typeof fetchEmployeeDetail>>;
 
 const ProfileSection = ({
   employee,
+  contact,
   contract,
 }: {
   employee: NonNullable<EmployeeDetailResponse["employee"]>;
+  contact: EmployeeDetailResponse["contact"];
   contract?: EmployeeDetailResponse["contracts"][number];
 }) => (
   <div className="space-y-8">
+    {/* 雇用情報セクション */}
     <div className="space-y-6">
       <h4 className="text-sm font-bold text-slate-900 uppercase tracking-wider mb-4 flex items-center">
         <span className="w-1 h-4 bg-accent-blue rounded-full mr-3" />
@@ -296,14 +305,36 @@ const ProfileSection = ({
       <div className="bg-blue-50/30 border border-blue-100 rounded-xl p-6 space-y-4">
         <InfoRow label="社員コード" value={employee.employeeNumber} />
         <InfoRow label="氏名" value={employee.name} />
+        <InfoRow label="氏名フリガナ" value={employee.nameKana} />
+        <InfoRow label="フセン項目" value={employee.stickerItem ?? "-"} />
+        <InfoRow label="性別" value={genderLabel(employee.gender)} />
+        <InfoRow label="生年月日" value={employee.birthDate ?? "-"} />
         <InfoRow label="部門" value={employee.departmentCode} />
         <InfoRow label="契約番号" value={contract?.id ?? "-"} />
         <InfoRow label="入社日" value={employee.hiredAt ?? "-"} />
+        <InfoRow label="再入社日" value={employee.rehiredAt ?? "-"} />
         <InfoRow
           label="雇用期間"
           value={`${contract?.contractStartDate ?? "-"} ~ ${contract?.employmentExpiryScheduledDate ?? "継続"}`}
         />
         <InfoRow label="退社日" value={employee.retiredAt ?? "-"} />
+      </div>
+    </div>
+
+    {/* 住所・連絡先セクション */}
+    <div className="space-y-6">
+      <h4 className="text-sm font-bold text-slate-900 uppercase tracking-wider mb-4 flex items-center">
+        <span className="w-1 h-4 bg-accent-emerald rounded-full mr-3" />
+        住所・連絡先（住民票住所）
+      </h4>
+      <div className="bg-emerald-50/30 border border-emerald-100 rounded-xl p-6 space-y-4">
+        <InfoRow label="郵便番号" value={contact?.postalCode ?? "-"} />
+        <InfoRow label="住所1" value={contact?.address1 ?? "-"} />
+        <InfoRow label="住所2" value={contact?.address2 ?? "-"} />
+        <InfoRow label="住所1フリガナ" value={contact?.address1Kana ?? "-"} />
+        <InfoRow label="住所2フリガナ" value={contact?.address2Kana ?? "-"} />
+        <InfoRow label="電話番号（個人用）" value={contact?.phone1 ?? "-"} />
+        <InfoRow label="メールアドレス（個人用）" value={contact?.email1 ?? "-"} />
       </div>
     </div>
   </div>
@@ -381,10 +412,12 @@ const WorkSection = ({
 const SalarySection = ({
   contract,
   adminRecord,
+  bankAccounts,
   workConditions,
 }: {
   contract?: EmployeeDetailResponse["contracts"][number];
   adminRecord: EmployeeDetailResponse["adminRecord"];
+  bankAccounts: EmployeeDetailResponse["bankAccounts"];
   workConditions: EmployeeDetailResponse["workConditions"];
 }) => {
   const currencyFormatter = new Intl.NumberFormat("ja-JP", {
@@ -410,27 +443,109 @@ const SalarySection = ({
     return value;
   };
 
+  const depositTypeLabel = (value?: string) => {
+    switch (value) {
+      case "SAVINGS":
+        return "普通";
+      case "CHECKING":
+        return "当座";
+      case "OTHER":
+        return "その他";
+      default:
+        return value ?? "-";
+    }
+  };
+
   return (
     <div className="space-y-8">
-      <div className="bg-white border border-slate-100 rounded-2xl p-6 space-y-3">
-        <InfoRow label="時給単価" value={formatCurrency(contract?.hourlyWage)} />
-        <InfoRow label="残業時給" value={formatCurrency(contract?.overtimeHourlyWage ?? null)} />
-        <InfoRow label="最寄り駅" value={primaryRoute?.nearestStation ?? "-"} />
-        <InfoRow
-          label="交通費（片道/往復）"
-          value={
-            primaryRoute
-              ? `往復 ${formatCurrency(primaryRoute.roundTripAmount)}${primaryRoute.monthlyPassAmount ? ` / 定期 ${formatCurrency(primaryRoute.monthlyPassAmount)}` : ""}`
-              : "-"
-          }
-        />
-        <InfoRow label="控除申告書（甲乙）" value={adminRecord?.taxWithholdingCategory ?? "-"} />
-        <InfoRow label="雇用保険（加入/未加入）" value={formatFlag(adminRecord?.employmentInsurance)} />
-        <InfoRow
-          label="雇用保険書提出"
-          value={adminRecord?.employmentInsuranceCardSubmitted ?? "-"}
-        />
-        <InfoRow label="社会保険（加入/未加入）" value={formatFlag(adminRecord?.socialInsurance)} />
+      {/* 基本給与情報 */}
+      <div className="space-y-6">
+        <h4 className="text-sm font-bold text-slate-900 uppercase tracking-wider mb-4 flex items-center">
+          <span className="w-1 h-4 bg-accent-blue rounded-full mr-3" />
+          給与情報
+        </h4>
+        <div className="bg-white border border-slate-100 rounded-2xl p-6 space-y-3">
+          <InfoRow label="基本給" value={formatCurrency(adminRecord?.baseSalary)} />
+          <InfoRow label="時給単価" value={formatCurrency(contract?.hourlyWage)} />
+          <InfoRow label="残業時給" value={formatCurrency(contract?.overtimeHourlyWage ?? null)} />
+          <InfoRow label="日払い支給額" value={formatCurrency(adminRecord?.dailyPaymentAmount)} />
+          <InfoRow label="通勤費区分" value={adminRecord?.commutingExpenseCategory ?? "-"} />
+          <InfoRow label="通勤費支払方法" value={adminRecord?.commutingExpensePaymentMethod ?? "-"} />
+          <InfoRow label="最寄り駅" value={primaryRoute?.nearestStation ?? "-"} />
+          <InfoRow
+            label="交通費（片道/往復）"
+            value={
+              primaryRoute
+                ? `往復 ${formatCurrency(primaryRoute.roundTripAmount)}${primaryRoute.monthlyPassAmount ? ` / 定期 ${formatCurrency(primaryRoute.monthlyPassAmount)}` : ""}`
+                : "-"
+            }
+          />
+        </div>
+      </div>
+
+      {/* 振込口座情報 */}
+      <div className="space-y-6">
+        <h4 className="text-sm font-bold text-slate-900 uppercase tracking-wider mb-4 flex items-center">
+          <span className="w-1 h-4 bg-accent-emerald rounded-full mr-3" />
+          振込口座情報
+        </h4>
+        {bankAccounts.length === 0 ? (
+          <p className="text-sm text-slate-500">振込口座はまだ登録されていません。</p>
+        ) : (
+          bankAccounts.map((account) => (
+            <div
+              key={account.id}
+              className="bg-white border border-slate-100 rounded-2xl p-6 space-y-3"
+            >
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm font-semibold text-slate-700">
+                  給与支払{account.paymentPriority}
+                </span>
+                {!account.isActive && (
+                  <span className="px-2 py-1 bg-slate-100 text-slate-500 text-xs rounded-full">
+                    無効
+                  </span>
+                )}
+              </div>
+              <InfoRow label="支払順位" value={String(account.paymentPriority)} />
+              <InfoRow label="取扱区分" value={account.handlingCategory ?? "-"} />
+              <InfoRow label="支払区分" value={account.paymentCategory ?? "-"} />
+              <InfoRow label="振込機関コード" value={account.bankCode ?? "-"} />
+              <InfoRow label="機関名" value={account.bankName ?? "-"} />
+              <InfoRow label="支店名" value={account.branchName ?? "-"} />
+              <InfoRow label="預金種目" value={depositTypeLabel(account.depositType)} />
+              <InfoRow label="口座番号" value={account.accountNumber ?? "-"} />
+              <InfoRow label="口座名" value={account.accountHolderName ?? "-"} />
+            </div>
+          ))
+        )}
+      </div>
+
+      {/* 社会保険・雇用保険情報 */}
+      <div className="space-y-6">
+        <h4 className="text-sm font-bold text-slate-900 uppercase tracking-wider mb-4 flex items-center">
+          <span className="w-1 h-4 bg-amber-500 rounded-full mr-3" />
+          社会保険・雇用保険
+        </h4>
+        <div className="bg-white border border-slate-100 rounded-2xl p-6 space-y-3">
+          <InfoRow label="控除申告書（甲乙）" value={adminRecord?.taxWithholdingCategory ?? "-"} />
+          <InfoRow
+            label="web給金帳"
+            value={adminRecord?.webSalaryBookEnabled ? "有効" : "無効"}
+          />
+          <InfoRow label="健康保険加入区分" value={adminRecord?.healthInsuranceCategory ?? "-"} />
+          <InfoRow label="健康保険証の種類" value={adminRecord?.healthInsuranceCardType ?? "-"} />
+          <InfoRow label="厚生年金加入区分" value={adminRecord?.pensionCategory ?? "-"} />
+          <InfoRow label="基礎年金番号" value={adminRecord?.basicPensionNumber ?? "-"} />
+          <InfoRow label="厚年基金加入区分" value={adminRecord?.pensionFundCategory ?? "-"} />
+          <InfoRow label="雇用保険（加入/未加入）" value={formatFlag(adminRecord?.employmentInsurance)} />
+          <InfoRow label="雇用保険被保険者番号" value={adminRecord?.employmentInsuranceNumber ?? "-"} />
+          <InfoRow
+            label="雇用保険証提出"
+            value={adminRecord?.employmentInsuranceCardSubmitted ?? "-"}
+          />
+          <InfoRow label="社会保険（加入/未加入）" value={formatFlag(adminRecord?.socialInsurance)} />
+        </div>
       </div>
     </div>
   );
