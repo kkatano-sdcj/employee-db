@@ -22,6 +22,7 @@ export type ContractSummary = {
   status: string;
   hourlyWage: number;
   needsUpdate: boolean;
+  daysUntilExpiry: number | null;
   latestHistory?: ContractHistorySnapshot;
 };
 
@@ -76,6 +77,7 @@ export async function fetchContractSummaries(): Promise<ContractSummary[]> {
       status: string;
       hourlyWage: number;
       needsUpdate: boolean;
+      daysUntilExpiry: number | null;
       historyEffectiveDate: Date | string | null;
       historyRaw: Record<string, unknown> | null;
     }>
@@ -98,6 +100,10 @@ export async function fetchContractSummaries(): Promise<ContractSummary[]> {
         WHEN c.employment_expiry_scheduled_date < CURRENT_DATE THEN true
         ELSE false
       END as "needsUpdate",
+      CASE
+        WHEN c.employment_expiry_scheduled_date IS NULL THEN NULL
+        ELSE (c.employment_expiry_scheduled_date::date - CURRENT_DATE)::int
+      END as "daysUntilExpiry",
       ${capability.hasSnapshots && capability.hasContractId ? db`history.effective_date` : db`NULL`} as "historyEffectiveDate",
       ${capability.hasSnapshots && capability.hasContractId ? db`history.snapshot` : db`NULL`} as "historyRaw"
     FROM contracts c
@@ -124,6 +130,7 @@ export async function fetchContractSummaries(): Promise<ContractSummary[]> {
     ...row,
     contractNumber: row.contractNumber ?? row.id,
     hourlyWage: Number(row.hourlyWage ?? 0),
+    daysUntilExpiry: typeof row.daysUntilExpiry === "number" ? row.daysUntilExpiry : null,
     contractStartDate: row.contractStartDate
       ? new Date(row.contractStartDate).toISOString().slice(0, 10)
       : undefined,

@@ -2,6 +2,32 @@
 
 import { db } from "@/server/db";
 
+/**
+ * 契約番号を自動生成する（FR-097）
+ * フォーマット: {employee_number}-CON{5桁の連番}
+ * 例: BPS0001-CON00001
+ */
+export async function generateContractNumber(employeeNumber: string): Promise<string> {
+  const prefix = `${employeeNumber}-CON`;
+
+  const rows = await db<Array<{ id: string }>>`
+    SELECT id FROM contracts
+    WHERE id LIKE ${prefix + "%"}
+    ORDER BY id DESC
+    LIMIT 1
+  `;
+
+  if (rows.length === 0) {
+    return `${prefix}00001`;
+  }
+
+  const lastId = rows[0]!.id;
+  const numPart = lastId.substring(prefix.length);
+  const nextNum = parseInt(numPart, 10) + 1;
+
+  return `${prefix}${String(nextNum).padStart(5, "0")}`;
+}
+
 type DeleteContractResult = {
   success: boolean;
   error?: string;

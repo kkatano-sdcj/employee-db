@@ -29,10 +29,16 @@ export const buildEmploymentHistorySnapshots = (
       end: slot.end,
     })),
     workLocations: data.workLocations.map((location) => ({
-      location: location.location,
+      companyName: location.companyName ?? null,
+      officeName: location.officeName ?? null,
+      address: location.address ?? null,
+      phoneNumber: location.phoneNumber ?? null,
+      location: location.location ?? null,
     })),
     transportationRoutes: data.transportationRoutes.map((route) => ({
-      route: route.route,
+      route: route.route ?? null,
+      usagePeriod: route.usagePeriod ?? null,
+      transportationName: route.transportationName ?? null,
       roundTripAmount: route.roundTripAmount,
       monthlyPassAmount: route.monthlyPassAmount ?? null,
       maxAmount: route.maxAmount ?? null,
@@ -73,7 +79,7 @@ export async function insertEmploymentHistoryFromForm(
   trx: Sql,
   params: {
     employeeId: string;
-    contractId: string;
+    contractId: string | null;
     departmentCode: string;
     effectiveDate: string;
     eventType: string;
@@ -83,6 +89,7 @@ export async function insertEmploymentHistoryFromForm(
 ) {
   const snapshots = buildEmploymentHistorySnapshots(params.form);
   const historyId = randomUUID();
+  const hourlyWage = params.form.contract.hourlyWage || null;
 
   await trx`
     INSERT INTO employment_history (
@@ -97,6 +104,8 @@ export async function insertEmploymentHistoryFromForm(
       contract_terms_snapshot,
       documents_snapshot,
       remarks,
+      created_at,
+      updated_at,
       updated_by
     ) VALUES (
       ${historyId},
@@ -105,11 +114,13 @@ export async function insertEmploymentHistoryFromForm(
       ${params.effectiveDate},
       ${params.eventType},
       ${params.departmentCode},
-      ${params.form.contract.hourlyWage},
+      ${hourlyWage},
       ${trx.json(snapshots.workCondition)},
       ${trx.json(snapshots.contractTerms)},
       ${trx.json(snapshots.documents)},
       ${params.remarks},
+      NOW(),
+      NOW(),
       'system'
     )
   `;
