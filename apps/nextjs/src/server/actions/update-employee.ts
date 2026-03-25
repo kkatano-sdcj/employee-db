@@ -1,8 +1,6 @@
 "use server";
 
 import { randomUUID } from "node:crypto";
-import type { Sql } from "postgres";
-
 import { createEmployeeFormSchema, type EmployeeFormValues } from "@/lib/schemas/employee";
 import { db } from "@/server/db";
 import { generateContractNumber } from "@/server/actions/contracts";
@@ -67,7 +65,7 @@ export async function updateEmployee(input: UpdateEmployeeInput) {
     data.transportationRoutes,
     workConditionKey,
   );
-  await db.begin(async (trx: Sql) => {
+  await db.begin(async (trx) => {
     await trx`
       UPDATE employees
       SET

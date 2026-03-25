@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import type { Sql } from "postgres";
+import type { TransactionSql } from "postgres";
 
 import type { EmployeeFormValues } from "@/lib/schemas/employee";
 
@@ -76,7 +76,7 @@ export const buildEmploymentHistorySnapshots = (
 };
 
 export async function insertEmploymentHistoryFromForm(
-  trx: Sql,
+  trx: TransactionSql,
   params: {
     employeeId: string;
     contractId: string | null;
