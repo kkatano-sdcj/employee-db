@@ -1,6 +1,7 @@
 "use server";
 
 import { randomUUID } from "node:crypto";
+import type { Sql } from "postgres";
 
 import { createEmployeeFormSchema, type EmployeeFormValues } from "@/lib/schemas/employee";
 import { db } from "@/server/db";
@@ -49,7 +50,7 @@ export async function createEmployee(payload: EmployeeFormValues) {
     (data.contract.contractStartDate?.trim() ?? "") !== "" ||
     (data.contractNumber?.trim() ?? "") !== "";
 
-  return db.begin(async (trx) => {
+  return db.begin(async (trx: Sql) => {
     const employeeId = randomUUID();
     await trx`
       INSERT INTO employees (
