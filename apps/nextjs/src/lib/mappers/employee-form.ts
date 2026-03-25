@@ -61,6 +61,10 @@ export function mapEmployeeDetailToFormValues(detail: EmployeeDetail): EmployeeF
       (employee.employmentStatus as EmployeeFormValues["employmentStatus"]) ??
       base.employmentStatus,
     departmentCode: employee.departmentCode,
+    siteCode: employee.siteCode ?? "",
+    rehireCount: employee.rehireCount ?? 0,
+    originalHireDate: employee.originalHireDate ?? "",
+    currentHireDate: employee.currentHireDate ?? "",
     myNumber: employee.myNumber ?? "",
     adminRecords: {
       healthInsuranceCategory: adminRecord?.healthInsuranceCategory ?? "",
@@ -96,6 +100,10 @@ export function mapEmployeeDetailToFormValues(detail: EmployeeDetail): EmployeeF
     workLocations:
       workCondition && workCondition.workLocations.length > 0
         ? workCondition.workLocations.map((location) => ({
+            companyName: location.companyName ?? "",
+            officeName: location.officeName ?? "",
+            address: location.address ?? "",
+            phoneNumber: location.phoneNumber ?? "",
             location: location.location ?? "",
           }))
         : base.workLocations,
@@ -103,6 +111,8 @@ export function mapEmployeeDetailToFormValues(detail: EmployeeDetail): EmployeeF
       workCondition && workCondition.transportationRoutes.length > 0
         ? workCondition.transportationRoutes.map((route) => ({
             route: route.route ?? "",
+            usagePeriod: route.usagePeriod ?? "",
+            transportationName: route.transportationName ?? "",
             roundTripAmount: Number(route.roundTripAmount ?? 0),
             monthlyPassAmount:
               typeof route.monthlyPassAmount === "number"
@@ -113,6 +123,14 @@ export function mapEmployeeDetailToFormValues(detail: EmployeeDetail): EmployeeF
             nearestStation: route.nearestStation ?? "",
           }))
         : base.transportationRoutes,
+    contact: {
+      residentAddressSame: contact?.residentAddressSame ?? true,
+      residentPostalCode: contact?.residentPostalCode ?? "",
+      residentAddress1: contact?.residentAddress1 ?? "",
+      residentAddress2: contact?.residentAddress2 ?? "",
+      residentAddress1Kana: contact?.residentAddress1Kana ?? "",
+      residentAddress2Kana: contact?.residentAddress2Kana ?? "",
+    },
     documents: {
       healthInsuranceCardSubmitted: adminRecord?.healthInsuranceCardSubmitted ?? "",
       submittedToAdminOn: adminRecord?.submittedToAdminOn ?? "",
@@ -142,6 +160,27 @@ export function mapEmployeeDetailToFormValues(detail: EmployeeDetail): EmployeeF
       paidLeaveClause: contract?.paidLeaveClause ?? "",
       hourlyWageNote: contract?.hourlyWageNote ?? "",
       specialNote: (contract as { specialNote?: string })?.specialNote ?? "",
+      jobDescriptionChangeScope: contract?.jobDescriptionChangeScope ?? "会社の定める業務",
+      workLocationChangeScope: contract?.workLocationChangeScope ?? "会社の定める事業所",
+      overtimeWork: contract?.overtimeWork ?? true,
+      holidayWork: contract?.holidayWork ?? true,
+      paidLeaveDays: contract?.paidLeaveDays ?? undefined,
+      paidLeaveBaseDateType: contract?.paidLeaveBaseDateType ?? "",
+      paidLeaveBaseDate: contract?.paidLeaveBaseDate ?? "",
+      disabilityLeaveFrequency: contract?.disabilityLeaveFrequency ?? "",
+      commutingAllowanceMax: contract?.commutingAllowanceMax ? Number(contract.commutingAllowanceMax) : 15000,
+      retirementAge: contract?.retirementAge ?? undefined,
+      retirementDate: contract?.retirementDate ?? "",
+      clientHolidayFollow: contract?.clientHolidayFollow ?? false,
+      holidaysNote: contract?.holidaysNote ?? "",
+      workingHoursNote: contract?.workingHoursNote ?? "",
+      pieceworkShiftPattern: contract?.pieceworkShiftPattern ?? "",
+      bonusClause: contract?.bonusClause ?? "支給する。額については、個人の業務内容、業務の責任の範囲、会社・組織の業績などに基づき、個人ごとに個別に決定する。",
+      employmentInsuranceEnrolled: contract?.employmentInsuranceEnrolled ?? false,
+      healthInsuranceEnrolled: contract?.healthInsuranceEnrolled ?? false,
+      pensionEnrolled: contract?.pensionEnrolled ?? false,
+      pensionFundEnrolled: contract?.pensionFundEnrolled ?? false,
+      eligibilityCertRequired: contract?.eligibilityCertRequired ?? false,
     },
   };
 

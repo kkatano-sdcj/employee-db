@@ -38,7 +38,7 @@ export const EmployeeForm = ({
     () => initialValues ?? defaultEmployeeFormValues,
     [initialValues],
   );
-  const schema = useMemo(() => createEmployeeFormSchema(mode), [mode]);
+  const schema = useMemo(() => createEmployeeFormSchema(mode, context), [mode, context]);
   const form = useForm<EmployeeFormValues>({
     resolver: zodResolver(schema),
     defaultValues: memoizedDefaultValues,
@@ -53,6 +53,8 @@ export const EmployeeForm = ({
     }
   }, [initialValues, form]);
 
+  const watchResidentSame = form.watch("contact.residentAddressSame");
+
   const workingHours = useFieldArray({ control: form.control, name: "workingHours" });
   const breakHours = useFieldArray({ control: form.control, name: "breakHours" });
   const workLocations = useFieldArray({ control: form.control, name: "workLocations" });
@@ -64,14 +66,32 @@ export const EmployeeForm = ({
   const sectionPermissions = (() => {
     // 従業員管理ページからのアクセス
     if (context === "employee-management") {
-      return { basic: true, work: false, contract: false, documents: true };
+      return {
+        basic: true,
+        work: false,
+        contract: false,
+        documents: true,
+        commutingBasic: true,
+      };
     }
     // 契約管理ページからのアクセス（契約更新・新規契約作成）
     if (context === "contract-management") {
-      return { basic: false, work: true, contract: true, documents: true };
+      return {
+        basic: false,
+        work: true,
+        contract: true,
+        documents: true,
+        commutingBasic: false,
+      };
     }
     // デフォルト（後方互換性のため）
-    return { basic: true, work: true, contract: true, documents: true };
+    return {
+      basic: true,
+      work: true,
+      contract: true,
+      documents: true,
+      commutingBasic: false,
+    };
   })();
 
   const onSubmit = async (values: EmployeeFormValues) => {
@@ -92,6 +112,7 @@ export const EmployeeForm = ({
           values,
           workConditionId,
           contractId,
+          formContext: context,
         }
       : values;
 
@@ -156,7 +177,6 @@ export const EmployeeForm = ({
             registration={form.register("stickerItem")}
             error={form.formState.errors.stickerItem?.message}
             readOnly={!sectionPermissions.basic}
-            required
           />
           <SelectField
             label="性別"
@@ -224,12 +244,21 @@ export const EmployeeForm = ({
               { label: "稼働", value: "ACTIVE" },
               { label: "休職", value: "ON_LEAVE" },
               { label: "退職", value: "RETIRED" },
+              { label: "待機中", value: "STANDBY" },
+              { label: "アーカイブ", value: "ARCHIVED" },
             ]}
           />
           <TextField
             label="所属コード"
             registration={form.register("departmentCode")}
             error={form.formState.errors.departmentCode?.message}
+            readOnly={!sectionPermissions.basic}
+            required
+          />
+          <TextField
+            label="所属コード"
+            registration={form.register("siteCode")}
+            error={form.formState.errors.siteCode?.message}
             readOnly={!sectionPermissions.basic}
           />
           <TextField
@@ -290,6 +319,126 @@ export const EmployeeForm = ({
               readOnly={!sectionPermissions.basic}
             />
           </div>
+          {/* 住民票住所 */}
+          <div className="flex items-center gap-2">
+            <input
+              id="residentAddressSame"
+              type="checkbox"
+              className="h-4 w-4 rounded border-slate-300"
+              {...form.register("contact.residentAddressSame")}
+            />
+            <label htmlFor="residentAddressSame" className="text-sm text-slate-600">
+              住民票住所は現住所と同じ
+            </label>
+          </div>
+          {!watchResidentSame && (
+            <div className="grid gap-4 md:grid-cols-3">
+              <TextField
+                label="住民票郵便番号"
+                registration={form.register("contact.residentPostalCode")}
+                error={form.formState.errors.contact?.residentPostalCode?.message}
+                readOnly={!sectionPermissions.basic}
+              />
+              <TextField
+                label="住民票住所1"
+                registration={form.register("contact.residentAddress1")}
+                error={form.formState.errors.contact?.residentAddress1?.message}
+                readOnly={!sectionPermissions.basic}
+              />
+              <TextField
+                label="住民票住所2"
+                registration={form.register("contact.residentAddress2")}
+                error={form.formState.errors.contact?.residentAddress2?.message}
+                readOnly={!sectionPermissions.basic}
+              />
+              <TextField
+                label="住民票住所1フリガナ"
+                registration={form.register("contact.residentAddress1Kana")}
+                error={form.formState.errors.contact?.residentAddress1Kana?.message}
+                readOnly={!sectionPermissions.basic}
+              />
+              <TextField
+                label="住民票住所2フリガナ"
+                registration={form.register("contact.residentAddress2Kana")}
+                error={form.formState.errors.contact?.residentAddress2Kana?.message}
+                readOnly={!sectionPermissions.basic}
+              />
+            </div>
+          )}
+        </FormSection>
+      )}
+
+      {sectionPermissions.commutingBasic && (
+        <FormSection title="通勤費">
+          <DynamicFieldArray
+            title="通勤経路"
+            fields={transportationRoutes.fields}
+            onAdd={() =>
+              transportationRoutes.append({
+                route: "",
+                usagePeriod: "",
+                transportationName: "",
+                roundTripAmount: 0,
+                monthlyPassAmount: undefined,
+                maxAmount: undefined,
+                nearestStation: "",
+              })
+            }
+            onRemove={(idx) => transportationRoutes.remove(idx)}
+            editable
+          >
+            {(field, index) => (
+              <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-5">
+                <TextField
+                  label="経路１"
+                  registration={form.register(`transportationRoutes.${index}.route` as const)}
+                  error={form.formState.errors.transportationRoutes?.[index]?.route?.message}
+                />
+                <TextField
+                  label="利用期間"
+                  registration={form.register(
+                    `transportationRoutes.${index}.usagePeriod` as const,
+                  )}
+                  error={
+                    form.formState.errors.transportationRoutes?.[index]?.usagePeriod?.message
+                  }
+                />
+                <TextField
+                  label="交通機関名"
+                  registration={form.register(
+                    `transportationRoutes.${index}.transportationName` as const,
+                  )}
+                  error={
+                    form.formState.errors.transportationRoutes?.[index]?.transportationName
+                      ?.message
+                  }
+                />
+                <TextField
+                  type="number"
+                  label="金額（往復）１"
+                  registration={form.register(
+                    `transportationRoutes.${index}.roundTripAmount` as const,
+                    { valueAsNumber: true },
+                  )}
+                  error={
+                    form.formState.errors.transportationRoutes?.[index]?.roundTripAmount
+                      ?.message
+                  }
+                />
+                <TextField
+                  type="number"
+                  label="金額（１か月定期）１"
+                  registration={form.register(
+                    `transportationRoutes.${index}.monthlyPassAmount` as const,
+                  )}
+                  error={
+                    form.formState.errors.transportationRoutes?.[index]?.monthlyPassAmount
+                      ?.message
+                  }
+                />
+              </div>
+            )}
+          </DynamicFieldArray>
         </FormSection>
       )}
 
@@ -332,8 +481,9 @@ export const EmployeeForm = ({
           />
         </div>
 
+        <p className="text-sm font-semibold text-slate-800">勤務時間</p>
         <DynamicFieldArray
-          title="勤務時間帯"
+          title="始業・就業"
           fields={workingHours.fields}
           onAdd={() => workingHours.append({ start: "09:00", end: "18:00" })}
           onRemove={(idx) => workingHours.remove(idx)}
@@ -342,14 +492,14 @@ export const EmployeeForm = ({
           {(field, index) => (
             <div className="grid gap-3 md:grid-cols-2">
               <TextField
-                label="開始"
+                label="始業時間"
                 type="time"
                 registration={form.register(`workingHours.${index}.start` as const)}
                 error={form.formState.errors.workingHours?.[index]?.start?.message}
                 readOnly={!sectionPermissions.work}
               />
               <TextField
-                label="終了"
+                label="就業時間"
                 type="time"
                 registration={form.register(`workingHours.${index}.end` as const)}
                 error={form.formState.errors.workingHours?.[index]?.end?.message}
@@ -360,7 +510,7 @@ export const EmployeeForm = ({
         </DynamicFieldArray>
 
         <DynamicFieldArray
-          title="休憩時間帯"
+          title="休憩時間"
           fields={breakHours.fields}
           onAdd={() => breakHours.append({ start: "12:00", end: "13:00" })}
           onRemove={(idx) => breakHours.remove(idx)}
@@ -386,29 +536,67 @@ export const EmployeeForm = ({
           )}
         </DynamicFieldArray>
 
+        <p className="text-sm font-semibold text-slate-800">就業の場所</p>
         <DynamicFieldArray
-          title="勤務場所"
+          title="会社・事業所"
           fields={workLocations.fields}
-          onAdd={() => workLocations.append({ location: "" })}
+          onAdd={() =>
+            workLocations.append({
+              companyName: "",
+              officeName: "",
+              address: "",
+              phoneNumber: "",
+              location: "",
+            })
+          }
           onRemove={(idx) => workLocations.remove(idx)}
           editable={sectionPermissions.work}
         >
           {(field, index) => (
-            <TextField
-              label="勤務地"
-              registration={form.register(`workLocations.${index}.location` as const)}
-              error={form.formState.errors.workLocations?.[index]?.location?.message}
-              readOnly={!sectionPermissions.work}
-            />
+            <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+              <TextField
+                label="会社名"
+                registration={form.register(`workLocations.${index}.companyName` as const)}
+                error={form.formState.errors.workLocations?.[index]?.companyName?.message}
+                readOnly={!sectionPermissions.work}
+              />
+              <TextField
+                label="事業所名"
+                registration={form.register(`workLocations.${index}.officeName` as const)}
+                error={form.formState.errors.workLocations?.[index]?.officeName?.message}
+                readOnly={!sectionPermissions.work}
+              />
+              <TextField
+                label="住所"
+                registration={form.register(`workLocations.${index}.address` as const)}
+                error={form.formState.errors.workLocations?.[index]?.address?.message}
+                readOnly={!sectionPermissions.work}
+              />
+              <TextField
+                label="電話番号"
+                registration={form.register(`workLocations.${index}.phoneNumber` as const)}
+                error={form.formState.errors.workLocations?.[index]?.phoneNumber?.message}
+                readOnly={!sectionPermissions.work}
+              />
+              <TextField
+                label="勤務地（従来・任意）"
+                registration={form.register(`workLocations.${index}.location` as const)}
+                error={form.formState.errors.workLocations?.[index]?.location?.message}
+                readOnly={!sectionPermissions.work}
+              />
+            </div>
           )}
         </DynamicFieldArray>
 
+        <p className="text-sm font-semibold text-slate-800">通勤費</p>
         <DynamicFieldArray
-          title="交通費（ルート別）"
+          title="通勤経路"
           fields={transportationRoutes.fields}
           onAdd={() =>
             transportationRoutes.append({
               route: "",
+              usagePeriod: "",
+              transportationName: "",
               roundTripAmount: 0,
               monthlyPassAmount: undefined,
               maxAmount: undefined,
@@ -419,9 +607,9 @@ export const EmployeeForm = ({
           editable={sectionPermissions.work}
         >
           {(field, index) => (
-            <div className="grid gap-3 md:grid-cols-5">
+            <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7">
               <TextField
-                label="ルート"
+                label="経路１"
                 registration={form.register(
                   `transportationRoutes.${index}.route` as const,
                 )}
@@ -431,8 +619,29 @@ export const EmployeeForm = ({
                 readOnly={!sectionPermissions.work}
               />
               <TextField
+                label="利用期間"
+                registration={form.register(
+                  `transportationRoutes.${index}.usagePeriod` as const,
+                )}
+                error={
+                  form.formState.errors.transportationRoutes?.[index]?.usagePeriod?.message
+                }
+                readOnly={!sectionPermissions.work}
+              />
+              <TextField
+                label="交通機関名"
+                registration={form.register(
+                  `transportationRoutes.${index}.transportationName` as const,
+                )}
+                error={
+                  form.formState.errors.transportationRoutes?.[index]?.transportationName
+                    ?.message
+                }
+                readOnly={!sectionPermissions.work}
+              />
+              <TextField
                 type="number"
-                label="往復"
+                label="金額（往復）１"
                 registration={form.register(
                   `transportationRoutes.${index}.roundTripAmount` as const,
                   { valueAsNumber: true },
@@ -445,7 +654,7 @@ export const EmployeeForm = ({
               />
               <TextField
                 type="number"
-                label="定期"
+                label="金額（１か月定期）１"
                 registration={form.register(
                   `transportationRoutes.${index}.monthlyPassAmount` as const,
                 )}
@@ -467,7 +676,7 @@ export const EmployeeForm = ({
                 readOnly={!sectionPermissions.work}
               />
               <TextField
-                label="最寄り"
+                label="最寄り駅"
                 registration={form.register(
                   `transportationRoutes.${index}.nearestStation` as const,
                 )}
@@ -509,6 +718,8 @@ export const EmployeeForm = ({
             options={[
               { label: "無期", value: "INDEFINITE" },
               { label: "有期", value: "FIXED_TERM" },
+              { label: "再雇用", value: "REHIRED" },
+              { label: "障がい者", value: "DISABILITY" },
             ]}
           />
           <TextField
@@ -537,9 +748,12 @@ export const EmployeeForm = ({
               更新予定あり
             </label>
           </div>
+        </div>
+        <p className="text-sm font-semibold text-slate-800">賃金（時給制）</p>
+        <div className="grid gap-4 md:grid-cols-3">
           <TextField
             type="number"
-            label="時給単価"
+            label="時間給"
             registration={form.register("contract.hourlyWage", { valueAsNumber: true })}
             error={form.formState.errors.contract?.hourlyWage?.message}
             readOnly={!sectionPermissions.contract}
@@ -553,6 +767,7 @@ export const EmployeeForm = ({
             readOnly={!sectionPermissions.contract}
           />
         </div>
+        <p className="text-sm font-semibold text-slate-800">業務の内容</p>
         <TextField
           label="業務内容"
           registration={form.register("contract.jobDescription")}
@@ -577,6 +792,237 @@ export const EmployeeForm = ({
           error={form.formState.errors.contract?.specialNote?.message}
           readOnly={!sectionPermissions.contract}
         />
+
+        {/* 変更の範囲 */}
+        <p className="text-sm font-semibold text-slate-800">変更の範囲</p>
+        <div className="grid gap-4 md:grid-cols-2">
+          <TextField
+            label="業務変更の範囲"
+            registration={form.register("contract.jobDescriptionChangeScope")}
+            error={form.formState.errors.contract?.jobDescriptionChangeScope?.message}
+            readOnly={!sectionPermissions.contract}
+          />
+          <TextField
+            label="就業場所変更の範囲"
+            registration={form.register("contract.workLocationChangeScope")}
+            error={form.formState.errors.contract?.workLocationChangeScope?.message}
+            readOnly={!sectionPermissions.contract}
+          />
+        </div>
+
+        {/* 労働条件詳細 */}
+        <p className="text-sm font-semibold text-slate-800">労働条件詳細</p>
+        <div className="grid gap-4 md:grid-cols-3">
+          <div className="flex items-center gap-2">
+            <input
+              id="overtimeWork"
+              type="checkbox"
+              className="h-4 w-4 rounded border-slate-300"
+              {...form.register("contract.overtimeWork")}
+              disabled={!sectionPermissions.contract && mode === "edit"}
+            />
+            <label htmlFor="overtimeWork" className="text-sm text-slate-600">
+              所定外労働あり
+            </label>
+          </div>
+          <div className="flex items-center gap-2">
+            <input
+              id="holidayWork"
+              type="checkbox"
+              className="h-4 w-4 rounded border-slate-300"
+              {...form.register("contract.holidayWork")}
+              disabled={!sectionPermissions.contract && mode === "edit"}
+            />
+            <label htmlFor="holidayWork" className="text-sm text-slate-600">
+              休日労働あり
+            </label>
+          </div>
+          <div className="flex items-center gap-2">
+            <input
+              id="clientHolidayFollow"
+              type="checkbox"
+              className="h-4 w-4 rounded border-slate-300"
+              {...form.register("contract.clientHolidayFollow")}
+              disabled={!sectionPermissions.contract && mode === "edit"}
+            />
+            <label htmlFor="clientHolidayFollow" className="text-sm text-slate-600">
+              客先休日に合わせる
+            </label>
+          </div>
+        </div>
+
+        {/* 有給・休暇 */}
+        <p className="text-sm font-semibold text-slate-800">有給・休暇</p>
+        <div className="grid gap-4 md:grid-cols-2">
+          <TextField
+            type="number"
+            label="年次有給休暇日数"
+            registration={form.register("contract.paidLeaveDays")}
+            error={form.formState.errors.contract?.paidLeaveDays?.message}
+            readOnly={!sectionPermissions.contract}
+          />
+          <SelectField
+            label="有休基準日タイプ"
+            registration={form.register("contract.paidLeaveBaseDateType")}
+            error={form.formState.errors.contract?.paidLeaveBaseDateType?.message}
+            disabled={!sectionPermissions.contract && mode === "edit"}
+            options={[
+              { label: "選択してください", value: "" },
+              { label: "入社6か月後", value: "SIX_MONTHS_AFTER_HIRE" },
+              { label: "その他", value: "OTHER" },
+            ]}
+          />
+          <TextField
+            type="date"
+            label="有休基準日"
+            registration={form.register("contract.paidLeaveBaseDate")}
+            error={form.formState.errors.contract?.paidLeaveBaseDate?.message}
+            readOnly={!sectionPermissions.contract}
+          />
+          <TextField
+            label="障がい者通院休暇"
+            registration={form.register("contract.disabilityLeaveFrequency")}
+            error={form.formState.errors.contract?.disabilityLeaveFrequency?.message}
+            readOnly={!sectionPermissions.contract}
+          />
+        </div>
+
+        {/* 手当・報酬 */}
+        <p className="text-sm font-semibold text-slate-800">手当・報酬</p>
+        <div className="grid gap-4 md:grid-cols-2">
+          <TextField
+            type="number"
+            label="通勤手当月限度額"
+            registration={form.register("contract.commutingAllowanceMax")}
+            error={form.formState.errors.contract?.commutingAllowanceMax?.message}
+            readOnly={!sectionPermissions.contract}
+          />
+          <TextField
+            label="賞与条項"
+            registration={form.register("contract.bonusClause")}
+            error={form.formState.errors.contract?.bonusClause?.message}
+            readOnly={!sectionPermissions.contract}
+          />
+        </div>
+
+        {/* 定年 */}
+        <p className="text-sm font-semibold text-slate-800">定年</p>
+        <div className="grid gap-4 md:grid-cols-2">
+          <SelectField
+            label="定年年齢"
+            registration={form.register("contract.retirementAge")}
+            error={form.formState.errors.contract?.retirementAge?.message}
+            disabled={!sectionPermissions.contract && mode === "edit"}
+            options={[
+              { label: "選択してください", value: "" },
+              { label: "60歳", value: "60" },
+              { label: "65歳", value: "65" },
+            ]}
+          />
+          <TextField
+            type="date"
+            label="定年日"
+            registration={form.register("contract.retirementDate")}
+            error={form.formState.errors.contract?.retirementDate?.message}
+            readOnly={!sectionPermissions.contract}
+          />
+        </div>
+
+        {/* 社会保険（契約単位） */}
+        <p className="text-sm font-semibold text-slate-800">社会保険（契約単位）</p>
+        <div className="grid gap-4 md:grid-cols-3">
+          <div className="flex items-center gap-2">
+            <input
+              id="employmentInsuranceEnrolled"
+              type="checkbox"
+              className="h-4 w-4 rounded border-slate-300"
+              {...form.register("contract.employmentInsuranceEnrolled")}
+              disabled={!sectionPermissions.contract && mode === "edit"}
+            />
+            <label htmlFor="employmentInsuranceEnrolled" className="text-sm text-slate-600">
+              雇用保険加入
+            </label>
+          </div>
+          <div className="flex items-center gap-2">
+            <input
+              id="healthInsuranceEnrolled"
+              type="checkbox"
+              className="h-4 w-4 rounded border-slate-300"
+              {...form.register("contract.healthInsuranceEnrolled")}
+              disabled={!sectionPermissions.contract && mode === "edit"}
+            />
+            <label htmlFor="healthInsuranceEnrolled" className="text-sm text-slate-600">
+              健康保険加入
+            </label>
+          </div>
+          <div className="flex items-center gap-2">
+            <input
+              id="pensionEnrolled"
+              type="checkbox"
+              className="h-4 w-4 rounded border-slate-300"
+              {...form.register("contract.pensionEnrolled")}
+              disabled={!sectionPermissions.contract && mode === "edit"}
+            />
+            <label htmlFor="pensionEnrolled" className="text-sm text-slate-600">
+              厚生年金加入
+            </label>
+          </div>
+          <div className="flex items-center gap-2">
+            <input
+              id="pensionFundEnrolled"
+              type="checkbox"
+              className="h-4 w-4 rounded border-slate-300"
+              {...form.register("contract.pensionFundEnrolled")}
+              disabled={!sectionPermissions.contract && mode === "edit"}
+            />
+            <label htmlFor="pensionFundEnrolled" className="text-sm text-slate-600">
+              厚生年金基金加入
+            </label>
+          </div>
+          <div className="flex items-center gap-2">
+            <input
+              id="eligibilityCertRequired"
+              type="checkbox"
+              className="h-4 w-4 rounded border-slate-300"
+              {...form.register("contract.eligibilityCertRequired")}
+              disabled={!sectionPermissions.contract && mode === "edit"}
+            />
+            <label htmlFor="eligibilityCertRequired" className="text-sm text-slate-600">
+              資格確認書（紙）必要
+            </label>
+          </div>
+        </div>
+
+        {/* 補足 */}
+        <p className="text-sm font-semibold text-slate-800">補足</p>
+        <div className="grid gap-4 md:grid-cols-1">
+          <TextField
+            label="休日補足"
+            registration={form.register("contract.holidaysNote")}
+            error={form.formState.errors.contract?.holidaysNote?.message}
+            readOnly={!sectionPermissions.contract}
+          />
+          <TextField
+            label="勤務時間補足"
+            registration={form.register("contract.workingHoursNote")}
+            error={form.formState.errors.contract?.workingHoursNote?.message}
+            readOnly={!sectionPermissions.contract}
+          />
+          <SelectField
+            label="出来高制勤務パターン"
+            registration={form.register("contract.pieceworkShiftPattern")}
+            error={form.formState.errors.contract?.pieceworkShiftPattern?.message}
+            disabled={!sectionPermissions.contract && mode === "edit"}
+            options={[
+              { label: "選択してください", value: "" },
+              { label: "1部", value: "1部" },
+              { label: "2部", value: "2部" },
+              { label: "3部-1", value: "3部-1" },
+              { label: "3部-2", value: "3部-2" },
+              { label: "上記以外", value: "上記以外" },
+            ]}
+          />
+        </div>
       </FormSection>
       )}
 

@@ -4,62 +4,61 @@ import { randomUUID } from "node:crypto";
 
 import { createEmployeeFormSchema, type EmployeeFormValues } from "@/lib/schemas/employee";
 import { db } from "@/server/db";
+import { generateContractNumber } from "@/server/actions/contracts";
 import { insertEmploymentHistoryFromForm } from "@/server/employment-history";
+import {
+  buildBreakHoursJson,
+  buildTransportationRoutesJson,
+  buildWorkLocationsJson,
+  buildWorkingHoursJson,
+} from "@/server/work-condition-json";
 
 type UpdateEmployeeInput = {
   employeeId: string;
   workConditionId?: string | null;
   contractId?: string | null;
   values: EmployeeFormValues;
+  /** クライアントの EmployeeForm context と一致させる（省略時は all） */
+  formContext?: "employee-management" | "contract-management" | "all";
 };
 
-const buildWorkingHoursJson = (values: EmployeeFormValues["workingHours"], keyPrefix: string) =>
-  values.map((slot, index) => ({
-    id: `${keyPrefix}-wh-${index + 1}`,
-    start_time: slot.start,
-    end_time: slot.end,
-  }));
-
-const buildBreakHoursJson = (
-  values: Array<{ start: string; end: string }>,
-  keyPrefix: string,
-) =>
-  values.map((slot, index) => ({
-    id: `${keyPrefix}-bh-${index + 1}`,
-    start_time: slot.start,
-    end_time: slot.end,
-  }));
-
-const buildWorkLocationsJson = (
-  values: EmployeeFormValues["workLocations"],
-  keyPrefix: string,
-) =>
-  values.map((location, index) => ({
-    id: `${keyPrefix}-wl-${index + 1}`,
-    location: location.location,
-  }));
-
-const buildTransportationRoutesJson = (
-  values: EmployeeFormValues["transportationRoutes"],
-  keyPrefix: string,
-) =>
-  values.map((route, index) => ({
-    id: `${keyPrefix}-tr-${index + 1}`,
-    route: route.route,
-    round_trip_amount: route.roundTripAmount,
-    monthly_pass_amount: route.monthlyPassAmount ?? null,
-    max_amount: route.maxAmount ?? null,
-    nearest_station: route.nearestStation || null,
-  }));
+function hasWorkConditionPayload(data: EmployeeFormValues) {
+  const hasTransportation = data.transportationRoutes.some((r) =>
+    Boolean(
+      r.route?.trim() ||
+        r.usagePeriod?.trim() ||
+        r.transportationName?.trim() ||
+        r.roundTripAmount > 0 ||
+        (r.monthlyPassAmount != null && r.monthlyPassAmount > 0),
+    ),
+  );
+  const hasWorkHours =
+    data.workingHours.length > 0 && data.workingHours.some((h) => h.start && h.end);
+  const hasWorkLocations = data.workLocations.some(
+    (l) =>
+      Boolean(
+        l.location?.trim() ||
+          l.companyName?.trim() ||
+          l.officeName?.trim() ||
+          l.address?.trim() ||
+          l.phoneNumber?.trim(),
+      ),
+  );
+  const hasBreakHours = (data.breakHours ?? []).some((b) => b.start && b.end);
+  return hasWorkHours || hasTransportation || hasWorkLocations || hasBreakHours;
+}
 
 export async function updateEmployee(input: UpdateEmployeeInput) {
   const { employeeId } = input;
-  const schema = createEmployeeFormSchema("edit");
+  const formContext = input.formContext ?? "all";
+  const schema = createEmployeeFormSchema("edit", formContext);
   const data = schema.parse(input.values);
 
   const workConditionKey = input.workConditionId ?? randomUUID();
-  const desiredContractNumber = data.contractNumber?.trim();
-  const contractKey = desiredContractNumber || input.contractId || randomUUID();
+  // FR-097: 新規契約の場合は自動生成、既存契約はそのまま
+  const contractKey = input.contractId
+    ? input.contractId
+    : await generateContractNumber(data.employeeNumber);
   const workingHoursJson = buildWorkingHoursJson(data.workingHours, workConditionKey);
   const breakHoursJson = buildBreakHoursJson(data.breakHours ?? [], workConditionKey);
   const workLocationsJson = buildWorkLocationsJson(data.workLocations, workConditionKey);
@@ -83,9 +82,51 @@ export async function updateEmployee(input: UpdateEmployeeInput) {
         employment_status = ${data.employmentStatus},
         department_code = ${data.departmentCode},
         my_number = ${data.myNumber || null},
+        site_code = ${data.siteCode || null},
+        rehire_count = ${data.rehireCount ?? 0},
+        original_hire_date = ${data.originalHireDate || null},
+        current_hire_date = ${data.currentHireDate || null},
         updated_by = 'system',
         updated_at = NOW()
       WHERE id = ${employeeId}
+    `;
+
+    // 連絡先情報（住民票住所）
+    await trx`
+      INSERT INTO employee_contacts (
+        id,
+        employee_id,
+        resident_address_same,
+        resident_postal_code,
+        resident_address1,
+        resident_address2,
+        resident_address1_kana,
+        resident_address2_kana,
+        created_at,
+        updated_at,
+        updated_by
+      ) VALUES (
+        ${randomUUID()},
+        ${employeeId},
+        ${data.contact?.residentAddressSame ?? true},
+        ${data.contact?.residentPostalCode || null},
+        ${data.contact?.residentAddress1 || null},
+        ${data.contact?.residentAddress2 || null},
+        ${data.contact?.residentAddress1Kana || null},
+        ${data.contact?.residentAddress2Kana || null},
+        NOW(),
+        NOW(),
+        'system'
+      )
+      ON CONFLICT (employee_id) DO UPDATE SET
+        resident_address_same = EXCLUDED.resident_address_same,
+        resident_postal_code = EXCLUDED.resident_postal_code,
+        resident_address1 = EXCLUDED.resident_address1,
+        resident_address2 = EXCLUDED.resident_address2,
+        resident_address1_kana = EXCLUDED.resident_address1_kana,
+        resident_address2_kana = EXCLUDED.resident_address2_kana,
+        updated_by = 'system',
+        updated_at = NOW()
     `;
 
     if (input.workConditionId) {
@@ -104,7 +145,7 @@ export async function updateEmployee(input: UpdateEmployeeInput) {
           updated_at = NOW()
         WHERE id = ${input.workConditionId}
       `;
-    } else {
+    } else if (hasWorkConditionPayload(data)) {
       await trx`
         INSERT INTO work_conditions (
           id,
@@ -142,7 +183,6 @@ export async function updateEmployee(input: UpdateEmployeeInput) {
       await trx`
         UPDATE contracts
         SET
-          id = ${contractKey},
           contract_type = ${data.contract.contractType},
           contract_start_date = ${data.contract.contractStartDate},
           contract_end_date = ${data.contract.contractEndDate || null},
@@ -153,11 +193,32 @@ export async function updateEmployee(input: UpdateEmployeeInput) {
           job_description = ${data.contract.jobDescription || null},
           paid_leave_clause = ${data.contract.paidLeaveClause || null},
           is_renewable = ${data.contract.isRenewable},
+          job_description_change_scope = ${data.contract.jobDescriptionChangeScope || '会社の定める業務'},
+          work_location_change_scope = ${data.contract.workLocationChangeScope || '会社の定める事業所'},
+          overtime_work = ${data.contract.overtimeWork ?? true},
+          holiday_work = ${data.contract.holidayWork ?? true},
+          paid_leave_days = ${data.contract.paidLeaveDays || null},
+          paid_leave_base_date_type = ${data.contract.paidLeaveBaseDateType || null},
+          paid_leave_base_date = ${data.contract.paidLeaveBaseDate || null},
+          disability_leave_frequency = ${data.contract.disabilityLeaveFrequency || null},
+          commuting_allowance_max = ${data.contract.commutingAllowanceMax ?? 15000},
+          retirement_age = ${data.contract.retirementAge || null},
+          retirement_date = ${data.contract.retirementDate || null},
+          client_holiday_follow = ${data.contract.clientHolidayFollow ?? false},
+          holidays_note = ${data.contract.holidaysNote || null},
+          working_hours_note = ${data.contract.workingHoursNote || null},
+          piecework_shift_pattern = ${data.contract.pieceworkShiftPattern || null},
+          bonus_clause = ${data.contract.bonusClause || null},
+          employment_insurance_enrolled = ${data.contract.employmentInsuranceEnrolled ?? false},
+          health_insurance_enrolled = ${data.contract.healthInsuranceEnrolled ?? false},
+          pension_enrolled = ${data.contract.pensionEnrolled ?? false},
+          pension_fund_enrolled = ${data.contract.pensionFundEnrolled ?? false},
+          eligibility_cert_required = ${data.contract.eligibilityCertRequired ?? false},
           updated_by = 'system',
           updated_at = NOW()
         WHERE id = ${input.contractId}
       `;
-    } else {
+    } else if (formContext === "contract-management") {
       await trx`
         INSERT INTO contracts (
           id,
@@ -174,6 +235,27 @@ export async function updateEmployee(input: UpdateEmployeeInput) {
           paid_leave_clause,
           termination_alert_flag,
           status,
+          job_description_change_scope,
+          work_location_change_scope,
+          overtime_work,
+          holiday_work,
+          paid_leave_days,
+          paid_leave_base_date_type,
+          paid_leave_base_date,
+          disability_leave_frequency,
+          commuting_allowance_max,
+          retirement_age,
+          retirement_date,
+          client_holiday_follow,
+          holidays_note,
+          working_hours_note,
+          piecework_shift_pattern,
+          bonus_clause,
+          employment_insurance_enrolled,
+          health_insurance_enrolled,
+          pension_enrolled,
+          pension_fund_enrolled,
+          eligibility_cert_required,
           updated_by
         ) VALUES (
           ${contractKey},
@@ -190,6 +272,27 @@ export async function updateEmployee(input: UpdateEmployeeInput) {
           ${data.contract.paidLeaveClause || null},
           false,
           'DRAFT',
+          ${data.contract.jobDescriptionChangeScope || '会社の定める業務'},
+          ${data.contract.workLocationChangeScope || '会社の定める事業所'},
+          ${data.contract.overtimeWork ?? true},
+          ${data.contract.holidayWork ?? true},
+          ${data.contract.paidLeaveDays || null},
+          ${data.contract.paidLeaveBaseDateType || null},
+          ${data.contract.paidLeaveBaseDate || null},
+          ${data.contract.disabilityLeaveFrequency || null},
+          ${data.contract.commutingAllowanceMax ?? 15000},
+          ${data.contract.retirementAge || null},
+          ${data.contract.retirementDate || null},
+          ${data.contract.clientHolidayFollow ?? false},
+          ${data.contract.holidaysNote || null},
+          ${data.contract.workingHoursNote || null},
+          ${data.contract.pieceworkShiftPattern || null},
+          ${data.contract.bonusClause || null},
+          ${data.contract.employmentInsuranceEnrolled ?? false},
+          ${data.contract.healthInsuranceEnrolled ?? false},
+          ${data.contract.pensionEnrolled ?? false},
+          ${data.contract.pensionFundEnrolled ?? false},
+          ${data.contract.eligibilityCertRequired ?? false},
           'system'
         )
       `;

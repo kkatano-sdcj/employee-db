@@ -49,7 +49,11 @@ export default async function ContractNewPage({ searchParams }: ContractNewPageP
       (detail.employee.employmentStatus as EmployeeFormValues["employmentStatus"]) ??
       defaultEmployeeFormValues.employmentStatus,
     departmentCode: detail.employee.departmentCode,
+    siteCode: detail.employee.siteCode || "",
     myNumber: "",
+    rehireCount: detail.employee.rehireCount ?? 0,
+    originalHireDate: detail.employee.originalHireDate || "",
+    currentHireDate: detail.employee.currentHireDate || "",
     // 連絡先情報（空白）
     contact: {
       postalCode: "",
@@ -59,6 +63,12 @@ export default async function ContractNewPage({ searchParams }: ContractNewPageP
       address2Kana: "",
       phone1: "",
       email1: "",
+      residentAddressSame: true,
+      residentPostalCode: "",
+      residentAddress1: "",
+      residentAddress2: "",
+      residentAddress1Kana: "",
+      residentAddress2Kana: "",
     },
     // 社会保険・給与関連（空白）
     adminRecords: {
@@ -77,10 +87,28 @@ export default async function ContractNewPage({ searchParams }: ContractNewPageP
     workDaysCount: 0,
     workDaysCountNote: "",
     paidLeaveBaseDate: "",
-    workingHours: [],
+    workingHours: [{ start: "", end: "" }],
     breakHours: [],
-    workLocations: [],
-    transportationRoutes: [],
+    workLocations: [
+      {
+        companyName: "",
+        officeName: "",
+        address: "",
+        phoneNumber: "",
+        location: "",
+      },
+    ],
+    transportationRoutes: [
+      {
+        route: "",
+        usagePeriod: "",
+        transportationName: "",
+        roundTripAmount: 0,
+        monthlyPassAmount: undefined,
+        maxAmount: undefined,
+        nearestStation: "",
+      },
+    ],
     // 書類・提出状況（空白）
     documents: {
       healthInsuranceCardSubmitted: "",
@@ -106,6 +134,27 @@ export default async function ContractNewPage({ searchParams }: ContractNewPageP
       paidLeaveClause: "",
       approvalNumber: "",
       specialNote: "",
+      jobDescriptionChangeScope: "会社の定める業務",
+      workLocationChangeScope: "会社の定める事業所",
+      overtimeWork: true,
+      holidayWork: true,
+      paidLeaveDays: undefined,
+      paidLeaveBaseDateType: "",
+      paidLeaveBaseDate: "",
+      disabilityLeaveFrequency: "",
+      commutingAllowanceMax: 15000,
+      retirementAge: undefined,
+      retirementDate: "",
+      clientHolidayFollow: false,
+      holidaysNote: "",
+      workingHoursNote: "",
+      pieceworkShiftPattern: "",
+      bonusClause: "支給する。額については、個人の業務内容、業務の責任の範囲、会社・組織の業績などに基づき、個人ごとに個別に決定する。",
+      employmentInsuranceEnrolled: false,
+      healthInsuranceEnrolled: false,
+      pensionEnrolled: false,
+      pensionFundEnrolled: false,
+      eligibilityCertRequired: false,
     },
   };
 

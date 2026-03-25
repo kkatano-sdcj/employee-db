@@ -1,4 +1,6 @@
 import { db } from "@/server/db";
+import type { CurrentUser } from "@/lib/rbac";
+import { canAccessHourlyWage, canAccessMyNumber, getDepartmentFilter } from "@/lib/rbac";
 
 const toDateString = (value: Date | string | null | undefined) => {
   if (!value) return undefined;
@@ -27,6 +29,7 @@ export type EmployeeListItem = {
   employmentType: string;
   employmentStatus: string;
   departmentCode: string;
+  siteCode?: string;
   hourlyWage?: number;
   contractStartDate?: string;
   contractEndDate?: string;
@@ -56,6 +59,8 @@ export type EmployeeSearchOptions = {
   hasAlert?: boolean;
   limit?: number;
   offset?: number;
+  /** RBAC: 現在のユーザー（行レベル/列レベル制御用） */
+  currentUser?: CurrentUser | null;
 };
 
 export async function fetchEmployees(options: EmployeeSearchOptions = {}) {
@@ -72,7 +77,12 @@ export async function fetchEmployees(options: EmployeeSearchOptions = {}) {
     hasAlert,
     limit = 25,
     offset = 0,
+    currentUser,
   } = options;
+
+  // RBAC行レベル制御: FIELD_MANAGERは自部門のみ
+  const departmentFilter = currentUser ? getDepartmentFilter(currentUser) : null;
+  const effectiveDepartment = departmentFilter ?? department;
   const normalizedStatus =
     status && status !== "ALL" ? statusValueMap[status] ?? status : undefined;
 
@@ -84,6 +94,7 @@ export async function fetchEmployees(options: EmployeeSearchOptions = {}) {
       employmentType: string;
       employmentStatus: string;
       departmentCode: string;
+      siteCode: string | null;
       updatedAt: Date | string | null;
       contractStartDate: Date | string | null;
       contractEndDate: Date | string | null;
@@ -99,6 +110,7 @@ export async function fetchEmployees(options: EmployeeSearchOptions = {}) {
       e.employment_type as "employmentType",
       e.employment_status as "employmentStatus",
       e.department_code as "departmentCode",
+      e.site_code as "siteCode",
       e.updated_at as "updatedAt",
       c.contract_start_date as "contractStartDate",
       c.contract_end_date as "contractEndDate",
@@ -123,7 +135,7 @@ export async function fetchEmployees(options: EmployeeSearchOptions = {}) {
     ${query ? db`AND (e.name ILIKE ${"%" + query + "%"} OR e.name_kana ILIKE ${"%" + query + "%"} OR e.employee_number ILIKE ${"%" + query + "%"})` : db``}
     ${normalizedStatus ? db`AND e.employment_status = ${normalizedStatus}` : db``}
     ${employmentType && employmentType !== "ALL" ? db`AND e.employment_type = ${employmentType}` : db``}
-    ${department ? db`AND e.department_code = ${department}` : db``}
+    ${effectiveDepartment ? db`AND e.department_code = ${effectiveDepartment}` : db``}
     ${
       contractFrom
         ? db`AND (c.contract_start_date IS NULL OR c.contract_start_date >= ${contractFrom})`
@@ -171,8 +183,12 @@ export async function fetchEmployees(options: EmployeeSearchOptions = {}) {
     LIMIT ${limit} OFFSET ${offset}
   `;
 
+  // RBAC列レベル制御: 権限に基づいてフィールドをマスク
+  const showHourlyWage = currentUser ? canAccessHourlyWage(currentUser.role) : true;
+
   return rows.map((row) => ({
     ...row,
+    siteCode: row.siteCode ?? undefined,
     contractStartDate: toDateString(row.contractStartDate as unknown as Date),
     contractEndDate: toDateString(row.contractEndDate as unknown as Date),
     employmentExpiryScheduledDate: toDateString(
@@ -180,6 +196,8 @@ export async function fetchEmployees(options: EmployeeSearchOptions = {}) {
     ),
     updatedAt: toDateTimeString(row.updatedAt as unknown as Date),
     needsContractUpdate: Boolean(row.needsContractUpdate),
+    // 列レベル制御: FIELD_MANAGER以上のみ時給を閲覧可能
+    hourlyWage: showHourlyWage ? row.hourlyWage : undefined,
   }));
 }
 
@@ -200,6 +218,10 @@ export type EmployeeDetail = {
     employmentType: string;
     employmentStatus: string;
     departmentCode: string;
+    siteCode?: string;
+    rehireCount: number;
+    originalHireDate?: string;
+    currentHireDate?: string;
     myNumber?: string;
     updatedAt?: string;
   } | null;
@@ -211,6 +233,12 @@ export type EmployeeDetail = {
     address2Kana?: string;
     phone1?: string;
     email1?: string;
+    residentAddressSame?: boolean;
+    residentPostalCode?: string;
+    residentAddress1?: string;
+    residentAddress2?: string;
+    residentAddress1Kana?: string;
+    residentAddress2Kana?: string;
   } | null;
   bankAccounts: Array<{
     id: string;
@@ -236,9 +264,17 @@ export type EmployeeDetail = {
     paidLeaveBaseDate?: string | null;
     workingHours: Array<{ start: string; end: string }>;
     breakHours: Array<{ start: string; end: string }>;
-    workLocations: Array<{ location: string }>;
+    workLocations: Array<{
+      location: string;
+      companyName: string;
+      officeName: string;
+      address: string;
+      phoneNumber: string;
+    }>;
     transportationRoutes: Array<{
       route: string;
+      usagePeriod: string;
+      transportationName: string;
       roundTripAmount: number;
       monthlyPassAmount?: number | null;
       maxAmount?: number | null;
@@ -260,6 +296,30 @@ export type EmployeeDetail = {
     jobDescription?: string | null;
     paidLeaveClause?: string | null;
     status: string;
+    wageType?: string;
+    subLeaderAllowanceAmount?: number | null;
+    perfectAttendanceAllowanceEligible?: boolean;
+    jobDescriptionChangeScope?: string | null;
+    workLocationChangeScope?: string | null;
+    overtimeWork?: boolean;
+    holidayWork?: boolean;
+    paidLeaveDays?: number | null;
+    paidLeaveBaseDateType?: string | null;
+    paidLeaveBaseDate?: string | null;
+    disabilityLeaveFrequency?: string | null;
+    commutingAllowanceMax?: number | null;
+    retirementAge?: number | null;
+    retirementDate?: string | null;
+    clientHolidayFollow?: boolean;
+    holidaysNote?: string | null;
+    workingHoursNote?: string | null;
+    pieceworkShiftPattern?: string | null;
+    bonusClause?: string | null;
+    employmentInsuranceEnrolled?: boolean;
+    healthInsuranceEnrolled?: boolean;
+    pensionEnrolled?: boolean;
+    pensionFundEnrolled?: boolean;
+    eligibilityCertRequired?: boolean;
     updatedAt?: string;
   }>;
   employmentHistory: Array<{
@@ -316,7 +376,10 @@ type WorkConditionRow = {
   transportation_routes_jsonb: unknown;
 };
 
-export async function fetchEmployeeDetail(employeeId: string): Promise<EmployeeDetail> {
+export async function fetchEmployeeDetail(
+  employeeId: string,
+  currentUser?: CurrentUser | null,
+): Promise<EmployeeDetail> {
   const [employee] = (await db`
     SELECT
       id,
@@ -335,6 +398,10 @@ export async function fetchEmployeeDetail(employeeId: string): Promise<EmployeeD
       employment_status as "employmentStatus",
       department_code as "departmentCode",
       my_number as "myNumber",
+      site_code as "siteCode",
+      rehire_count as "rehireCount",
+      original_hire_date as "originalHireDate",
+      current_hire_date as "currentHireDate",
       updated_at as "updatedAt"
     FROM employees
     WHERE id = ${employeeId}
@@ -355,6 +422,10 @@ export async function fetchEmployeeDetail(employeeId: string): Promise<EmployeeD
     employmentStatus: string;
     departmentCode: string;
     myNumber: string | null;
+    siteCode: string | null;
+    rehireCount: number;
+    originalHireDate: Date | string | null;
+    currentHireDate: Date | string | null;
     updatedAt: Date | string | null;
   } | undefined>;
 
@@ -367,7 +438,13 @@ export async function fetchEmployeeDetail(employeeId: string): Promise<EmployeeD
       address1_kana as "address1Kana",
       address2_kana as "address2Kana",
       phone1,
-      email1
+      email1,
+      resident_address_same as "residentAddressSame",
+      resident_postal_code as "residentPostalCode",
+      resident_address1 as "residentAddress1",
+      resident_address2 as "residentAddress2",
+      resident_address1_kana as "residentAddress1Kana",
+      resident_address2_kana as "residentAddress2Kana"
     FROM employee_contacts
     WHERE employee_id = ${employeeId}
     LIMIT 1
@@ -379,6 +456,12 @@ export async function fetchEmployeeDetail(employeeId: string): Promise<EmployeeD
     address2Kana: string | null;
     phone1: string | null;
     email1: string | null;
+    residentAddressSame: boolean | null;
+    residentPostalCode: string | null;
+    residentAddress1: string | null;
+    residentAddress2: string | null;
+    residentAddress1Kana: string | null;
+    residentAddress2Kana: string | null;
   }>;
 
   // 振込口座情報を取得
@@ -440,19 +523,35 @@ export async function fetchEmployeeDetail(employeeId: string): Promise<EmployeeD
         )
       : [],
     workLocations: Array.isArray(condition.work_locations_jsonb)
-      ? (condition.work_locations_jsonb as Array<{ location?: string }>).map((location) => ({
+      ? (
+          condition.work_locations_jsonb as Array<{
+            location?: string;
+            company_name?: string;
+            office_name?: string;
+            address?: string;
+            phone_number?: string;
+          }>
+        ).map((location) => ({
           location: location.location ?? "",
+          companyName: location.company_name ?? "",
+          officeName: location.office_name ?? "",
+          address: location.address ?? "",
+          phoneNumber: location.phone_number ?? "",
         }))
       : [],
     transportationRoutes: Array.isArray(condition.transportation_routes_jsonb)
       ? (condition.transportation_routes_jsonb as Array<{
           route?: string;
+          usage_period?: string;
+          transportation_name?: string;
           round_trip_amount?: number;
           monthly_pass_amount?: number;
           max_amount?: number;
           nearest_station?: string;
         }>).map((route) => ({
           route: route.route ?? "",
+          usagePeriod: route.usage_period ?? "",
+          transportationName: route.transportation_name ?? "",
           roundTripAmount: Number(route.round_trip_amount ?? 0),
           monthlyPassAmount: route.monthly_pass_amount ? Number(route.monthly_pass_amount) : null,
           maxAmount: route.max_amount ? Number(route.max_amount) : null,
@@ -476,6 +575,30 @@ export async function fetchEmployeeDetail(employeeId: string): Promise<EmployeeD
       job_description as "jobDescription",
       paid_leave_clause as "paidLeaveClause",
       status,
+      wage_type as "wageType",
+      sub_leader_allowance_amount as "subLeaderAllowanceAmount",
+      perfect_attendance_allowance_eligible as "perfectAttendanceAllowanceEligible",
+      job_description_change_scope as "jobDescriptionChangeScope",
+      work_location_change_scope as "workLocationChangeScope",
+      overtime_work as "overtimeWork",
+      holiday_work as "holidayWork",
+      paid_leave_days as "paidLeaveDays",
+      paid_leave_base_date_type as "paidLeaveBaseDateType",
+      paid_leave_base_date as "paidLeaveBaseDate",
+      disability_leave_frequency as "disabilityLeaveFrequency",
+      commuting_allowance_max as "commutingAllowanceMax",
+      retirement_age as "retirementAge",
+      retirement_date as "retirementDate",
+      client_holiday_follow as "clientHolidayFollow",
+      holidays_note as "holidaysNote",
+      working_hours_note as "workingHoursNote",
+      piecework_shift_pattern as "pieceworkShiftPattern",
+      bonus_clause as "bonusClause",
+      employment_insurance_enrolled as "employmentInsuranceEnrolled",
+      health_insurance_enrolled as "healthInsuranceEnrolled",
+      pension_enrolled as "pensionEnrolled",
+      pension_fund_enrolled as "pensionFundEnrolled",
+      eligibility_cert_required as "eligibilityCertRequired",
       updated_at as "updatedAt",
       CASE
         WHEN employment_expiry_scheduled_date IS NULL THEN false
@@ -499,6 +622,30 @@ export async function fetchEmployeeDetail(employeeId: string): Promise<EmployeeD
     jobDescription: string | null;
     paidLeaveClause: string | null;
     status: string;
+    wageType: string | null;
+    subLeaderAllowanceAmount: number | null;
+    perfectAttendanceAllowanceEligible: boolean | null;
+    jobDescriptionChangeScope: string | null;
+    workLocationChangeScope: string | null;
+    overtimeWork: boolean | null;
+    holidayWork: boolean | null;
+    paidLeaveDays: number | null;
+    paidLeaveBaseDateType: string | null;
+    paidLeaveBaseDate: Date | string | null;
+    disabilityLeaveFrequency: string | null;
+    commutingAllowanceMax: number | null;
+    retirementAge: number | null;
+    retirementDate: Date | string | null;
+    clientHolidayFollow: boolean | null;
+    holidaysNote: string | null;
+    workingHoursNote: string | null;
+    pieceworkShiftPattern: string | null;
+    bonusClause: string | null;
+    employmentInsuranceEnrolled: boolean | null;
+    healthInsuranceEnrolled: boolean | null;
+    pensionEnrolled: boolean | null;
+    pensionFundEnrolled: boolean | null;
+    eligibilityCertRequired: boolean | null;
     updatedAt: Date | string | null;
     needsUpdate: boolean;
   }>;
@@ -585,6 +732,10 @@ export async function fetchEmployeeDetail(employeeId: string): Promise<EmployeeD
     notes: string | null;
   }>;
 
+  // RBAC列レベル制御
+  const showMyNumber = currentUser ? canAccessMyNumber(currentUser.role) : true;
+  const showHourlyWage = currentUser ? canAccessHourlyWage(currentUser.role) : true;
+
   return {
     employee: employee
       ? {
@@ -595,7 +746,12 @@ export async function fetchEmployeeDetail(employeeId: string): Promise<EmployeeD
           hiredAt: toDateString(employee.hiredAt as unknown as Date),
           rehiredAt: toDateString(employee.rehiredAt as unknown as Date),
           retiredAt: toDateString(employee.retiredAt as unknown as Date),
-          myNumber: employee.myNumber ?? undefined,
+          // 列レベル制御: HR_MANAGER以上のみmyNumberを閲覧可能
+          myNumber: showMyNumber ? (employee.myNumber ?? undefined) : undefined,
+          siteCode: employee.siteCode ?? undefined,
+          rehireCount: employee.rehireCount ?? 0,
+          originalHireDate: toDateString(employee.originalHireDate as unknown as Date),
+          currentHireDate: toDateString(employee.currentHireDate as unknown as Date),
           updatedAt: toDateTimeString(employee.updatedAt as unknown as Date),
         }
       : null,
@@ -608,6 +764,12 @@ export async function fetchEmployeeDetail(employeeId: string): Promise<EmployeeD
           address2Kana: contact.address2Kana ?? undefined,
           phone1: contact.phone1 ?? undefined,
           email1: contact.email1 ?? undefined,
+          residentAddressSame: contact.residentAddressSame ?? true,
+          residentPostalCode: contact.residentPostalCode ?? undefined,
+          residentAddress1: contact.residentAddress1 ?? undefined,
+          residentAddress2: contact.residentAddress2 ?? undefined,
+          residentAddress1Kana: contact.residentAddress1Kana ?? undefined,
+          residentAddress2Kana: contact.residentAddress2Kana ?? undefined,
         }
       : null,
     bankAccounts: bankAccounts.map((account) => ({
@@ -636,14 +798,39 @@ export async function fetchEmployeeDetail(employeeId: string): Promise<EmployeeD
       ),
       employmentExpiryDate: toDateString(contract.employmentExpiryDate as unknown as Date),
       needsUpdate: Boolean(contract.needsUpdate),
-      hourlyWage: Number(contract.hourlyWage ?? 0),
-      hourlyWageNote: contract.hourlyWageNote ?? undefined,
-      overtimeHourlyWage: contract.overtimeHourlyWage
+      // 列レベル制御: FIELD_MANAGER以上のみ時給を閲覧可能
+      hourlyWage: showHourlyWage ? Number(contract.hourlyWage ?? 0) : 0,
+      hourlyWageNote: showHourlyWage ? (contract.hourlyWageNote ?? undefined) : undefined,
+      overtimeHourlyWage: showHourlyWage && contract.overtimeHourlyWage
         ? Number(contract.overtimeHourlyWage)
         : null,
       jobDescription: contract.jobDescription ?? undefined,
       paidLeaveClause: contract.paidLeaveClause ?? undefined,
       status: contract.status,
+      wageType: contract.wageType ?? undefined,
+      subLeaderAllowanceAmount: showHourlyWage && contract.subLeaderAllowanceAmount ? Number(contract.subLeaderAllowanceAmount) : null,
+      perfectAttendanceAllowanceEligible: Boolean(contract.perfectAttendanceAllowanceEligible),
+      jobDescriptionChangeScope: contract.jobDescriptionChangeScope ?? undefined,
+      workLocationChangeScope: contract.workLocationChangeScope ?? undefined,
+      overtimeWork: contract.overtimeWork ?? true,
+      holidayWork: contract.holidayWork ?? true,
+      paidLeaveDays: contract.paidLeaveDays ?? null,
+      paidLeaveBaseDateType: contract.paidLeaveBaseDateType ?? undefined,
+      paidLeaveBaseDate: toDateString(contract.paidLeaveBaseDate as unknown as Date),
+      disabilityLeaveFrequency: contract.disabilityLeaveFrequency ?? undefined,
+      commutingAllowanceMax: contract.commutingAllowanceMax ? Number(contract.commutingAllowanceMax) : null,
+      retirementAge: contract.retirementAge ?? null,
+      retirementDate: toDateString(contract.retirementDate as unknown as Date),
+      clientHolidayFollow: Boolean(contract.clientHolidayFollow),
+      holidaysNote: contract.holidaysNote ?? undefined,
+      workingHoursNote: contract.workingHoursNote ?? undefined,
+      pieceworkShiftPattern: contract.pieceworkShiftPattern ?? undefined,
+      bonusClause: contract.bonusClause ?? undefined,
+      employmentInsuranceEnrolled: Boolean(contract.employmentInsuranceEnrolled),
+      healthInsuranceEnrolled: Boolean(contract.healthInsuranceEnrolled),
+      pensionEnrolled: Boolean(contract.pensionEnrolled),
+      pensionFundEnrolled: Boolean(contract.pensionFundEnrolled),
+      eligibilityCertRequired: Boolean(contract.eligibilityCertRequired),
       updatedAt: toDateTimeString(contract.updatedAt as unknown as Date),
     })),
     employmentHistory: employmentHistory.map((history) => ({
@@ -653,7 +840,7 @@ export async function fetchEmployeeDetail(employeeId: string): Promise<EmployeeD
       effectiveDate: toDateString(history.effectiveDate as unknown as Date),
       departmentCode: history.departmentCode ?? undefined,
       grade: history.grade ?? undefined,
-      hourlyWage: history.hourlyWage ? Number(history.hourlyWage) : null,
+      hourlyWage: showHourlyWage && history.hourlyWage ? Number(history.hourlyWage) : null,
       approvalNumber: history.approvalNumber ?? undefined,
       remarks: history.remarks ?? undefined,
     })),
